@@ -1,4 +1,4 @@
-# AI4Maxcut: High performance GPU-based solver for the Graph Maxcut Problem
+# AI4Maxcut: High performance GPU-based solver for the graph maxcut problem
 
 We aim to showcase that AI, especially reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for the graph maxcut problems. AI4Maxcut collects many AI tricks and also operations research (OR) tricks to improve the performance. We encourage users to try AI tricks, and implement their own new ideas based on the datasets. If encountering any problems, please submit github issues, and we can talk there.
 
