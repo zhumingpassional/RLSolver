@@ -100,7 +100,7 @@ AI4Maxcut
 └──simulated_annealing.py
 └──utils.py
 └──opt_methods
-└──maxcut.md
+└──README.md
 
 ```
 
