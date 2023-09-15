@@ -112,6 +112,6 @@ AI4Maxcut
 
 
 ## Related Websites
-+ [RLSolver]([https://github.com/zhumingpassional/AI4Maxcut](https://github.com/AI4Finance-Foundation/RLSolver))
++ [RLSolver](https://github.com/AI4Finance-Foundation/RLSolver))
 + [Benchmarks for optimization softwre](http://plato.asu.edu/bench.html) 
 
