@@ -145,7 +145,12 @@ In the following table, the first row illustrates the limited time for solvers. 
 
 
 ## Finished
-- [x] Maxcut
+- [x] Random walk
+- [x] Greedy
+- [x] Simulated annealing
+- [x] Learn to anneal
+- [x] MCPG
+
 ## TODO
 - [ ] Learning greedy
 
