@@ -9,13 +9,6 @@ We aim to showcase that AI, especially reinforcement learning (RL) or machine le
 - **Podracer scheduling** on a GPU cloud, e.g., DGX-2 SuperPod.
 
 
-# Workflow
-<a target="\_blank">
-	<div align="center">
-		<img src=fig/work_flow.png width="90%"/>
-	</div>
-</a>  
-
 
 ## File Structure
 
@@ -68,33 +61,6 @@ Format:
 python xxx.py  # xxx.py is the file name of the algorithm
 ```
 
-| Algorithm | File| 
-|---|----------|
-|learn_to_anneal_x (ours) | learn_to_anneal_x.py | 
-|random walk | random_walk.py | 
-| greedy | greedy.py | 
-| simulated annealing| simulated_annealing.py | 
-
-
-## Benchmarks
-
-
-* Learning to branch
-  
-[code](https://github.com/cwfparsonson/retro_branching/tree/master) 2023 AAAI Reinforcement Learning for Branch-and-Bound Optimisation using Retrospective Trajectories 
-
-[code](https://github.com/ds4dm/branch-search-trees) 2021 AAAI Parameterizing Branch-and-Bound Search Trees to Learn Branching Policies
-
-* Learning to cut
-
-[code](https://github.com/Wenbo11/learntocut) 2020 ICML Reinforcement learning for integer programming: Learning to cut
-
-
-* AI-based heuristic
-  
-[code](https://github.com/Hanjun-Dai/graph_comb_opt)  (greedy) 2017 NeurIPS Learning Combinatorial Optimization Algorithms over Graphs
-
-[code](https://github.com/optsuite/MCPG) (local search) 2023, A Monte Carlo Policy Gradient Method with Local Search for Binary Optimization
 
 
 * Classical methods
@@ -116,17 +82,6 @@ python xxx.py  # xxx.py is the file name of the algorithm
 [SCIP](https://www.scipopt.org/index.php#welcome) is a well-known open-source solver, and its simplex is commonly used in "learn to branch/cut". If users do not have Gurobi licenses, SCIP is a good choice since it is __open-source and free__. Although its performance is not as good as Gurobi, we recommend to use SCIP if users do not have Gurobi licenses. 
 
 
-## Other Solvers
-
-[COPT](https://www.copt.de/): a mathematical optimization solver for large-scale problems.
-
-[CPLEX](https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer): a high-performance mathematical programming solver for linear programming, mixed integer programming, and quadratic programming.
-
-[Xpress](https://www.fico.com/en/products/fico-xpress-optimization): an extraordinarily powerful, field-installable Solver Engine.
-
-[BiqMac](https://biqmac.aau.at/): a solver only for binary quadratic or maxcut. Users should upload txt file, but the response time is not guaranteed. If users use it, we recommend to [download](https://biqmac.aau.at/) the sources and run it by local computers. 
-
-
 ## Store Results 
 
 Results will be written to a file result.txt in the folder "result". The first column is the node, and the second column is the label of classified set. For example, 
@@ -140,10 +95,6 @@ Results will be written to a file result.txt in the folder "result". The first c
 4 1  # node 4 in set 1
 
 5 2  # node 5 in set 2
-
-The filename of the results follows the principle: the last number denotes the running duration (seconds). Take syn_10_21_1800.txt as an example, it is solution of syn_10_21.txt, and the running duration is 1800 seconds. Take gset_14_1800.txt as an example, it is solution of gset_14.txt, and the running duration is 1800 seconds. 
-
-If using Gurobi or SCIP, the generated files have their own formats (e.g., result.lp and result.sol) for easy check, which are very different from that by running our algorithms. 
 
 The partial results are stored in the folder "result" in this repo. All the results are stored in [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE: hojh for China users).  
 
