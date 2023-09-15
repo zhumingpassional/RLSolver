@@ -1,12 +1,12 @@
 # AI4Maxcut: High performance GPU-based solver for the Graph Maxcut Problem
 
-We aim to showcase that AI, especially reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for large-scale graph maxcut problems. AI4Maxcut collects many RL/ML tricks and also operations research (OR) tricks to improve the performance. We encourage users to try AI tricks, and implement their own new ideas based on the datasets. If encountering any problems, please submit github issues, and we can talk there.
+We aim to showcase that AI, especially reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for the graph maxcut problems. AI4Maxcut collects many AI tricks and also operations research (OR) tricks to improve the performance. We encourage users to try AI tricks, and implement their own new ideas based on the datasets. If encountering any problems, please submit github issues, and we can talk there.
 
 # Key Technologies
+- **AI tricks** such as learn to optimize, and curriculum learning.
+- **OR tricks** such as local search, and tabu search.
 - **Massively parallel sampling** of Markov chain Monte Carlo simulations on GPU, using thousands of CUDA cores and tensor cores.
 - **Podracer scheduling** on a GPU cloud, e.g., DGX-2 SuperPod.
-- **OR tricks** such as local search, and tabu search.
-- **AI tricks** such as learn to optimize, and curriculum learning.
 
 
 # Workflow
@@ -111,6 +111,6 @@ AI4Maxcut
 
 
 ## Related Websites
-+ [RLSolver](https://github.com/AI4Finance-Foundation/RLSolver))
-+ [Benchmarks for optimization softwre](http://plato.asu.edu/bench.html) 
++ [RLSolver](https://github.com/AI4Finance-Foundation/RLSolver)
++ [Benchmarks for optimization softwre](http://plato.asu.edu/bench.html)
 
