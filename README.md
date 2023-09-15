@@ -28,11 +28,11 @@ AI4Maxcut
 └──gurobi.py
 └──scip.py
 └──random_walk.py
+└──README.md
 └──greedy.py
 └──simulated_annealing.py
 └──utils.py
-└──opt_methods
-└──README.md
+
 
 ```
 
@@ -143,7 +143,7 @@ Results will be written to a file result.txt in the folder "result". The first c
 
 The filename of the results follows the principle: the last number denotes the running duration (seconds). Take syn_10_21_1800.txt as an example, it is solution of syn_10_21.txt, and the running duration is 1800 seconds. Take gset_14_1800.txt as an example, it is solution of gset_14.txt, and the running duration is 1800 seconds. 
 
-If using Gurobi or SCIP, the generated files have their own formats (e.g., result.lp and result.sol) for easy check, which are very different from that by running algorithms. 
+If using Gurobi or SCIP, the generated files have their own formats (e.g., result.lp and result.sol) for easy check, which are very different from that by running our algorithms. 
 
 The partial results are stored in the folder "result" in this repo. All the results are stored in [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE: hojh for China users).  
 
