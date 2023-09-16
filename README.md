@@ -8,15 +8,17 @@
 ```
 Maxcut
 └──comparisons
-    └──gurobi.py
-    └──scip.py
-    └──random_walk.py
     └──greedy.py
+    └──gurobi.py
+    └──mcpg.py
+    └──random_walk.py
+    └──scip.py
     └──simulated_annealing.py
 └──data
 └──result
 └──mcmc.py
-└──learn_to_x.py (ours)
+└──l2a.py (ours)
+└──l2a_distribution.py (ours)
 └──README.md
 └──utils.py
 
@@ -35,7 +37,7 @@ Maxcut
 
 Format:
 ```
-python learn_to_x.py  # our algorithm
+python l2a.py  # our algorithm
 ```
 
 ## Solvers to Compare with
