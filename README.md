@@ -15,7 +15,7 @@ Maxcut
     └──simulated_annealing.py
 └──data
 └──result
-└──mcmc
+└──mcmc.py
 └──learn_to_x.py (ours)
 └──README.md
 └──utils.py
