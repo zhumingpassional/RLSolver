@@ -8,7 +8,7 @@ We showcase reinforcement learning (RL) with GPUs for the graph maxcut problem.
 ## File Structure
 
 ```
-AI4Maxcut
+Maxcut
 └──data
 └──mcmc_sim
 └──result
