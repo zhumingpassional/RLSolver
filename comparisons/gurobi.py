@@ -24,7 +24,7 @@ def write_statistics(model, new_file, add_slash = False):
 
 # running_duration (seconds) is included.
 def write_result_gurobi(model, filename: str = 'result/result', running_duration: int = None):
-    if filename.split('/')[0] == 'data':
+    if 'data' in filename:
         filename = calc_result_file_name(filename)
     directory = filename.split('/')[0]
     if not os.path.exists(directory):
@@ -130,8 +130,8 @@ if __name__ == '__main__':
     if select_single_file:
         filename = '../data/syn/syn_50_176.txt'
         time_limits = [0.5 * 3600]
-        run_using_gurobi(filename, time_limit=time_limits[0], plot_fig_=True)
-        directory = 'result'
+        run_using_gurobi(filename, time_limit=time_limits[0], plot_fig_=False)
+        directory = '../result'
         prefixes = ['syn_50_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     else:
@@ -139,9 +139,9 @@ if __name__ == '__main__':
         # prefixes = ['syn_10_']
         # time_limits = [0.5 * 3600, 1 * 3600]
         time_limits = [0.5 * 3600]
-        directory_data = 'data/syn'
+        directory_data = '../data/syn'
         run_gurobi_over_multiple_files(prefixes, time_limits, directory_data)
-        directory = 'result'
+        directory = '../result'
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
 
     pass

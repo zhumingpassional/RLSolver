@@ -60,7 +60,7 @@ if __name__ == '__main__':
     gr_score, gr_solution, gr_scores = greedy(init_solution, num_steps, graph)
 
     # write result
-    write_result(gr_solution)
+    write_result(gr_solution, '../result/result.txt')
     obj = obj_maxcut(gr_solution, graph)
     print('obj: ', obj)
     
