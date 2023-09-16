@@ -28,15 +28,7 @@ Maxcut
   
 2) __Syn__ is the synthetic data obtained by calling the function generate_write in utils.py. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh for China users). 
   
-Take gset_14.txt as an example,
 
-800 4694 # the number of nodes is 800, and the number of edges is 4694
-
-1 7 1 # the edge connects node 1 and 7, and its weight is 1
-
-1 10 1 # the edge connects node 1 and 10, and its weight is 1
-
-...
 
 ### Generate synthetic data
 
