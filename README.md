@@ -1,6 +1,6 @@
 # AI4Maxcut: High performance GPU-based solver for the graph maxcut problem
 
-We aim to showcase that AI, especially reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for the graph maxcut problems. AI4Maxcut collects many AI tricks and also operations research (OR) tricks to improve the performance. 
+We aim to showcase that AI, especially reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for the graph maxcut problem. AI4Maxcut collects many AI tricks and also operations research (OR) tricks to improve the performance. 
 
 # Key Technologies
 - **AI tricks** such as learn to optimize, and curriculum learning.
@@ -123,7 +123,7 @@ When use solvers, "gap" is calculated based on the objective of its solution and
 
 We use the whole synthetic data. For graphs with n nodes, there are 5 datasets, and we run once for each dataset, and finally calcualte the average and standard deviation for the objective values. 
 
-In the following table, the first row illustrates the limited time for solvers. The average running duration is exactly the limited time if we do not write the average duration. We see that, when the number of nodes is not larger than 100, the optimal solutions are obtained, and the average running duraton is much less than 0.5 hour. The inference time of our method is less than 0.001 second.
+In the following table, the first row illustrates the limited time for solvers. We see that, when the number of nodes is not larger than 100, the optimal solutions are obtained, and the average running duraton is much less than 0.5 hour. The inference time of our method is less than 0.001 second.
  
 
 |Datasets |Gurobi (0.5 h)| Gap |Gurobi (1 h) | Gap |Gurobi (1.5 h) |Gap |Ours|Gap_best |
@@ -149,7 +149,7 @@ In the following table, the first row illustrates the limited time for solvers. 
 - [x] Greedy
 - [x] Simulated annealing
 - [x] Learn to anneal
-- [x] MCPG
+- [x] [MCPG](https://github.com/optsuite/MCPG)
 
 ## TODO
 - [ ] Learning greedy
