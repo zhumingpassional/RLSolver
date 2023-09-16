@@ -126,7 +126,7 @@ if __name__ == '__main__':
         filename = '../data/syn/syn_50_176.txt'
         time_limits = [0.5 * 3600]
         run_using_scip(filename, time_limit=time_limits[0], plot_fig_=True)
-        directory = 'result'
+        directory = '../result'
         prefixes = ['syn_50_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
 
@@ -135,9 +135,9 @@ if __name__ == '__main__':
         # prefixes = ['syn_10_']
         # time_limits = [0.5 * 3600, 1 * 3600]
         time_limits = [0.5 * 3600]
-        directory_data = 'data/syn'
+        directory_data = '../data/syn'
         run_scip_over_multiple_files(prefixes, time_limits, directory_data)
-        directory = 'result'
+        directory = '../result'
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     pass
 

@@ -54,7 +54,7 @@ if __name__ == '__main__':
     sa_score, sa_solution, sa_scores = simulated_annealing(init_solution, init_temperature, num_steps, graph)
 
     # write result
-    write_result(sa_solution)
+    write_result(sa_solution, '../result/result.txt')
 
     # plot fig
     alg_name = 'SA'

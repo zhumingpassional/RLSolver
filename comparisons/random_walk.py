@@ -44,7 +44,7 @@ if __name__ == '__main__':
     rw_score, rw_solution, rw_scores = random_walk(init_solution=init_solution, num_steps=1000, graph=graph)
 
     # write result
-    write_result(rw_solution)
+    write_result(rw_solution, '../result/result.txt')
     obj = obj_maxcut(rw_solution, graph)
     print('obj: ', obj)
     alg_name = 'RW'
