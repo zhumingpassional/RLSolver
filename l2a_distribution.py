@@ -677,21 +677,6 @@ class AgentDist(Agent):
         return best_sln_x, best_score
 
 
-def run_v31_find_xs_using_opti():
-    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    num_nodes = 48
-    graph_name = f"powerlaw_{num_nodes}"
-
-    agent = Agent(graph_name=graph_name, gpu_id=gpu_id, json_path='auto_build')
-
-    best_sln_x = None
-    best_score = None
-    for j in range(agent.num_opti):
-        best_sln_x, best_score = agent.search(j=j)
-    print(f"\nbest_sln_x {best_sln_x}"
-          f"\nbest_score {best_score}")
-
-
 def run_v32_find_xs_using_opti():
     gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     num_nodes = 48
@@ -744,5 +729,4 @@ def run_v32_find_xs_using_opti():
 
 
 if __name__ == '__main__':
-    # run_v31_find_xs_using_opti()
     run_v32_find_xs_using_opti()
