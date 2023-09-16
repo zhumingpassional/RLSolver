@@ -12,7 +12,7 @@ from torch.distributions import Bernoulli  # BinaryDist
 from tqdm import tqdm
 import matplotlib
 
-class MCMCSim2:
+class MCMC:
     def __init__(self, graph_name: str = 'gset_14', gpu_id: int = -1):
         self.grapj_name = graph_name
         device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
