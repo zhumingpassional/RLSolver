@@ -35,7 +35,7 @@ Maxcut
 
 Format:
 ```
-python learn_to_anneal.py  # xxx.py is the file name of the algorithm
+python learn_to_x.py  # our algorithm
 ```
 
 ## Solvers to Compare with
