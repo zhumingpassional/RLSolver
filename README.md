@@ -7,16 +7,17 @@
 
 ```
 Maxcut
+└──comparisons
+    └──gurobi.py
+    └──scip.py
+    └──random_walk.py
+    └──greedy.py
+    └──simulated_annealing.py
 └──data
-└──mcmc_sim
 └──result
-└──learn_to_anneal_x.py (ours)
-└──gurobi.py
-└──scip.py
-└──random_walk.py
+└──mcmc
+└──learn_to_x.py (ours)
 └──README.md
-└──greedy.py
-└──simulated_annealing.py
 └──utils.py
 
 
@@ -80,8 +81,6 @@ In the following experiments, we use GPU during training by default.
 2) __Syn__ 
 
 We use the whole synthetic data. For graphs with n nodes, there are 5 datasets, and we run once for each dataset, and finally calcualte the average and standard deviation for the objective values. 
-
-In the following table, the first row illustrates the limited time for solvers. We see that, when the number of nodes is not larger than 100, the optimal solutions are obtained, and the average running duraton is much less than 0.5 hour. The inference time of our method is less than 0.001 second.
  
 |Datasets |Gurobi (0.5 h)| Gap |Gurobi (1 h) | Gap |Gurobi (1.5 h) |Gap |Ours|Gap |
 |-------|------|----| ---- |------|----| ---- |---- |--|
