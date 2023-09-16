@@ -1,14 +1,10 @@
-# AI4Maxcut: High performance GPU-based solver for the graph maxcut problem
+# Maxcut using machine learning
 
-We aim to showcase that AI, especially reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for the graph maxcut problem. AI4Maxcut collects many AI tricks and also operations research (OR) tricks to improve the performance. 
+We showcase reinforcement learning (RL) with GPUs for the graph maxcut problem.
 
 # Key Technologies
-- **AI tricks** such as learn to optimize, and curriculum learning.
-- **OR tricks** such as local search, and tabu search.
-- **Massively parallel sampling** of Markov chain Monte Carlo simulations on GPU, using thousands of CUDA cores and tensor cores.
-- **Podracer scheduling** on a GPU cloud, e.g., DGX-2 SuperPod.
-
-
+- **RL tricks** such as learn to optimize, and curriculum learning.
+- **Massively parallel sampling** on GPU, using thousands of CUDA cores and tensor cores.
 
 ## File Structure
 
