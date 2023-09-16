@@ -1,7 +1,5 @@
 # Maxcut using machine learning
 
-We showcase reinforcement learning (RL) with GPUs for the graph maxcut problem.
-
 - **RL tricks** such as learn to optimize, and curriculum learning.
 - **Massively parallel sampling** on GPU, using thousands of CUDA cores and tensor cores.
 
