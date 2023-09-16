@@ -61,7 +61,6 @@ python xxx.py  # xxx.py is the file name of the algorithm
 * Classical methods
   - Random walk
   - Greedy
-  - $\epsilon$-greedy
   - Simulated annealing
   - Local search
   - Beam search
