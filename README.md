@@ -59,12 +59,9 @@ python xxx.py  # xxx.py is the file name of the algorithm
 
 
 * Classical methods
-  - Random walk
   - Greedy
   - Simulated annealing
   - Local search
-  - Beam search
-  - Tabu search
   - Branch-and-bound
   - Cutting plane
 
