@@ -53,25 +53,14 @@ We use the function __read_txt__ in utils.py to read the data, which returns a [
 
 Format:
 ```
-python xxx.py  # xxx.py is the file name of the algorithm
+python learn_to_anneal.py  # xxx.py is the file name of the algorithm
 ```
-
-
-
-* Classical methods
-  - Greedy
-  - Simulated annealing
-  - Local search
-  - Branch-and-bound
-  - Cutting plane
-
 
 ## Solvers to Compare with
 
 [Gurobi](https://www.gurobi.com/) is the state-of-the-art solver. The license is required, and professors/students at universities can obtain the __academic license for free__. We recommend to use Gurobi if users have licenses, since its performance is the best.
 
 [SCIP](https://www.scipopt.org/index.php#welcome) is a well-known open-source solver, and its simplex is commonly used in "learn to branch/cut". If users do not have Gurobi licenses, SCIP is a good choice since it is __open-source and free__. Although its performance is not as good as Gurobi, we recommend to use SCIP if users do not have Gurobi licenses. 
-
 
 ## Store Results 
 
@@ -108,15 +97,12 @@ When use solvers, "gap" is calculated based on the objective of its solution and
 |G55 | 5000 | 12468 | __10294__ | 9960 | 10236 | 10116 | 10138  | 10103 | 15.39\%|10103| 11.92\%|10103 | 10.69\%  |10017 |  2.69\% | 
 |G70 | 10000 | 9999 |__9541__ | 9456 | 9458 | - | 9421  | 9489 | 2.41\% |9490|2.26\%| 9580| 0.96\% |9358 | 1.92\% | 
 
-
-
 2) __Syn__ 
 
 We use the whole synthetic data. For graphs with n nodes, there are 5 datasets, and we run once for each dataset, and finally calcualte the average and standard deviation for the objective values. 
 
 In the following table, the first row illustrates the limited time for solvers. We see that, when the number of nodes is not larger than 100, the optimal solutions are obtained, and the average running duraton is much less than 0.5 hour. The inference time of our method is less than 0.001 second.
  
-
 |Datasets |Gurobi (0.5 h)| Gap |Gurobi (1 h) | Gap |Gurobi (1.5 h) |Gap |Ours|Gap_best |
 |-------|------|----| ---- |------|----| ---- |---- |--|
 |syn_10   | 17.40 $\pm$ 0.80 (0.004s) | 0| 17.40 $\pm$ 0.80 (0.004s)| 0 | 17.40 $\pm$ 0.80 (0.004s)| 0| $\pm$  | |  
@@ -133,21 +119,4 @@ In the following table, the first row illustrates the limited time for solvers. 
 |syn_9000  |  57730.20 $\pm$ 502.51 (1800s)  | 60.30\% | 57730.20 $\pm$ 502.51 (3600s) | 60.00\%  | $\pm$ (5400s)| \%|   $\pm$   |  |  
 |syn_10000 |  60768.40 $\pm$ 585.41 (1800s)  | 59.54\% | 60768.40 $\pm$ 585.41 (3600s) |  58.67\%  | $\pm$ (5400s)| \%|   $\pm$   |  |  
 
-
-
-## Finished
-- [x] Random walk
-- [x] Greedy
-- [x] Simulated annealing
-- [x] Learn to anneal
-- [x] [MCPG](https://github.com/optsuite/MCPG)
-
-## TODO
-- [ ] Learning greedy
-
-
-
-## Related Websites
-+ [RLSolver](https://github.com/AI4Finance-Foundation/RLSolver)
-+ [Benchmarks for optimization softwre](http://plato.asu.edu/bench.html)
 
