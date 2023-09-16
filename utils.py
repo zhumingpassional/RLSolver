@@ -443,12 +443,12 @@ if __name__ == '__main__':
     time_limits = [0.5 * 3600]
     avgs_stds = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 
-    filename = 'result/syn_10_21_1800.sta'
-    new_filename = 'result/syn_10_21_1800.txt'
-    transfer_write_solver_result(filename, new_filename)
+    # filename = 'result/syn_10_21_1800.sta'
+    # new_filename = 'result/syn_10_21_1800.txt'
+    # transfer_write_solver_result(filename, new_filename)
 
-    from_extension = '.sov'
-    to_extension = '.txt'
-    transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
+    # from_extension = '.sov'
+    # to_extension = '.txt'
+    # transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
 
     print()
