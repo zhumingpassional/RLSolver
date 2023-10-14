@@ -7,7 +7,7 @@
 
 ```
 Maxcut
-└──comparisons
+└──baseline
     └──greedy.py
     └──gurobi.py
     └──mcpg.py
