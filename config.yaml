@@ -1,5 +1,5 @@
 input_params:
-  dataset: "data/gset14.txt",
+  dataset: "data/gset_14.txt",
 output_params:
   outputdir: "result/gset_l2a"
 rl_params:
