@@ -10,38 +10,41 @@ import networkx as nx
 
 from torch import Tensor
 
+def plot_graph(g: nx.Graph()):
+    import matplotlib.pyplot as plt
+    nx.draw_networkx(g)
+    fig_filename = '.result/fig.png'
+    plt.savefig(fig_filename)
+    plt.show()
 
 # read graph file, e.g., gset_14.txt, as networkx.Graph
 # The nodes in file start from 1, but the nodes start from 0 in our codes.
-def read_txt_as_networkx_graph(filename: str, plot_fig: bool = False) -> nx.Graph():
+def read_graph(filename: str) -> nx.Graph():
+    g = nx.Graph()
     with open(filename, 'r') as file:
-        lines = []
-        line = file.readline()  # 读取第一行
+        # lines = []
+        line = file.readline()
+        is_first_line = True
         while line is not None and line != '':
             if '//' not in line:
-                lines.append(line)
-            line = file.readline()  # 读取下一行
-        # lines = file.readlines()
-        lines = [[int(i1) for i1 in i0.split()] for i0 in lines]
-    num_nodes, num_edges = lines[0]
-    g = nx.Graph()
-    nodes = list(range(num_nodes))
-    g.add_nodes_from(nodes)
-    for item in lines[1:]:
-        g.add_edge(item[0] - 1, item[1] - 1, weight=item[2])
-    if plot_fig:
-        import matplotlib.pyplot as plt
-        nx.draw_networkx(g)
-        fig_filename = filename.split('.')[0] + '.png'
-        plt.savefig(fig_filename)
-        plt.show()
+                if is_first_line:
+                    strings = line.split(" ")
+                    num_nodes = int(strings[0])
+                    num_edges = int(strings[1])
+                    nodes = list(range(num_nodes))
+                    g.add_nodes_from(nodes)
+                    is_first_line = False
+                else:
+                    node1, node2, weight = line.split(" ")
+                    g.add_edge(int(node1) - 1, int(node2) - 1, weight=weight)
+            line = file.readline()
     return g
 
 
 def obj_maxcut(result: Union[Tensor, List[int], np.array], graph: nx.Graph):
     num_nodes = len(result)
     cut = 0
-    adj_matrix = nx.adjacency_matrix(graph)
+    adj_matrix = nx.to_numpy_matrix(graph)
     for i in range(num_nodes):
         for j in range(i + 1, num_nodes):
             if result[i] != result[j]:
@@ -246,7 +249,7 @@ def plot_fig(scores: List[int], label: str):
     dic = {'0': 'ro-', '1': 'gs', '2': 'b^', '3': 'c>', '4': 'm<', '5': 'yp'}
     plt.plot(x, scores, dic['0'])
     plt.legend([label], loc=0)
-    plt.savefig('result/' + label + '.png')
+    plt.savefig('../result/' + label + '.png')
     plt.show()
 
 def calc_txt_files_with_prefix(directory: str, prefix: str):
@@ -401,8 +404,8 @@ def rename_files(directory: str, orig: str, dest: str):
 if __name__ == '__main__':
     read_txt = True
     if read_txt:
-        graph1 = read_txt_as_networkx_graph('data/gset/gset_14.txt')
-        graph2 = read_txt_as_networkx_graph('data/syn_5_5.txt')
+        graph1 = read_graph('data/gset/gset_14.txt')
+        graph2 = read_graph('data/syn_5_5.txt')
 
     # result = Tensor([0, 1, 0, 1, 0, 1, 1])
     # write_result(result)
@@ -416,7 +419,7 @@ if __name__ == '__main__':
     generate_read = False
     if generate_read:
         adj_matrix, graph3 = generate_write_symmetric_adjacency_matrix_and_networkx_graph(6, 8)
-        graph4 = read_txt_as_networkx_graph('data/syn_6_8.txt')
+        graph4 = read_graph('data/syn_6_8.txt')
         obj_maxcut(result, graph4)
 
     # generate synthetic data
