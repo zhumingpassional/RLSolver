@@ -1,0 +1,2 @@
+The Max-Cut graph instances used were originally generated for benchmarking purposes in the research work https://arxiv.org/abs/1910.10675
+The graphs are open-source and available on https://github.com/joegomes/cqo. Furthermore, they were also used with the author's consent.
