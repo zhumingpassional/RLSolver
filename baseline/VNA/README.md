@@ -1,3 +1,5 @@
+# The code is revised based on https://github.com/VectorInstitute/VariationalNeuralAnnealing
+
 # Variational Neural Annealing
 Variational neural annealing (VNA) is a framework to variationally simulate classical and quantum annealing for the purpose of solving optimization problems using neural networks. In this paper https://www.nature.com/articles/s42256-021-00401-3 (arXiv version: https://arxiv.org/abs/2101.10154), we show that we can implement a variational version of classical annealing (VCA) and its quantum counterpart (VQA) using recurrent neural networks. We find that our implementation significantly outperforms traditional simulated annealing in the asymptotic limit on prototypical spin models, suggesting the promising potential of this route to optimization.
 
