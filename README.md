@@ -14,6 +14,8 @@ Maxcut
     └──random_walk.py
     └──scip.py
     └──simulated_annealing.py
+    └──variational_classical_annealing
+    └──variational_neural_annealing
 └──data
 └──result
 └──mcmc.py
