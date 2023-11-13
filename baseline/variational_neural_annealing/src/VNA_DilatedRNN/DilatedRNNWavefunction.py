@@ -13,7 +13,7 @@ dependencies between spins more efficiently as explained in https://arxiv.org/ab
 """
 
 class DilatedRNNWavefunction(object):
-    def __init__(self,systemsize,cell=tf.nn.rnn_cell.BasicRNNCell,activation=tf.nn.relu,units=[2],scope='DilatedRNNwavefunction', seed = 111):
+    def __init__(self,systemsize,cell=tf.keras.layers.SimpleRNNCell,activation=tf.nn.relu,units=[2],scope='DilatedRNNwavefunction', seed = 111):
         """
             systemsize:  int
                          number of sites

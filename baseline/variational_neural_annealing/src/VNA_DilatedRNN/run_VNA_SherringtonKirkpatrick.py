@@ -60,7 +60,7 @@ print("Number of training steps = {0}".format(num_steps))
 print("Number of layers = {0}\n".format(numlayers))
 
 # Intitializing the RNN-----------
-DRNNWF = DilatedRNNWavefunction(N,units=units,cell=tf.nn.rnn_cell.BasicRNNCell, activation = activation_function, seed = seed) #contains the graph with the RNNs
+DRNNWF = DilatedRNNWavefunction(N,units=units,cell=tf.keras.layers.SimpleRNNCell, activation = activation_function, seed = seed) #contains the graph with the RNNs
 
 #Building the graph -------------------
 with tf.compat.v1.variable_scope(DRNNWF.scope,reuse=tf.compat.v1.AUTO_REUSE):
