@@ -40,6 +40,18 @@ def read_graph(filename: str) -> nx.Graph():
             line = file.readline()
     return g
 
+def transfer_graph_to_matrix(graph: nx.Graph):
+    return nx.to_numpy_matrix(graph)
+
+# edges: each vector includes node1 node2 weight
+# num_nodes: num of nodes
+def transfer_edges_to_graph(edges: List[List[int]], num_nodes: int) -> nx.Graph():
+    graph = nx.Graph()
+    nodes = list(range(num_nodes))
+    graph.add_nodes_from(nodes)
+    for i, j, weight in edges:
+        graph.add_edge(i, j, weight=weight)
+    return graph
 
 def obj_maxcut(result: Union[Tensor, List[int], np.array], graph: nx.Graph):
     num_nodes = len(result)
@@ -49,7 +61,6 @@ def obj_maxcut(result: Union[Tensor, List[int], np.array], graph: nx.Graph):
         for j in range(i + 1, num_nodes):
             if result[i] != result[j]:
                 cut += adj_matrix[(i, j)]
-    # print('obj: ', cut)
     return cut
 
 
@@ -75,11 +86,11 @@ def write_result(result: Union[Tensor, List, np.array], filename: str = 'result/
 # weight_low (inclusive) and weight_high (exclusive) are the low and high int values for weight, and should be int.
 # If writing the graph to file, the node starts from 1, not 0. The first node index < the second node index. Only the non-zero weight will be written.
 # If writing the graph, the file name will be revised, e.g., syn.txt will be revised to syn_n_m.txt, where n is num_nodes, and m is num_edges.
-def generate_write_symmetric_adjacency_matrix_and_networkx_graph(num_nodes: int,
-                                                                 num_edges: int,
-                                                                 filename: str = 'data/syn.txt',
-                                                                 weight_low=0,
-                                                                 weight_high=2) -> (List[List[int]], nx.Graph):
+def generate_write_adjacency_matrix_and_graph(num_nodes: int,
+                                              num_edges: int,
+                                              filename: str = 'data/syn.txt',
+                                              weight_low=0,
+                                              weight_high=2) -> (List[List[int]], nx.Graph):
     if weight_low == 0:
         weight_low += 1
     adjacency_matrix = []
@@ -160,9 +171,9 @@ def generate_write_symmetric_adjacency_matrix_and_networkx_graph(num_nodes: int,
                 else:
                     adjacency_matrix[i][j] = 0
     # create a networkx graph
-    g = nx.Graph()
+    graph = nx.Graph()
     nodes = list(range(num_nodes))
-    g.add_nodes_from(nodes)
+    graph.add_nodes_from(nodes)
     num_edges = len(new_indices2)
     # create a new filename, and write the graph to the file.
     new_filename = filename.split('.')[0] + '_' + str(num_nodes) + '_' + str(num_edges) + '.txt'
@@ -171,12 +182,12 @@ def generate_write_symmetric_adjacency_matrix_and_networkx_graph(num_nodes: int,
         for i in range(num_nodes):
             for j in range(i + 1, num_nodes):
                 weight = int(adjacency_matrix[i][j])
-                g.add_edge(i, j, weight=weight)
+                graph.add_edge(i, j, weight=weight)
                 if weight != 0:
                     file.write(f'{i + 1} {j + 1} {weight}\n')
-    return adjacency_matrix, g
+    return adjacency_matrix, graph
 
-def write_networkx_graph(g: nx.Graph(), new_filename: str):
+def write_graph(g: nx.Graph(), new_filename: str):
     num_nodes = nx.number_of_nodes(g)
     num_edges = nx.number_of_edges(g)
     adjacency_matrix = nx.to_numpy_array(g)
@@ -189,13 +200,6 @@ def write_networkx_graph(g: nx.Graph(), new_filename: str):
                 if weight != 0:
                     file.write(f'{i + 1} {j + 1} {weight}\n')
 
-def calc_networkx_graph(node_node_weight: List[List[int]], num_nodes: int) -> nx.Graph():
-    g = nx.Graph()
-    nodes = list(range(num_nodes))
-    g.add_nodes_from(nodes)
-    for i, j, weight in node_node_weight:
-        g.add_edge(i, j, weight=weight)
-    return g
 
 
 def calc_file_name(front: str, id2: int, val: int, end: str):
@@ -418,7 +422,7 @@ if __name__ == '__main__':
 
     generate_read = False
     if generate_read:
-        adj_matrix, graph3 = generate_write_symmetric_adjacency_matrix_and_networkx_graph(6, 8)
+        adj_matrix, graph3 = generate_write_adjacency_matrix_and_graph(6, 8)
         graph4 = read_graph('data/syn_6_8.txt')
         obj_maxcut(result, graph4)
 
@@ -431,7 +435,7 @@ if __name__ == '__main__':
         num_datasets = 1
         for num_nodes, num_edges in num_nodes_edges:
             for n in range(num_datasets):
-                generate_write_symmetric_adjacency_matrix_and_networkx_graph(num_nodes, num_edges + n)
+                generate_write_adjacency_matrix_and_graph(num_nodes, num_edges + n)
         print()
 
 

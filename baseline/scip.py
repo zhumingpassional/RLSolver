@@ -4,13 +4,13 @@ import os
 import time
 from typing import List
 import networkx as nx
-from utils import read_graph
-from utils import calc_txt_files_with_prefix
-from utils import calc_result_file_name
-from utils import calc_avg_std_of_objs
-from utils import plot_fig
-from utils import fetch_node
-from utils import float_to_binary
+from util import read_graph
+from util import calc_txt_files_with_prefix
+from util import calc_result_file_name
+from util import calc_avg_std_of_objs
+from util import plot_fig
+from util import fetch_node
+from util import float_to_binary
 
 
 # the file has been open
