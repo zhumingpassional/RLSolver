@@ -5,11 +5,11 @@ from typing import List, Union
 import numpy as np
 from typing import List
 import networkx as nx
-from util import read_graph
+from util import read_nxgraph
 from util import obj_maxcut
 from util import write_result
 from util import plot_fig
-
+from util import transfer_nxgraph_to_weightmatrix
 
 def greedy(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
@@ -51,8 +51,8 @@ def greedy(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.
 
 if __name__ == '__main__':
     # read data
-    graph = read_graph('../data/syn/syn_50_176.txt')
-
+    graph = read_nxgraph('../data/syn/syn_50_176.txt')
+    weightmatrix = transfer_nxgraph_to_weightmatrix(graph)
     # run alg
     init_solution = [0] * graph.number_of_nodes()
     num_steps = 30
