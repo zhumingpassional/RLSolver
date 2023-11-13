@@ -10,7 +10,7 @@ import networkx as nx
 
 from torch import Tensor
 
-def plot_graph(g: nx.Graph()):
+def plot_nxgraph(g: nx.Graph()):
     import matplotlib.pyplot as plt
     nx.draw_networkx(g)
     fig_filename = '.result/fig.png'
@@ -19,7 +19,7 @@ def plot_graph(g: nx.Graph()):
 
 # read graph file, e.g., gset_14.txt, as networkx.Graph
 # The nodes in file start from 1, but the nodes start from 0 in our codes.
-def read_graph(filename: str) -> nx.Graph():
+def read_nxgraph(filename: str) -> nx.Graph():
     g = nx.Graph()
     with open(filename, 'r') as file:
         # lines = []
@@ -40,12 +40,31 @@ def read_graph(filename: str) -> nx.Graph():
             line = file.readline()
     return g
 
-def transfer_graph_to_matrix(graph: nx.Graph):
+#
+def transfer_nxgraph_to_adjacencymatrix(graph: nx.Graph):
     return nx.to_numpy_matrix(graph)
 
-# edges: each vector includes node1 node2 weight
+# the returned weightmatrix has the following format： node1 node2 weight
+# 1 2 1 // the weight of node1 and node2 is 1
+def transfer_nxgraph_to_weightmatrix(graph: nx.Graph):
+    # edges = nx.edges(graph)
+    res = np.array([])
+    edges = graph.edges()
+    for u, v in edges:
+        u = int(u)
+        v = int(v)
+        # weight = graph[u][v]["weight"]
+        weight = float(graph.get_edge_data(u, v)["weight"])
+        vec = np.array([u, v, weight])
+        if len(res) == 0:
+            res = vec
+        else:
+            res = np.vstack((res, vec))
+    return res
+
+# weightmatrix: format of each vector: node1 node2 weight
 # num_nodes: num of nodes
-def transfer_edges_to_graph(edges: List[List[int]], num_nodes: int) -> nx.Graph():
+def transfer_weightmatrix_to_nxgraph(edges: List[List[int]], num_nodes: int) -> nx.Graph():
     graph = nx.Graph()
     nodes = list(range(num_nodes))
     graph.add_nodes_from(nodes)
@@ -86,11 +105,11 @@ def write_result(result: Union[Tensor, List, np.array], filename: str = 'result/
 # weight_low (inclusive) and weight_high (exclusive) are the low and high int values for weight, and should be int.
 # If writing the graph to file, the node starts from 1, not 0. The first node index < the second node index. Only the non-zero weight will be written.
 # If writing the graph, the file name will be revised, e.g., syn.txt will be revised to syn_n_m.txt, where n is num_nodes, and m is num_edges.
-def generate_write_adjacency_matrix_and_graph(num_nodes: int,
-                                              num_edges: int,
-                                              filename: str = 'data/syn.txt',
-                                              weight_low=0,
-                                              weight_high=2) -> (List[List[int]], nx.Graph):
+def generate_write_adjacencymatrix_and_nxgraph(num_nodes: int,
+                                               num_edges: int,
+                                               filename: str = 'data/syn.txt',
+                                               weight_low=0,
+                                               weight_high=2) -> (List[List[int]], nx.Graph):
     if weight_low == 0:
         weight_low += 1
     adjacency_matrix = []
@@ -187,7 +206,7 @@ def generate_write_adjacency_matrix_and_graph(num_nodes: int,
                     file.write(f'{i + 1} {j + 1} {weight}\n')
     return adjacency_matrix, graph
 
-def write_graph(g: nx.Graph(), new_filename: str):
+def write_nxgraph(g: nx.Graph(), new_filename: str):
     num_nodes = nx.number_of_nodes(g)
     num_edges = nx.number_of_edges(g)
     adjacency_matrix = nx.to_numpy_array(g)
@@ -408,8 +427,8 @@ def rename_files(directory: str, orig: str, dest: str):
 if __name__ == '__main__':
     read_txt = True
     if read_txt:
-        graph1 = read_graph('data/gset/gset_14.txt')
-        graph2 = read_graph('data/syn_5_5.txt')
+        graph1 = read_nxgraph('data/gset/gset_14.txt')
+        graph2 = read_nxgraph('data/syn_5_5.txt')
 
     # result = Tensor([0, 1, 0, 1, 0, 1, 1])
     # write_result(result)
@@ -422,8 +441,8 @@ if __name__ == '__main__':
 
     generate_read = False
     if generate_read:
-        adj_matrix, graph3 = generate_write_adjacency_matrix_and_graph(6, 8)
-        graph4 = read_graph('data/syn_6_8.txt')
+        adj_matrix, graph3 = generate_write_adjacencymatrix_and_nxgraph(6, 8)
+        graph4 = read_nxgraph('data/syn_6_8.txt')
         obj_maxcut(result, graph4)
 
     # generate synthetic data
@@ -435,7 +454,7 @@ if __name__ == '__main__':
         num_datasets = 1
         for num_nodes, num_edges in num_nodes_edges:
             for n in range(num_datasets):
-                generate_write_adjacency_matrix_and_graph(num_nodes, num_edges + n)
+                generate_write_adjacencymatrix_and_nxgraph(num_nodes, num_edges + n)
         print()
 
 

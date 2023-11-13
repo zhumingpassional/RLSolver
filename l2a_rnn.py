@@ -36,7 +36,6 @@ INT = th.IntTensor
 '''graph'''
 
 class Config:
-    staticmethod
     gpu_id = -1
 
 
