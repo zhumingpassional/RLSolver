@@ -105,11 +105,11 @@ def write_result(result: Union[Tensor, List, np.array], filename: str = 'result/
 # weight_low (inclusive) and weight_high (exclusive) are the low and high int values for weight, and should be int.
 # If writing the graph to file, the node starts from 1, not 0. The first node index < the second node index. Only the non-zero weight will be written.
 # If writing the graph, the file name will be revised, e.g., syn.txt will be revised to syn_n_m.txt, where n is num_nodes, and m is num_edges.
-def generate_write_adjacency_matrix_and_nxgraph(num_nodes: int,
-                                                num_edges: int,
-                                                filename: str = 'data/syn.txt',
-                                                weight_low=0,
-                                                weight_high=2) -> (List[List[int]], nx.Graph):
+def generate_write_adjacencymatrix_and_nxgraph(num_nodes: int,
+                                               num_edges: int,
+                                               filename: str = 'data/syn.txt',
+                                               weight_low=0,
+                                               weight_high=2) -> (List[List[int]], nx.Graph):
     if weight_low == 0:
         weight_low += 1
     adjacency_matrix = []
@@ -441,7 +441,7 @@ if __name__ == '__main__':
 
     generate_read = False
     if generate_read:
-        adj_matrix, graph3 = generate_write_adjacency_matrix_and_nxgraph(6, 8)
+        adj_matrix, graph3 = generate_write_adjacencymatrix_and_nxgraph(6, 8)
         graph4 = read_nxgraph('data/syn_6_8.txt')
         obj_maxcut(result, graph4)
 
@@ -454,7 +454,7 @@ if __name__ == '__main__':
         num_datasets = 1
         for num_nodes, num_edges in num_nodes_edges:
             for n in range(num_datasets):
-                generate_write_adjacency_matrix_and_nxgraph(num_nodes, num_edges + n)
+                generate_write_adjacencymatrix_and_nxgraph(num_nodes, num_edges + n)
         print()
 
 
