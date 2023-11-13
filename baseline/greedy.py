@@ -5,10 +5,10 @@ from typing import List, Union
 import numpy as np
 from typing import List
 import networkx as nx
-from utils import read_graph
-from utils import obj_maxcut
-from utils import write_result
-from utils import plot_fig
+from util import read_graph
+from util import obj_maxcut
+from util import write_result
+from util import plot_fig
 
 
 def greedy(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):

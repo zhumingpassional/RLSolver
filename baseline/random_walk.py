@@ -5,10 +5,10 @@ import networkx as nx
 import numpy as np
 from typing import List, Union
 import random
-from utils import read_graph
-from utils import obj_maxcut
-from utils import write_result
-from utils import plot_fig
+from util import read_graph
+from util import obj_maxcut
+from util import write_result
+from util import plot_fig
 
 
 def random_walk(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
