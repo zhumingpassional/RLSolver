@@ -9,7 +9,7 @@ import torch as th
 import torch.nn as nn
 from tqdm import tqdm
 from util import write_nxgraph
-from util import transfer_edges_to_nxgraph
+from util import transfer_weightmatrix_to_nxgraph
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -694,7 +694,7 @@ def run_v32_find_xs_using_opti():
     for i in range(num_valid):
         graph, num_nodes, num_edges = generate_graph(num_nodes=num_nodes, g_type=g_type)
         filename = directory + "syndistri_" + str(num_nodes) + '_' + str(num_edges) + '.txt'
-        g = transfer_edges_to_nxgraph(graph, num_nodes)
+        g = transfer_weightmatrix_to_nxgraph(graph, num_nodes)
         write_nxgraph(g, filename)
         agent = AgentDist(graph_name=graph_name, gpu_id=gpu_id, json_path='auto_build',
                           graph_tuple=(graph, num_nodes, num_edges))

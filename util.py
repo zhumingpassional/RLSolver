@@ -62,9 +62,9 @@ def transfer_nxgraph_to_weightmatrix(graph: nx.Graph):
             res = np.vstack((res, vec))
     return res
 
-# edges: each vector includes node1 node2 weight
+# weightmatrix: format of each vector: node1 node2 weight
 # num_nodes: num of nodes
-def transfer_edges_to_nxgraph(edges: List[List[int]], num_nodes: int) -> nx.Graph():
+def transfer_weightmatrix_to_nxgraph(edges: List[List[int]], num_nodes: int) -> nx.Graph():
     graph = nx.Graph()
     nodes = list(range(num_nodes))
     graph.add_nodes_from(nodes)
