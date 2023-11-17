@@ -3,7 +3,7 @@ import os
 from typing import List
 import networkx as nx
 import sys
-from util import read_graph
+from util import read_nxgraph
 from util import calc_txt_files_with_prefix
 from util import calc_result_file_name
 from util import calc_avg_std_of_objs
@@ -64,7 +64,7 @@ def write_result_gurobi(model, filename: str = 'result/result', running_duration
 def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = False):
     model = Model("maxcut")
 
-    graph = read_graph(filename)
+    graph = read_nxgraph(filename)
 
     adjacency_matrix = nx.to_numpy_array(graph)
     num_nodes = nx.number_of_nodes(graph)

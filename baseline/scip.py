@@ -4,7 +4,7 @@ import os
 import time
 from typing import List
 import networkx as nx
-from util import read_graph
+from util import read_nxgraph
 from util import calc_txt_files_with_prefix
 from util import calc_result_file_name
 from util import calc_avg_std_of_objs
@@ -71,7 +71,7 @@ def run_using_scip(filename: str, time_limit: int = None, plot_fig_: bool = Fals
     start_time = time.time()
     model = Model("maxcut")
 
-    graph = read_graph(filename)
+    graph = read_nxgraph(filename)
 
     adjacency_matrix = nx.to_numpy_array(graph)
     num_nodes = nx.number_of_nodes(graph)
