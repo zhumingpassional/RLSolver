@@ -3,6 +3,10 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg
+from util import obj_maxcut
+from util import read_nxgraph
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 def draw_graph(G, colors, pos):
     default_axes = plt.axes(frameon=True)
@@ -12,42 +16,29 @@ def draw_graph(G, colors, pos):
     plt.show()
 
 
-n = 5
-G = nx.Graph()
-G.add_nodes_from(np.arange(0,4,1))
 
-edges = [(1,2),(1,3),(2,4),(3,4),(3,0),(4,0)]
-#edges = [(0,1),(1,2),(2,3),(3,4)]#[(1,2),(2,3),(3,4),(4,5)]
-G.add_edges_from(edges)
-
-#colors = ["g" for node in G.nodes()]
-pos = nx.spring_layout(G)
-#draw_graph(G, colors, pos)
-w = np.zeros([n, n])
-for i in range(n):
-    for j in range(n):
-        temp = G.get_edge_data(i, j, default=0)
-        if temp != 0:
-            w[i, j] = 1
 
 # approx ratio 0.87
-def goemans_williamson():
-    X = cp.Variable((n,n), symmetric = True) #construct n x n matrix
+def goemans_williamson(graph: nx.Graph):
+    n = graph.number_of_nodes() # num of nodes
+    edges = graph.edges
+
+    x = cp.Variable((n,n), symmetric = True) #construct n x n matrix
 
     # diagonals must be 1 (unit) and eigenvalues must be postivie
     # semidefinite
-    constraints = [X >> 0] + [ X[i,i] == 1 for i in range(n) ]
+    constraints = [x >> 0] + [ x[i,i] == 1 for i in range(n) ]
 
     #this is function defing the cost of the cut. You want to maximize this function
     #to get heaviest cut
-    objective = sum( (0.5)* (1 - X[i,j]) for (i,j) in edges)
+    objective = sum( (0.5)* (1 - x[i,j]) for (i,j) in edges)
 
     # solves semidefinite program, optimizes linear cost function
     prob = cp.Problem(cp.Maximize(objective), constraints)
     prob.solve()
 
     # normalizes matrix, makes it applicable in unit sphere
-    sqrtProb = scipy.linalg.sqrtm(X.value)
+    sqrtProb = scipy.linalg.sqrtm(x.value)
 
     #generates random hyperplane used to split set of points into two disjoint sets of nodes
     hyperplane = np.random.randn(n)
@@ -60,9 +51,31 @@ def goemans_williamson():
     colors = ["r" if sqrtProb[i] == -1 else "c" for i in range(n)]
     solution = [0 if sqrtProb[i] == -1 else 1 for i in range(n)]
 
-    draw_graph(G, colors, pos)
-    print("solution = " + str(solution))
+    pos = nx.spring_layout(graph)
+    # draw_graph(graph, colors, pos)
+    obj = obj_maxcut(solution, graph)
+    print("obj: ", obj, ",solution = " + str(solution))
     return solution
 
 if __name__ == '__main__':
-    goemans_williamson()
+    # n = 5
+    # graph = nx.Graph()
+    # graph.add_nodes_from(np.arange(0, 4, 1))
+    #
+    # edges = [(1, 2), (1, 3), (2, 4), (3, 4), (3, 0), (4, 0)]
+    # # edges = [(0,1),(1,2),(2,3),(3,4)]#[(1,2),(2,3),(3,4),(4,5)]
+    # graph.add_edges_from(edges)
+
+    # colors = ["g" for node in G.nodes()]
+    # pos = nx.spring_layout(graph)
+    # draw_graph(G, colors, pos)
+    # w = np.zeros([n, n])
+    # for i in range(n):
+    #     for j in range(n):
+    #         temp = graph.get_edge_data(i, j, default=0)
+    #         if temp != 0:
+    #             w[i, j] = 1
+
+    # graph = read_nxgraph('../data/syn/syn_50_176.txt')
+    graph = read_nxgraph('../data/gset/gset_14.txt')
+    goemans_williamson(graph)
