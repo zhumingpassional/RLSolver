@@ -78,7 +78,7 @@ def main():
                 rnn_unit='basic', T0=2.0)
     energies_vanilla, samples_vanilla = model.run()
     running_duration = time.time() - start_time
-    print("running_duration: %.2f", running_duration)
+    print(f"running_duration: {running_duration: .2f}")
 
 if __name__ == '__main__':
     main()

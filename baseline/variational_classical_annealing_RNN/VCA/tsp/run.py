@@ -27,11 +27,11 @@ def read_cities(path):
 """
 Main
 """
-if __name__ == '__main__':
+def main():
     start_time = time.time()
     # set the appropriate filepath to the Max-Cut graph below
     filepath = "../../Data/tsp_instances/coordinates_N64.txt"
-    assert(os.path.exists(filepath)) # check if file exists in path
+    assert (os.path.exists(filepath))  # check if file exists in path
     coordinates_X, coordinates_Y, N = read_cities(filepath)
     coordinates = np.array(list(zip(coordinates_X, coordinates_Y)))
     # VCA hyperparameters
@@ -44,6 +44,10 @@ if __name__ == '__main__':
     # VCA-Dilated
     model = vca(N=N, coordinates=coordinates, n_warmup=n_warmup, n_anneal=n_anneal, n_train=n_train, T0=2.0)
     energies, samples = model.run()
-    print("running_duration: %.2f", running_duration)
+    running_duration = time.time() - start_time
+    print(f"running_duration: {running_duration: .2f}")
+
+if __name__ == '__main__':
+    main()
  
 

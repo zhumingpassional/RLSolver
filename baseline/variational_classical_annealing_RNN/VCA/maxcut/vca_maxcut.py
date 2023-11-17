@@ -604,7 +604,8 @@ class vca:
                         samples, log_probs = sess.run(samplesandprobs)
 
                         energies = hamiltonian(samples, self.qubo)
-
+                        print(f"energies: {energies}")
+                        print(f"best obj: {-min(energies)}")
                         meanE = np.mean(energies)
                         varE = np.var(energies)
 
