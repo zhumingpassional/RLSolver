@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from VCA_TSP import *
-
+import time
 """
 Functions
 """
@@ -28,6 +28,7 @@ def read_cities(path):
 Main
 """
 if __name__ == '__main__':
+    start_time = time.time()
     # set the appropriate filepath to the Max-Cut graph below
     filepath = "../../Data/TSP Instances/coordinates_N64.txt"
     assert(os.path.exists(filepath)) # check if file exists in path
@@ -43,5 +44,6 @@ if __name__ == '__main__':
     # VCA-Dilated
     model = vca(N=N, coordinates=coordinates, n_warmup=n_warmup, n_anneal=n_anneal, n_train=n_train, T0=2.0)
     energies, samples = model.run()
+    print("running_duration: %.2f", running_duration)
  
 
