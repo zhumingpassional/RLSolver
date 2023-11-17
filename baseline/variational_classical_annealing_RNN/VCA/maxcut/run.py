@@ -1,4 +1,4 @@
-from VCA_MaxCut import vca
+from vca_maxcut import vca
 import numpy as np
 import os
 import time
@@ -47,7 +47,7 @@ def main():
     """
     start_time = time.time()
     # set the filepath of the Max-Cut graph instance below
-    # filepath = "../../Data/Max-Cut Instances/rudy_128_12_1340.txt"
+    # filepath = "../../Data/maxcut_instances/rudy_128_12_1340.txt"
     filepath = "../../../../data/gset/gset_14.txt"
     assert (os.path.exists(filepath))  # check if file exists in path
     graph, N = read_graph(filepath)

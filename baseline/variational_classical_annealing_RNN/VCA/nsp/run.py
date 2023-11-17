@@ -1,4 +1,4 @@
-from VCA_NSP import vca
+from vca_nsp import vca
 import numpy as np
 import time
 """

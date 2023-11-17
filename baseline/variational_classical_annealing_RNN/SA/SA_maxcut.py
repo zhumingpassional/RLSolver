@@ -157,7 +157,7 @@ Main
 """
 if __name__ == '__main__':
     # set the appropriate filepath to the Max-Cut graph below
-    filepath = "../Data/Max-Cut Instances/rudy_128_12_1340.txt"
+    filepath = "../Data/maxcut_instances/rudy_128_12_1340.txt"
     assert(os.path.exists(filepath)) # check if file exists in path
     G, N = read_graph(filepath)
     Q = formulate_qubo(G)

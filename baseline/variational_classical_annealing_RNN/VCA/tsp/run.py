@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from VCA_TSP import *
+from vca_tsp import *
 import time
 """
 Functions
@@ -30,7 +30,7 @@ Main
 if __name__ == '__main__':
     start_time = time.time()
     # set the appropriate filepath to the Max-Cut graph below
-    filepath = "../../Data/TSP Instances/coordinates_N64.txt"
+    filepath = "../../Data/tsp_instances/coordinates_N64.txt"
     assert(os.path.exists(filepath)) # check if file exists in path
     coordinates_X, coordinates_Y, N = read_cities(filepath)
     coordinates = np.array(list(zip(coordinates_X, coordinates_Y)))

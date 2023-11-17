@@ -186,7 +186,7 @@ Main
 """
 if __name__ == '__main__':
     # set the appropriate filepath to the Max-Cut graph below
-    filepath = "../Data/TSP Instances/coordinates_N64.txt"
+    filepath = "../Data/tsp_instances/coordinates_N64.txt"
     assert(os.path.exists(filepath)) # check if file exists in path
     coordinates_X, coordinates_Y, N = read_cities(filepath)
     # run the SA solver
