@@ -100,6 +100,7 @@ def main():
     model = vca(N=N, n_layers=1, n_warmup=n_warmup, n_anneal=n_anneal, n_train=n_train, qubo=qubo, offset=offset,
                 RNNtype='nws', rnn_unit='basic', T0=2)
     energies_vanilla, samples_vanilla = model.run()  # returns numpy nd arrays
-    print("running_duration: %.2f", running_duration)
+    running_duration = time.time() - start_time
+    print(f"running_duration: {running_duration: .2f}")
 if __name__ == '__main__':
     main()
