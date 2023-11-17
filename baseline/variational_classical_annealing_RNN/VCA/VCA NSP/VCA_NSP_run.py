@@ -1,6 +1,6 @@
 from VCA_NSP import vca
 import numpy as np
-
+import time
 """
 Functions
 """
@@ -66,34 +66,40 @@ def dwave_nsp_qubo(n_nurses, n_days):
     
     return Q, offset
 
-"""
-Main
-"""
-# obtain the qubo matrix and offset scalar of the NSP configuration
-qubo, offset = dwave_nsp_qubo(n_days=15, n_nurses=7)
-N = qubo.shape[0]   # system size
+def main():
+    """
+    Main
+    """
+    start_time = time.time()
+    # obtain the qubo matrix and offset scalar of the NSP configuration
+    qubo, offset = dwave_nsp_qubo(n_days=15, n_nurses=7)
+    N = qubo.shape[0]  # system size
 
-# VCA parameters
-# n_warmup - number of training steps at the initial temperature T=T0
-# n_anneal - duration of the annealing procedure
-# n_train - number of training step during backprop after every annealing step
-# dilated_layers - number of dilated layers for VCA-Dilated. Note: for other architectures, layers = 1
-n_warmup = 2000
-n_anneal = 16
-n_train = 5
-dilated_layers = np.int32(np.ceil(np.log2(N)))
+    # VCA parameters
+    # n_warmup - number of training steps at the initial temperature T=T0
+    # n_anneal - duration of the annealing procedure
+    # n_train - number of training step during backprop after every annealing step
+    # dilated_layers - number of dilated layers for VCA-Dilated. Note: for other architectures, layers = 1
+    n_warmup = 2000
+    n_anneal = 16
+    n_train = 5
+    dilated_layers = np.int32(np.ceil(np.log2(N)))
 
-# RNNtype specifies the RNN architecture among {'ws', 'nws', 'dilated'} where
-# 'ws' - weight-sharing RNN parameters
-# 'nws' - independent RNN parameters at every RNN cell
-# 'dilated' - independent RNN parameters at every RNN cell with a dilatedRNN structure
-# rnn_unit specifies the RNN cell type among {'basic', 'lstm', 'gru'}
+    # RNNtype specifies the RNN architecture among {'ws', 'nws', 'dilated'} where
+    # 'ws' - weight-sharing RNN parameters
+    # 'nws' - independent RNN parameters at every RNN cell
+    # 'dilated' - independent RNN parameters at every RNN cell with a dilatedRNN structure
+    # rnn_unit specifies the RNN cell type among {'basic', 'lstm', 'gru'}
 
-# VCA-Dilated
-model = vca(N=N, n_layers=dilated_layers, n_warmup=n_warmup, n_anneal=n_anneal, n_train=n_train, qubo=qubo, offset=offset, RNNtype='dilated', rnn_unit='basic', T0=2)
-energies_dilated, samples_dilated = model.run() # returns numpy nd arrays
+    # VCA-Dilated
+    model = vca(N=N, n_layers=dilated_layers, n_warmup=n_warmup, n_anneal=n_anneal, n_train=n_train, qubo=qubo,
+                offset=offset, RNNtype='dilated', rnn_unit='basic', T0=2)
+    energies_dilated, samples_dilated = model.run()  # returns numpy nd arrays
 
-# VCA-Vanilla
-model = vca(N=N, n_layers=1, n_warmup=n_warmup, n_anneal=n_anneal, n_train=n_train, qubo=qubo, offset=offset, RNNtype='nws', rnn_unit='basic', T0=2)
-energies_vanilla, samples_vanilla = model.run() # returns numpy nd arrays
-
+    # VCA-Vanilla
+    model = vca(N=N, n_layers=1, n_warmup=n_warmup, n_anneal=n_anneal, n_train=n_train, qubo=qubo, offset=offset,
+                RNNtype='nws', rnn_unit='basic', T0=2)
+    energies_vanilla, samples_vanilla = model.run()  # returns numpy nd arrays
+    print("running_duration: %.2f", running_duration)
+if __name__ == '__main__':
+    main()
