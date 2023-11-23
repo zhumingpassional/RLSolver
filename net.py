@@ -39,6 +39,38 @@ class PolicyMLP(nn.Module):
         xs2 = self.net2(th.concat((xs1, embedding_ws), dim=1))
         return xs2.squeeze(1)
 
+class PolicyGNN(nn.Module):
+    def __init__(self, inp_dim, mid_dim, out_dim):
+        super().__init__()
+        self.inp_dim = inp_dim
+        self.mid_dim = mid_dim
+        self.out_dim = out_dim
+
+        self.inp_enc = nn.Sequential(nn.Linear(inp_dim, mid_dim), nn.ReLU(), nn.LayerNorm(mid_dim),
+                                     nn.Linear(mid_dim, mid_dim))
+
+        self.tmp_enc = nn.Sequential(nn.Linear(mid_dim + mid_dim, mid_dim), nn.ReLU(), nn.LayerNorm(mid_dim),
+                                     nn.Linear(mid_dim, out_dim), )
+        self.soft_max = nn.Softmax(dim=1)
+
+    def forward(self, inp, ids_list):
+        num_size, num_nodes, num_dim = inp.shape
+        device = inp.device
+
+        tmp1 = th.empty((num_size, num_nodes, self.mid_dim), dtype=th.float32, device=device)
+        for node0 in range(num_nodes):
+            tmp1[:, node0] = self.inp_enc(inp[:, node0])
+
+        env_i = th.arange(inp.shape[0], device=inp.device)
+        tmp2 = th.empty((num_size, num_nodes, self.mid_dim), dtype=th.float32, device=device)
+        for node0, node1s in enumerate(ids_list):
+            tmp2[:, node0, :] = tmp1[env_i[:, None], node1s[None, :]].mean(dim=1)
+
+        tmp3 = th.cat((tmp1, tmp2), dim=2)
+        out = th.empty((num_size, num_nodes, self.out_dim), dtype=th.float32, device=device)
+        for node0 in range(num_nodes):
+            out[:, node0] = self.tmp_enc(tmp3[:, node0])
+        return self.soft_max(out.squeeze(2))
 
 class OptimizerLSTM(nn.Module):
     def __init__(self, inp_dim, mid_dim, out_dim, num_layers):

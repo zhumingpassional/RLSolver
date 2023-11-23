@@ -130,11 +130,11 @@ hI1MHL$$n7W32E96659blS3WAnnGOr0Vwg7MMvyKS8ignmH_pfy7g1TeTVF1R7SSnUPCojEBO7Sz4ds6
 
 def check_solution_x():
     from util import load_graph
-    from simulator import GraphMaxCutSimulator
+    from simulator import MaxcutSimulator
     graph_name = 'gset_14'
 
     graph = load_graph(graph_name=graph_name)
-    simulator = GraphMaxCutSimulator(graph=graph)
+    simulator = MaxcutSimulator(graph=graph)
 
     x_str = X_G14
     num_nodes = simulator.num_nodes

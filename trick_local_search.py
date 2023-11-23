@@ -4,7 +4,7 @@ import time
 import torch as th
 import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
-from simulator import GraphMaxCutSimulator
+from simulator import MaxcutSimulator
 from simulator import X_G14, X_G15, X_G49, X_G50, X_G22, X_G55, X_G70
 from evaluator import Evaluator
 from util import EncoderBase64
@@ -14,7 +14,7 @@ TEN = th.Tensor
 
 
 class TrickLocalSearch:
-    def __init__(self, simulator: GraphMaxCutSimulator, num_nodes: int):
+    def __init__(self, simulator: MaxcutSimulator, num_nodes: int):
         self.simulator = simulator
         self.num_nodes = num_nodes
 
@@ -193,7 +193,7 @@ def check_generate_best_x():
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
     '''simulator'''
-    sim = GraphMaxCutSimulator(sim_name=sim_name, device=device)
+    sim = MaxcutSimulator(sim_name=sim_name, device=device)
     enc = EncoderBase64(num_nodes=sim.num_nodes)
     num_nodes = sim.num_nodes
 
@@ -296,7 +296,7 @@ hUH4vj0nAzi24"""
 
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
-    simulator_class = GraphMaxCutSimulator
+    simulator_class = MaxcutSimulator
     trick_class = TrickLocalSearch
 
     '''simulator'''

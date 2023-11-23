@@ -1,13 +1,4 @@
-import os
-import sys
-import time
-import math
-import json
-import networkx as nx
-import numpy as np
 import torch as th
-import torch.nn as nn
-from tqdm import tqdm
 from util import load_graph, load_graph_auto
 from util import convert_matrix_to_vector
 from typing import List, Union, Tuple
@@ -20,11 +11,6 @@ except ImportError:
 
 TEN = th.Tensor
 INT = th.IntTensor
-TEN = th.Tensor
-INT = th.IntTensor
-TEN = th.Tensor
-
-IndexList = List[List[int]]
 
 '''check'''
 
@@ -117,7 +103,7 @@ YPWO1chl8zx20J7$gCmvASk4jH9pJKkX8RyHEH74cwS9pWjmywHbAmg7t54QwfcFvfLyzTrziJaz2oHy
 hI1MHL$$n7W32E96659blS3WAnnGOr0Vwg7MMvyKS8ignmH_pfy7g1TeTVF1R7SSnUPCojEBO7Sz4ds6OcGu2QfLzCMcMg4SRJho4RueZxm
 """  # 9583, SOTA=9595
 
-class GraphMaxCutSimulator:  # Markov Chain Monte Carlo Simulator
+class MaxcutSimulator:  # Markov Chain Monte Carlo Simulator
     def __init__(self, graph_name: str = 'powerlaw_64', gpu_id: int = -1, graph_tuple=None):
         device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
         int_type = th.int32
@@ -273,7 +259,7 @@ class GraphMaxCutSimulator:  # Markov Chain Monte Carlo Simulator
         return p0s > thresh
 
 
-class SimulatorAutoregressive:
+class MaxcutSimulatorAutoregressive:
     def __init__(self, sim_name: str, device=th.device('cpu'), if_bidirectional: bool = False):
         self.device = device
         self.sim_name = sim_name
@@ -335,7 +321,7 @@ class SimulatorAutoregressive:
         return xs
 
 
-class SimulatorReinforce:
+class MaxcutSimulatorReinforce:
     def __init__(self, graph: GraphList, device=th.device('cpu'), if_bidirectional: bool = False):
         self.device = device
         self.int_type = int_type = th.long

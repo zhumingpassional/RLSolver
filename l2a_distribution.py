@@ -9,15 +9,16 @@ import torch as th
 import torch.nn as nn
 from tqdm import tqdm
 from evaluator import Evaluator
-from simulator import GraphMaxCutSimulator
+from simulator import MaxcutSimulator
 from util import (load_graph_from_txt,
-                  save_graph_info_to_txt,
-                  generate_graph,
-                  generate_graph_for_validation,
-                  load_graph,
-                  EncoderBase64,
+                    save_graph_info_to_txt,
+                    generate_graph,
+                    generate_graph_for_validation,
+                    load_graph,
+                    EncoderBase64,
+                    calc_device
                   )
-
+from config import Config
 
 try:
     import matplotlib as mpl
@@ -77,13 +78,13 @@ class Agent:  # Demo
 
         """agent"""
         '''init simulator'''
-        self.sim = GraphMaxCutSimulator(graph_name=graph_name, gpu_id=gpu_id, graph_tuple=graph_tuple)
+        self.sim = MaxcutSimulator(graph_name=graph_name, gpu_id=gpu_id, graph_tuple=graph_tuple)
         self.enc = EncoderBase64(num_nodes=self.sim.num_nodes)
         self.num_nodes = self.sim.num_nodes
         self.num_edges = self.sim.num_edges
 
         '''init optimizer'''
-        self.device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+        self.device = calc_device(gpu_id)
         self.opt_opti = OptimizerLSTM(
             inp_dim=self.num_nodes,
             mid_dim=self.mid_dim,
@@ -220,7 +221,7 @@ class AgentDist(Agent):
         return best_sln_x, best_score
 
 def run():
-    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    gpu_id = Config.gpu_id
     num_nodes = 50
     graph_name = f"powerlaw_{num_nodes}"
 
