@@ -25,10 +25,11 @@ GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
 DataDir = Config.gset_dir
 
-class GraphType(Enum):
-    erdos_renyi = 0
-    powerlaw = 1
-    barabasi_albert = 2
+class GraphDistriType(Enum):
+    erdos_renyi = 'erdos_renyi'
+    powerlaw = 'powerlaw'
+    barabasi_albert = 'barabasi_albert'
+
 
 class MyGraph:
     def __init__(self):
@@ -466,7 +467,7 @@ def get_adjacency_matrix(graph, num_nodes):
 
 def load_graph(graph_name: str):
     data_dir = Config.data_dir
-    graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+    graph_types = Config.graph_distri_types
 
     if os.path.exists(f"{data_dir}/{graph_name}.txt"):
         txt_path = f"{data_dir}/{graph_name}.txt"
@@ -481,7 +482,7 @@ def load_graph(graph_name: str):
 
 def load_graph_auto(graph_name: str):
     import random
-    graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+    graph_types = Config.graph_distri_types
 
     if os.path.exists(f"{DataDir}/{graph_name}.txt"):
         txt_path = f"{DataDir}/{graph_name}.txt"
@@ -511,14 +512,14 @@ def save_graph_info_to_txt(txt_path, graph, num_nodes, num_edges):
 
 
 def generate_graph(num_nodes: int, g_type: str):
-    graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+    graph_types = Config.graph_distri_types
     assert g_type in graph_types
 
-    if g_type == 'erdos_renyi':
+    if g_type == GraphDistriType.erdos_renyi:
         g = nx.erdos_renyi_graph(n=num_nodes, p=0.15)
-    elif g_type == 'powerlaw':
+    elif g_type == GraphDistriType.powerlaw:
         g = nx.powerlaw_cluster_graph(n=num_nodes, m=4, p=0.05)
-    elif g_type == 'barabasi_albert':
+    elif g_type == GraphDistriType.barabasi_albert:
         g = nx.barabasi_albert_graph(n=num_nodes, m=4)
     else:
         raise ValueError(f"g_type {g_type} should in {graph_types}")
@@ -673,7 +674,7 @@ def convert_matrix_to_vector(matrix):
 
 def check_adjacency_matrix_vector():
     num_nodes = 32
-    graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+    graph_types = Config.graph_distri_types
 
     for g_type in graph_types:
         print(f"g_type {g_type}")
