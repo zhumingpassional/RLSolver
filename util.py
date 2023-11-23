@@ -4,12 +4,31 @@ import os
 import functools
 import torch.nn as nn
 import numpy as np
-from typing import List, Union
+from typing import List, Union, Tuple
 import networkx as nx
-
-
+import torch as th
 from torch import Tensor
+from os import system
+from config import Config
+import math
+try:
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 
+TEN = th.Tensor
+INT = th.IntTensor
+TEN = th.Tensor
+GraphList = List[Tuple[int, int, int]]
+IndexList = List[List[int]]
+DataDir = './data/gset'
+
+class MyGraph:
+    def __init__(self):
+        num_nodes = 0
+        num_edges = 0
+        graph = List[int]
 def plot_nxgraph(g: nx.Graph()):
     import matplotlib.pyplot as plt
     nx.draw_networkx(g)
@@ -422,6 +441,353 @@ def rename_files(directory: str, orig: str, dest: str):
         if orig in filename:
             new_filename = filename.replace(orig, dest)
             os.rename(filename, new_filename)
+
+def load_graph_from_txt(txt_path: str = './data/gset_14.txt'):
+    with open(txt_path, 'r') as file:
+        lines = file.readlines()
+        lines = [[int(i1) for i1 in i0.split()] for i0 in lines]
+    num_nodes, num_edges = lines[0]
+    graph = [(n0 - 1, n1 - 1, dt) for n0, n1, dt in lines[1:]]  # node_id “从1开始”改为“从0开始”
+    return graph, num_nodes, num_edges
+
+def get_adjacency_matrix(graph, num_nodes):
+    adjacency_matrix = np.empty((num_nodes, num_nodes))
+    adjacency_matrix[:] = -1  # 选用-1而非0表示表示两个node之间没有edge相连，避免两个节点的距离为0时出现冲突
+    for n0, n1, dt in graph:
+        adjacency_matrix[n0, n1] = dt
+    return adjacency_matrix
+
+def load_graph(graph_name: str):
+    data_dir = './data/gset'
+    graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+
+    if os.path.exists(f"{data_dir}/{graph_name}.txt"):
+        txt_path = f"{data_dir}/{graph_name}.txt"
+        graph, num_nodes, num_edges = load_graph_from_txt(txt_path=txt_path)
+    elif graph_name.split('_')[0] in graph_types:
+        g_type, num_nodes = graph_name.split('_')
+        num_nodes = int(num_nodes)
+        graph, num_nodes, num_edges = generate_graph(num_nodes=num_nodes, g_type=g_type)
+    else:
+        raise ValueError(f"graph_name {graph_name}")
+    return graph, num_nodes, num_edges
+
+def load_graph_auto(graph_name: str):
+    import random
+    graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+
+    if os.path.exists(f"{DataDir}/{graph_name}.txt"):
+        txt_path = f"{DataDir}/{graph_name}.txt"
+        graph = load_graph_from_txt(txt_path=txt_path)
+    elif graph_name.split('_')[0] in graph_types and len(graph_name.split('_')) == 3:
+        graph_type, num_nodes, valid_i = graph_name.split('_')
+        num_nodes = int(num_nodes)
+        valid_i = int(valid_i[len('ID'):])
+        random.seed(valid_i)
+        graph = generate_graph(num_nodes=num_nodes, graph_type=graph_type)
+        random.seed()
+    elif graph_name.split('_')[0] in graph_types and len(graph_name.split('_')) == 2:
+        graph_type, num_nodes = graph_name.split('_')
+        num_nodes = int(num_nodes)
+        graph = generate_graph(num_nodes=num_nodes, graph_type=graph_type)
+    else:
+        raise ValueError(f"DataDir {DataDir} | graph_name {graph_name}")
+    return graph
+
+def save_graph_info_to_txt(txt_path, graph, num_nodes, num_edges):
+    formatted_content = f"{num_nodes} {num_edges}\n"
+    for node0, node1, distance in graph:
+        row = [node0 + 1, node1 + 1, distance]  # node+1 is a bad design
+        formatted_content += " ".join(str(item) for item in row) + "\n"
+    with open(txt_path, "w") as file:
+        file.write(formatted_content)
+
+
+def generate_graph(num_nodes: int, g_type: str):
+    graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+    assert g_type in graph_types
+
+    if g_type == 'erdos_renyi':
+        g = nx.erdos_renyi_graph(n=num_nodes, p=0.15)
+    elif g_type == 'powerlaw':
+        g = nx.powerlaw_cluster_graph(n=num_nodes, m=4, p=0.05)
+    elif g_type == 'barabasi_albert':
+        g = nx.barabasi_albert_graph(n=num_nodes, m=4)
+    else:
+        raise ValueError(f"g_type {g_type} should in {graph_types}")
+
+    graph = []
+    for node0, node1 in g.edges:
+        distance = 1
+        graph.append((node0, node1, distance))
+    num_nodes = num_nodes
+    num_edges = len(graph)
+    return graph, num_nodes, num_edges
+
+
+def generate_graph_for_validation():
+    import random
+    num_nodes_list = [20, 50, 100, 200, 300]
+    g_type = 'powerlaw'
+    num_valid = 6
+    seed_num = 0
+    data_dir = './data'
+    os.makedirs(data_dir, exist_ok=True)
+
+    '''generate'''
+    for num_nodes in num_nodes_list:
+        random.seed(seed_num)  # must write in the for loop
+        for i in range(num_valid):
+            txt_path = f"{data_dir}/graph_{g_type}_{num_nodes}_ID{i:03}.txt"
+
+            graph, num_nodes, num_edges = generate_graph(num_nodes=num_nodes, g_type=g_type)
+            save_graph_info_to_txt(txt_path, graph, num_nodes, num_edges)
+
+    '''load'''
+    for num_nodes in num_nodes_list:
+        for i in range(num_valid):
+            txt_path = f"{data_dir}/graph_{g_type}_{num_nodes}_ID{i:03}.txt"
+
+            graph, num_nodes, num_edges = load_graph_from_txt(txt_path)
+            adjacency_matrix = build_adjacency_matrix(graph, num_nodes)
+            print(adjacency_matrix.shape)
+
+
+
+
+
+
+
+
+'''simulator'''
+
+
+def build_adjacency_matrix(graph, num_nodes):
+    adjacency_matrix = np.empty((num_nodes, num_nodes))
+    adjacency_matrix[:] = -1  # 选用-1而非0表示表示两个node之间没有edge相连，避免两个节点的距离为0时出现冲突
+    for n0, n1, dt in graph:
+        adjacency_matrix[n0, n1] = dt
+    return adjacency_matrix
+
+def build_adjacency_matrix_auto(graph: GraphList, if_bidirectional: bool = False):
+    """例如，无向图里：
+    - 节点0连接了节点1
+    - 节点0连接了节点2
+    - 节点2连接了节点3
+
+    用邻接阶矩阵Ary的上三角表示这个无向图：
+      0 1 2 3
+    0 F T T F
+    1 _ F F F
+    2 _ _ F T
+    3 _ _ _ F
+
+    其中：
+    - Ary[0,1]=True
+    - Ary[0,2]=True
+    - Ary[2,3]=True
+    - 其余为False
+    """
+    not_connection = -1  # 选用-1去表示表示两个node之间没有edge相连，不选用0是为了避免两个节点的距离为0时出现冲突
+    print(f"graph before enter: {graph}")
+    num_nodes = obtain_num_nodes_auto(graph=graph)
+
+    adjacency_matrix = th.zeros((num_nodes, num_nodes), dtype=th.float32)
+    adjacency_matrix[:] = not_connection
+    for n0, n1, distance in graph:
+        adjacency_matrix[n0, n1] = distance
+        if if_bidirectional:
+            adjacency_matrix[n1, n0] = distance
+    return adjacency_matrix
+
+def build_adjacency_indies_auto(graph: MyGraph, if_bidirectional: bool = False) -> (IndexList, IndexList):
+    """
+    用二维列表list2d表示这个图：
+    [
+        [1, 2],
+        [],
+        [3],
+        [],
+    ]
+    其中：
+    - list2d[0] = [1, 2]
+    - list2d[2] = [3]
+
+    对于稀疏的矩阵，可以直接记录每条边两端节点的序号，用shape=(2,N)的二维列表 表示这个图：
+    0, 1
+    0, 2
+    2, 3
+    如果条边的长度为1，那么表示为shape=(2,N)的二维列表，并在第一行，写上 4个节点，3条边的信息，帮助重建这个图，然后保存在txt里：
+    4, 3
+    0, 1, 1
+    0, 2, 1
+    2, 3, 1
+    """
+    num_nodes = obtain_num_nodes_auto(graph=graph)
+
+    n0_to_n1s = [[] for _ in range(num_nodes)]  # 将 node0_id 映射到 node1_id
+    n0_to_dts = [[] for _ in range(num_nodes)]  # 将 mode0_id 映射到 node1_id 与 node0_id 的距离
+    for n0, n1, distance in graph:
+        n0_to_n1s[n0].append(n1)
+        n0_to_dts[n0].append(distance)
+        if if_bidirectional:
+            n0_to_n1s[n1].append(n0)
+            n0_to_dts[n1].append(distance)
+    n0_to_n1s = [th.tensor(node1s) for node1s in n0_to_n1s]
+    n0_to_dts = [th.tensor(node1s) for node1s in n0_to_dts]
+    assert num_nodes == len(n0_to_n1s)
+    assert num_nodes == len(n0_to_dts)
+
+    '''sort'''
+    for i, node1s in enumerate(n0_to_n1s):
+        sort_ids = th.argsort(node1s)
+        n0_to_n1s[i] = n0_to_n1s[i][sort_ids]
+        n0_to_dts[i] = n0_to_dts[i][sort_ids]
+    return n0_to_n1s, n0_to_dts
+
+def obtain_num_nodes_auto(graph: GraphList) -> int:
+    # print(f"iter: {Config.iter}, graph: {graph}")
+    # Config.iter += 1
+    # num_nodes = 0
+    # for vec in graph:
+    #     print(f"vec: {vec}")
+    #     assert len(vec) == 3
+    #     n0, n1, distance = vec
+    #     if max(n0, n1) > num_nodes:
+    #         num_nodes = max(n0, n1)
+    # return num_nodes
+    return max([max(n0, n1) for n0, n1, distance in graph]) + 1
+
+
+def convert_matrix_to_vector(matrix):
+    vector = [row[i + 1:] for i, row in enumerate(matrix)]
+    return th.hstack(vector)
+
+
+def check_adjacency_matrix_vector():
+    num_nodes = 32
+    graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+
+    for g_type in graph_types:
+        print(f"g_type {g_type}")
+        for i in range(8):
+            graph, num_nodes, num_edges = generate_graph(num_nodes=num_nodes, g_type=g_type)
+            print(i, num_nodes, num_edges, graph)
+
+            adjacency_matrix = build_adjacency_matrix(graph, num_nodes)  # 邻接矩阵
+            adjacency_vector = convert_matrix_to_vector(adjacency_matrix)  # 邻接矩阵的上三角拍平为矢量，传入神经网络
+            print(adjacency_vector)
+
+
+
+
+def draw_adjacency_matrix():
+    from simulator import GraphMaxCutSimulator
+    graph_name = 'powerlaw_48'
+    env = GraphMaxCutSimulator(graph_name=graph_name)
+    ary = (env.adjacency_matrix != -1).to(th.int).data.cpu().numpy()
+
+    d0 = d1 = ary.shape[0]
+    if plt:
+        plt.imshow(1 - ary[:, ::-1], cmap='hot', interpolation='nearest', extent=[0, d1, 0, d0])
+        plt.gca().set_xticks(np.arange(0, d1, 1))
+        plt.gca().set_yticks(np.arange(0, d0, 1))
+        plt.grid(True, color='grey', linewidth=1)
+        plt.title('black denotes connect')
+        plt.show()
+
+
+def check_simulator_encoder():
+    th.manual_seed(0)
+    num_envs = 6
+    graph_name = 'powerlaw_64'
+    from simulator import GraphMaxCutSimulator
+    sim = GraphMaxCutSimulator(graph_name=graph_name)
+    enc = EncoderBase64(num_nodes=sim.num_nodes)
+
+    probs = sim.get_rand_probs(num_envs=num_envs)
+    print(sim.get_objectives(probs))
+
+    best_score = -th.inf
+    best_str_x = ''
+    for _ in range(8):
+        probs = sim.get_rand_probs(num_envs=num_envs)
+        sln_xs = sim.prob_to_bool(probs)
+        scores = sim.get_scores(sln_xs)
+
+        max_score, max_id = th.max(scores, dim=0)
+        if max_score > best_score:
+            best_score = max_score
+            best_sln_x = sln_xs[max_id]
+            best_str_x = enc.bool_to_str(best_sln_x)
+            print(f"best_score {best_score}  best_sln_x {best_str_x}")
+
+    best_sln_x = enc.str_to_bool(best_str_x)
+    best_score = sim.get_scores(best_sln_x.unsqueeze(0)).squeeze(0)
+    print(f"NumNodes {sim.num_nodes}  NumEdges {sim.num_edges}")
+    print(f"score {best_score}  sln_x \n{enc.bool_to_str(best_sln_x)}")
+
+
+def check_convert_sln_x():
+    gpu_id = 0
+    num_envs = 1
+    graph_name = 'powerlaw_64'
+    from simulator import GraphMaxCutSimulator
+    sim = GraphMaxCutSimulator(graph_name=graph_name, gpu_id=gpu_id)
+    enc = EncoderBase64(num_nodes=sim.num_nodes)
+
+    x_prob = sim.get_rand_probs(num_envs=num_envs)[0]
+    x_bool = sim.prob_to_bool(x_prob)
+
+    x_str = enc.bool_to_str(x_bool)
+    print(x_str)
+    x_bool = enc.str_to_bool(x_str)
+
+    assert all(x_bool == sim.prob_to_bool(x_prob))
+
+
+class EncoderBase64:
+    def __init__(self, num_nodes: int):
+        self.num_nodes = num_nodes
+
+        self.base_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$"
+        self.base_num = len(self.base_digits)
+
+    def bool_to_str(self, x_bool: TEN) -> str:
+        x_int = int(''.join([('1' if i else '0') for i in x_bool.tolist()]), 2)
+
+        '''bin_int_to_str'''
+        base_num = len(self.base_digits)
+        x_str = ""
+        while True:
+            remainder = x_int % base_num
+            x_str = self.base_digits[remainder] + x_str
+            x_int //= base_num
+            if x_int == 0:
+                break
+
+        x_str = '\n'.join([x_str[i:i + 120] for i in range(0, len(x_str), 120)])
+        return x_str.zfill(math.ceil(self.num_nodes // 6 + 1))
+
+    def str_to_bool(self, x_str: str) -> TEN:
+        x_b64 = x_str.replace('\n', '')
+
+        '''b64_str_to_int'''
+        x_int = 0
+        base_len = len(x_b64)
+        for i in range(base_len):
+            digit = self.base_digits.index(x_b64[i])
+            power = base_len - 1 - i
+            x_int += digit * (self.base_num ** power)
+
+        return self.int_to_bool(x_int)
+
+    def int_to_bool(self, x_int: int) -> TEN:
+        x_bin: str = bin(x_int)[2:]
+        x_bool = th.zeros(self.num_nodes, dtype=th.int8)
+        x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.int8)
+        return x_bool
+
 
 
 if __name__ == '__main__':
