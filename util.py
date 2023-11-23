@@ -25,7 +25,7 @@ GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
 DataDir = Config.gset_dir
 
-class GraphDistriType(Enum):
+class GraphDistriType():
     erdos_renyi = 'erdos_renyi'
     powerlaw = 'powerlaw'
     barabasi_albert = 'barabasi_albert'
