@@ -1,43 +1,10 @@
 from trick_local_search import *
 from torch.nn.utils import clip_grad_norm_
-from simulator import SimulatorReinforce
+from simulator import MaxcutSimulatorReinforce
 from util import load_graph, load_graph_auto
 from torch.distributions.categorical import Categorical
-
-class PolicyGNN(nn.Module):
-    def __init__(self, inp_dim, mid_dim, out_dim):
-        super().__init__()
-        self.inp_dim = inp_dim
-        self.mid_dim = mid_dim
-        self.out_dim = out_dim
-
-        self.inp_enc = nn.Sequential(nn.Linear(inp_dim, mid_dim), nn.ReLU(), nn.LayerNorm(mid_dim),
-                                     nn.Linear(mid_dim, mid_dim))
-
-        self.tmp_enc = nn.Sequential(nn.Linear(mid_dim + mid_dim, mid_dim), nn.ReLU(), nn.LayerNorm(mid_dim),
-                                     nn.Linear(mid_dim, out_dim), )
-        self.soft_max = nn.Softmax(dim=1)
-
-    def forward(self, inp, ids_list):
-        num_size, num_nodes, num_dim = inp.shape
-        device = inp.device
-
-        tmp1 = th.empty((num_size, num_nodes, self.mid_dim), dtype=th.float32, device=device)
-        for node0 in range(num_nodes):
-            tmp1[:, node0] = self.inp_enc(inp[:, node0])
-
-        env_i = th.arange(inp.shape[0], device=inp.device)
-        tmp2 = th.empty((num_size, num_nodes, self.mid_dim), dtype=th.float32, device=device)
-        for node0, node1s in enumerate(ids_list):
-            tmp2[:, node0, :] = tmp1[env_i[:, None], node1s[None, :]].mean(dim=1)
-
-        tmp3 = th.cat((tmp1, tmp2), dim=2)
-        out = th.empty((num_size, num_nodes, self.out_dim), dtype=th.float32, device=device)
-        for node0 in range(num_nodes):
-            out[:, node0] = self.tmp_enc(tmp3[:, node0])
-        return self.soft_max(out.squeeze(2))
-
-
+from net import PolicyGNN
+from config import Config
 def map_to_power_of_two(x):
     n = 0
     while 2 ** n <= x:
@@ -85,7 +52,7 @@ def train_embedding_net(adjacency_matrix, num_embed: int, num_epoch: int = 2 ** 
     return encoder
 
 
-def build_input_tensor(xs, sim: SimulatorReinforce, inp_dim, feature):
+def build_input_tensor(xs, sim: MaxcutSimulatorReinforce, inp_dim, feature):
     num_sims, num_nodes = xs.shape
 
     inp = th.empty((num_sims, num_nodes, inp_dim), dtype=th.float32, device=xs.device)
@@ -97,9 +64,7 @@ def build_input_tensor(xs, sim: SimulatorReinforce, inp_dim, feature):
 
 
 def check_gnn():
-    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     graph_name, num_nodes = 'gset_14', 800
-
     inp_dim = map_to_power_of_two(num_nodes) // 2
     mid_dim = 64
     out_dim = 1
@@ -107,10 +72,10 @@ def check_gnn():
 
     num_sims = 8
 
-    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    device = Config.device
     graph = load_graph(graph_name=graph_name)
 
-    sim = SimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
+    sim = MaxcutSimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
 
     '''get adjacency_feature'''
     embed_net_path = f"{graph_name}_embedding_net.pth"
@@ -153,10 +118,10 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
     gap_print = 2 ** 0
 
     '''build simulator'''
-    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    device = Config.device
     graph, _, _ = load_graph_auto(graph_name=graph_name)
 
-    sim = SimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
+    sim = MaxcutSimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
 
     '''get adjacency_feature'''
     embed_net_path = f"{graph_name}_embedding_net.pth"

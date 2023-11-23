@@ -7,12 +7,12 @@ import numpy as np
 from torch import Tensor
 # from rlsolver.rlsolver_learn2opt.np_complete_problems.env.maxcut_env import MCSim
 from mcmc import MCMC
-
-from utils2 import Opt_net
+from config import Config
+from util import Opt_net
 import pickle as pkl
 from util import calc_file_name
-from utils2 import read_txt_as_networkx_graph
-from utils2 import write_result
+from util import read_nxgraph
+from util import write_result
 # graph_node = {"14":800, "15":800, "22":2000, "49":3000, "50":3000, "55":5000, "70":10000  }
 
 
@@ -104,15 +104,14 @@ if __name__ == "__main__":
     import sys
 
     filename = 'data/gset/gset_14.txt'
-    gpu_id = 5
-    graph = read_txt_as_networkx_graph(filename)
+    gpu_id = Config.gpu_id
+    graph = read_nxgraph(filename)
     num_nodes = graph.number_of_nodes()
     hidden_layer_size = 4000
     learning_rate = 2e-5
     num_samples = 20
     episode_length = 30
-
-    device = th.device(f"cuda:{gpu_id}" if (th.cuda.is_available() and (gpu_id >= 0)) else "cpu")
+    device = Config.device
     th.manual_seed(7)
     opt_net = Opt_net(num_nodes, hidden_layer_size).to(device)
     optimizer = th.optim.Adam(opt_net.parameters(), lr=learning_rate)

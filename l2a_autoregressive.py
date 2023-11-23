@@ -1,11 +1,11 @@
 import os
-from simulator import SimulatorAutoregressive
+from simulator import MaxcutSimulatorAutoregressive
 from trick_local_search import *
 from util import EncoderBase64
 from net import PolicyMLP, Net
+from config import Config
 
-
-def train_embedding_net(sim: SimulatorAutoregressive, net_path='embedding_net.pth'):
+def train_embedding_net(sim: MaxcutSimulatorAutoregressive, net_path='embedding_net.pth'):
     num_nodes = sim.num_nodes
     device = sim.device
     lr = 1e-3
@@ -70,9 +70,7 @@ def roll_out_continuous(temp_xs, num_roll_continuous, rand_id_ary, num_sims, pol
 
 
 def run(graph_name):
-    # gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    gpu_id=0
-    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    device = Config.device
     # sim_name = 'gset_14'
     sim_name = graph_name
     # x_str = X_G14
@@ -85,7 +83,7 @@ FUAYMjofiS5er"""  # 3023
         num_sims = 2 ** 4
         num_roll = 5
 
-    sim = SimulatorAutoregressive(sim_name=sim_name, device=device)
+    sim = MaxcutSimulatorAutoregressive(sim_name=sim_name, device=device)
     enc = EncoderBase64(num_nodes=sim.num_nodes)
     num_nodes = sim.num_nodes
 

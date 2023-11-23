@@ -25,10 +25,11 @@ GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
 DataDir = Config.gset_dir
 
-class GraphDistriType():
-    erdos_renyi = 'erdos_renyi'
-    powerlaw = 'powerlaw'
-    barabasi_albert = 'barabasi_albert'
+def calc_device(gpu_id: int):
+    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    return device
+
+
 
 
 class MyGraph:
@@ -690,9 +691,9 @@ def check_adjacency_matrix_vector():
 
 
 def draw_adjacency_matrix():
-    from simulator import GraphMaxCutSimulator
+    from simulator import MaxcutSimulator
     graph_name = 'powerlaw_48'
-    env = GraphMaxCutSimulator(graph_name=graph_name)
+    env = MaxcutSimulator(graph_name=graph_name)
     ary = (env.adjacency_matrix != -1).to(th.int).data.cpu().numpy()
 
     d0 = d1 = ary.shape[0]
@@ -709,8 +710,8 @@ def check_simulator_encoder():
     th.manual_seed(0)
     num_envs = 6
     graph_name = 'powerlaw_64'
-    from simulator import GraphMaxCutSimulator
-    sim = GraphMaxCutSimulator(graph_name=graph_name)
+    from simulator import MaxcutSimulator
+    sim = MaxcutSimulator(graph_name=graph_name)
     enc = EncoderBase64(num_nodes=sim.num_nodes)
 
     probs = sim.get_rand_probs(num_envs=num_envs)
@@ -740,8 +741,8 @@ def check_convert_sln_x():
     gpu_id = 0
     num_envs = 1
     graph_name = 'powerlaw_64'
-    from simulator import GraphMaxCutSimulator
-    sim = GraphMaxCutSimulator(graph_name=graph_name, gpu_id=gpu_id)
+    from simulator import MaxcutSimulator
+    sim = MaxcutSimulator(graph_name=graph_name, gpu_id=gpu_id)
     enc = EncoderBase64(num_nodes=sim.num_nodes)
 
     x_prob = sim.get_rand_probs(num_envs=num_envs)[0]

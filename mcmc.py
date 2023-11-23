@@ -11,11 +11,11 @@ from torch import Tensor
 from torch.distributions import Bernoulli  # BinaryDist
 from tqdm import tqdm
 import matplotlib
-
+from util import calc_device
 class MCMC:
     def __init__(self, graph_name: str = 'gset_14', gpu_id: int = -1):
         self.grapj_name = graph_name
-        device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+        device = calc_device(gpu_id)
         int_type = th.int32
         self.device = device
         self.int_type = int_type
@@ -46,7 +46,7 @@ class MCMC:
         sum_dts = th.hstack(sum_dts)
         return -sum_dts
 
-    def get_rand_probs(self, num_samples: int):
+    def calc_rand_probs(self, num_samples: int):
         # generate random probability for each node, mainly for initilization
         return th.rand((num_samples, self.num_nodes), dtype=th.float32, device=self.device)
 
@@ -55,7 +55,7 @@ class MCMC:
         # make decision of each node whether it is in set A by the probability given the threshold
         return prob > thresh
 
-    def get_score(self, decisions: th.Tensor):
+    def calc_score(self, decisions: th.Tensor):
         # get the score of the decision
         num_samples = decisions.shape[0]
         env_ids = th.arange(num_samples, dtype=self.int_type, device=self.device)
