@@ -10,6 +10,7 @@ import torch.nn as nn
 from torch.distributions import Bernoulli  # BinaryDist
 from tqdm import tqdm
 from net import OptimizerLSTM
+from config import Config
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -69,7 +70,7 @@ def generate_graph(num_nodes: int, g_type: str):
 
 
 def load_graph(graph_name: str):
-    data_dir = './data'
+    data_dir = Config.data_dir
     graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 
     if os.path.exists(f"{data_dir}/{graph_name}.txt"):

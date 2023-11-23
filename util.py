@@ -11,6 +11,7 @@ from torch import Tensor
 from os import system
 from config import Config
 import math
+from enum import Enum
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -22,13 +23,19 @@ INT = th.IntTensor
 TEN = th.Tensor
 GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
-DataDir = './data/gset'
+DataDir = Config.gset_dir
+
+class GraphType(Enum):
+    erdos_renyi = 0
+    powerlaw = 1
+    barabasi_albert = 2
 
 class MyGraph:
     def __init__(self):
         num_nodes = 0
         num_edges = 0
         graph = List[int]
+
 def plot_nxgraph(g: nx.Graph()):
     import matplotlib.pyplot as plt
     nx.draw_networkx(g)
@@ -458,7 +465,7 @@ def get_adjacency_matrix(graph, num_nodes):
     return adjacency_matrix
 
 def load_graph(graph_name: str):
-    data_dir = './data/gset'
+    data_dir = Config.data_dir
     graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 
     if os.path.exists(f"{data_dir}/{graph_name}.txt"):
@@ -531,7 +538,7 @@ def generate_graph_for_validation():
     g_type = 'powerlaw'
     num_valid = 6
     seed_num = 0
-    data_dir = './data'
+    data_dir = Config.data_dir
     os.makedirs(data_dir, exist_ok=True)
 
     '''generate'''
