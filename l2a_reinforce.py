@@ -1,6 +1,8 @@
-from local_search import *
+from trick_local_search import *
 from torch.nn.utils import clip_grad_norm_
-
+from simulator import SimulatorReinforce
+from util import load_graph, load_graph_auto
+from torch.distributions.categorical import Categorical
 
 class PolicyGNN(nn.Module):
     def __init__(self, inp_dim, mid_dim, out_dim):
@@ -83,7 +85,7 @@ def train_embedding_net(adjacency_matrix, num_embed: int, num_epoch: int = 2 ** 
     return encoder
 
 
-def build_input_tensor(xs, sim: SimulatorGraphMaxCut, inp_dim, feature):
+def build_input_tensor(xs, sim: SimulatorReinforce, inp_dim, feature):
     num_sims, num_nodes = xs.shape
 
     inp = th.empty((num_sims, num_nodes, inp_dim), dtype=th.float32, device=xs.device)
@@ -108,7 +110,7 @@ def check_gnn():
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
     graph = load_graph(graph_name=graph_name)
 
-    sim = SimulatorGraphMaxCut(graph=graph, device=device, if_bidirectional=True)
+    sim = SimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
 
     '''get adjacency_feature'''
     embed_net_path = f"{graph_name}_embedding_net.pth"
@@ -130,10 +132,7 @@ def check_gnn():
     print(out.shape)
 
 
-def search_and_evaluate_reinforce():
-    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    graph_name, num_nodes = 'gset_14', 800
-
+def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0):
     inp_dim = map_to_power_of_two(num_nodes) // 2
     mid_dim = 128
     out_dim = 1
@@ -155,9 +154,9 @@ def search_and_evaluate_reinforce():
 
     '''build simulator'''
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
-    graph = load_graph(graph_name=graph_name)
+    graph, _, _ = load_graph_auto(graph_name=graph_name)
 
-    sim = SimulatorGraphMaxCut(graph=graph, device=device, if_bidirectional=True)
+    sim = SimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
 
     '''get adjacency_feature'''
     embed_net_path = f"{graph_name}_embedding_net.pth"
@@ -174,7 +173,7 @@ def search_and_evaluate_reinforce():
     net_params = list(net.parameters())
     print(f"num_nodes {num_nodes}  num_node_features {sim.adjacency_feature.shape[1]}")
 
-    solver = SolverLocalSearch(simulator=sim, num_nodes=num_nodes)
+    solver = TrickLocalSearch(simulator=sim, num_nodes=num_nodes)
     optimizer = th.optim.Adam(net_params, lr=2e-3, maximize=True)
 
     '''evaluator'''

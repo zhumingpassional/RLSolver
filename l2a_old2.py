@@ -375,6 +375,52 @@ def check_convert_sln_x():
     assert all(x_bool == sim.prob_to_bool(x_prob))
 
 
+def exhaustion_search():
+    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    graph_name = 'powerlaw_64'
+    num_envs = 2 ** 14
+    th.manual_seed(0)
+
+    th.set_grad_enabled(False)
+
+    sim = GraphMaxCutSimulator(graph_name=graph_name, gpu_id=gpu_id)
+    enc = EncoderBase64(num_nodes=sim.num_nodes)
+
+    best_score = -th.inf
+    best_sln_x = None
+    dim = sim.num_nodes
+
+    num_iter = 2 ** (dim - 1)
+    print(f"NumNodes {sim.num_nodes}  NumEdges {sim.num_edges}  Total search num_iter {num_iter}")
+    time.sleep(0.1)
+    _num_envs = min(num_iter, num_envs)
+    i_iter = tqdm(range(0, num_iter, _num_envs), ascii=True)
+    all_score = np.empty(num_iter, dtype=np.int16)
+    for i in i_iter:
+        sln_xs = [enc.int_to_bool(i + j) for j in range(_num_envs)]
+        sln_xs = th.stack(sln_xs).to(sim.device)
+        scores = sim.get_scores(sln_xs)
+
+        max_score, max_id = th.max(scores, dim=0)
+        if max_score > best_score:
+            best_score = max_score
+            best_sln_x = sln_xs[max_id]
+            i_iter.set_description(
+                f"best_score {best_score:6.0f}  best_sln_x {enc.bool_to_str(best_sln_x)}")
+            print()
+
+        all_score[i:i + _num_envs] = scores.data.cpu().numpy()
+    i_iter.close()
+
+    num_best = np.count_nonzero(all_score == best_score.item())
+    print(f"NumNodes {sim.num_nodes}  NumEdges {sim.num_edges}  NumSearch {2 ** dim}  "
+          f"best score {best_score:6.0f}  sln_x {enc.bool_to_str(best_sln_x)}  count 2*{num_best}")
+
+
+"""find solution_x using optimizer"""
+
+
+
 class UniqueBuffer:  # for GraphMaxCut
     def __init__(self, max_size: int, num_nodes: int, gpu_id: int = 0):
         self.max_size = max_size
@@ -533,6 +579,187 @@ class Config:  # Demo
             json.dump(json_dict, file, indent=4)
 
 
+def run_v1_find_sln_x_using_grad():
+    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    num_envs = 2 ** 6
+    graph_name = 'G14'
+    # graph_name = 'g70'
+
+    '''hyper-parameters'''
+    lr = 1e-3
+    opt_num = 2 ** 12
+    eval_gap = 2 ** 6
+
+    '''init task'''
+    sim = GraphMaxCutSimulator(graph_name=graph_name, gpu_id=gpu_id)
+    enc = EncoderBase64(num_nodes=sim.num_nodes)
+
+    probs = sim.get_rand_probs(num_envs=num_envs)
+    probs.requires_grad_(True)
+
+    '''loop'''
+    best_score = -th.inf
+    best_sln_x = probs
+    start_time = time.time()
+    for i in range(1, opt_num + 1):
+        obj = sim.get_objectives(probs).mean()
+        obj.backward()
+
+        grads = probs.grad.data
+        probs.data.add_(-lr * grads).clip_(0, 1)
+
+        if i % eval_gap == 0:
+            sln_xs = sim.prob_to_bool(probs)
+            scores = sim.get_scores(sln_xs)
+            used_time = time.time() - start_time
+            print(f"|{used_time:9.0f}  {i:6}  {obj.item():9.3f}  {scores.max().item():9.0f}")
+
+            max_score, max_id = th.max(scores, dim=0)
+            if max_score > best_score:
+                best_score = max_score
+                best_sln_x = sln_xs[max_id]
+                print(f"best_score {best_score}  best_sln_x \n{enc.bool_to_str(best_sln_x)}")
+
+    print()
+    print(f"best_score {best_score}  best_sln_x \n{enc.bool_to_str(best_sln_x)}")
+
+
+def run_v2_find_sln_x_using_adam():
+    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    num_envs = 2 ** 4
+    graph_name = 'G14'
+    # graph_name = 'g70'
+
+    '''hyper-parameters'''
+    lr = 1e-3
+    opt_num = 2 ** 12
+    eval_gap = 2 ** 6
+
+    '''init task'''
+    sim = GraphMaxCutSimulator(graph_name=graph_name, gpu_id=gpu_id)
+    enc = EncoderBase64(num_nodes=sim.num_nodes)
+
+    probs = sim.get_rand_probs(num_envs=num_envs)
+    probs.requires_grad_(True)
+
+    '''init opti'''
+    opt_base = th.optim.Adam([probs, ], lr=lr)
+
+    '''loop'''
+    best_score = -th.inf
+    best_sln_x = sim.prob_to_bool(probs[0])
+    start_time = time.time()
+    for i in range(1, opt_num + 1):
+        obj = sim.get_objectives(probs).mean()
+        opt_base.zero_grad()
+        obj.backward()
+        opt_base.step()
+
+        probs.data.clip_(0, 1)
+
+        if i % eval_gap == 0:
+            sln_xs = sim.prob_to_bool(probs)
+            scores = sim.get_scores(sln_xs)
+            used_time = time.time() - start_time
+            print(f"|{used_time:9.0f}  {i:6}  {obj.item():9.3f}  {scores.max().item():9.0f}")
+
+            max_score, max_id = th.max(scores, dim=0)
+            if max_score > best_score:
+                best_score = max_score
+                best_sln_x = sln_xs[max_id]
+                print(f"best_score {best_score}  best_sln_x \n{enc.bool_to_str(best_sln_x)}")
+
+    print()
+    print(f"best_score {best_score}  best_sln_x \n{enc.bool_to_str(best_sln_x)}")
+
+
+def run_v3_find_sln_x_using_opti():
+    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    num_envs = 2 ** 6
+    graph_name = 'G14'
+    # graph_name = 'g70'
+
+    '''hyper-parameters'''
+    lr = 1e-3
+    mid_dim = 2 ** 8
+    num_layers = 1
+    seq_len = 2 ** 5
+    reset_gap = 2 ** 6
+
+    opt_num = int(2 ** 16 / num_envs)
+    eval_gap = 2 ** 1
+
+    '''init task'''
+    sim = GraphMaxCutSimulator(graph_name=graph_name, gpu_id=gpu_id)
+    enc = EncoderBase64(num_nodes=sim.num_nodes)
+
+    dim = sim.num_nodes
+    probs = sim.get_rand_probs(num_envs=num_envs)
+    probs.requires_grad_(True)
+    obj = None
+    hidden0 = None
+    hidden1 = None
+
+    '''init opti'''
+    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    opt_opti = OptimizerLSTM(inp_dim=dim, mid_dim=mid_dim, out_dim=dim, num_layers=num_layers).to(device)
+    opt_base = th.optim.Adam(opt_opti.parameters(), lr=lr)
+
+    '''loop'''
+    best_score = -th.inf
+    best_sln_x = sim.prob_to_bool(probs[0])
+    start_time = time.time()
+    for i in range(1, opt_num + 1):
+        if i % reset_gap == 0:
+            probs = sim.get_rand_probs(num_envs=num_envs)
+            probs.requires_grad_(True)
+            obj = None
+            hidden0 = None
+            hidden1 = None
+
+        prob_ = probs.clone()
+        updates = []
+
+        for j in range(seq_len):
+            obj = sim.get_objectives(probs).mean()
+            obj.backward()
+
+            grad_s = probs.grad.data
+            update, hidden0, hidden1 = opt_opti(grad_s.unsqueeze(0), hidden0, hidden1)
+            update = (update.squeeze_(0) - grad_s) * lr
+            updates.append(update)
+            probs.data.add_(update).clip_(0, 1)
+        hidden0 = [h.detach() for h in hidden0]
+        hidden1 = [h.detach() for h in hidden1]
+
+        updates = th.stack(updates, dim=0)
+        prob_ = (prob_ + updates.mean(0)).clip(0, 1)
+        obj_ = sim.get_objectives(prob_).mean()
+
+        opt_base.zero_grad()
+        obj_.backward()
+        opt_base.step()
+
+        probs.data[:] = prob_
+
+        if i % eval_gap == 0:
+            sln_xs = sim.prob_to_bool(probs)
+            scores = sim.get_scores(sln_xs)
+            used_time = time.time() - start_time
+            print(f"|{used_time:9.0f}  {i:6}  {obj.item():9.3f}  "
+                  f"max_score {scores.max().item():9.0f}  "
+                  f"best_score {best_score}")
+
+            max_score, max_id = th.max(scores, dim=0)
+            if max_score > best_score:
+                best_score = max_score
+                best_sln_x = sln_xs[max_id]
+
+        if i % eval_gap * 256:
+            print(f"best_score {best_score}  best_sln_x \n{enc.bool_to_str(best_sln_x)}")
+
+    print()
+    print(f"best_score {best_score}  best_sln_x \n{enc.bool_to_str(best_sln_x)}")
 
 
 def run_v4_find_sln_x_using_opti_and_buffer():
@@ -646,7 +873,7 @@ def run_v4_find_sln_x_using_opti_and_buffer():
             best_sln_x = sln_xs[max_id]
             best_sln_x_str = enc.bool_to_str(best_sln_x)
             enter_str = '\n' if len(best_sln_x_str) > 60 else ''
-            print(f"\n graph_name {graph_name} best_score {best_score}  best_sln_x {enter_str}{best_sln_x_str}")
+            print(f"\nbest_score {best_score}  best_sln_x {enter_str}{best_sln_x_str}")
 
             recorder.append((i, best_score))
             recorder_ary = th.tensor(recorder)
@@ -717,6 +944,76 @@ def sample_sln_x_using_auto_regression(num_envs, device, dim, opt_opti, if_train
     return sln_xs, logprobs, entropies
 
 
+def run_v1_find_sln_x_using_auto_regression():
+    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    num_envs = 2 ** 8
+    # graph_name, num_limit = 'G14', sys.maxsize
+    graph_name, num_limit = 'G14', 28
+
+    '''hyper-parameters'''
+    lr = 1e-3
+    mid_dim = 2 ** 8
+    num_layers = 1
+    num_opt = int(2 ** 24 / num_envs)
+    eval_gap = 2 ** 4
+    print_gap = 2 ** 8
+
+    alpha_period = 2 ** 10
+    alpha_weight = 1.0
+
+    '''init task'''
+    sim = GraphMaxCutSimulator(graph_name=graph_name, gpu_id=gpu_id)
+    enc = EncoderBase64(num_nodes=sim.num_nodes)
+    dim = sim.num_nodes
+
+    '''init opti'''
+    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    opt_opti = NetLSTM(inp_dim=2, mid_dim=mid_dim, out_dim=1, num_layers=num_layers).to(device)
+    opt_base = th.optim.Adam(opt_opti.parameters(), lr=lr)
+
+    '''loop'''
+    best_score = -th.inf
+    best_sln_x = sim.get_rand_probs(num_envs=1)[0]
+    start_time = time.time()
+    for i in range(num_opt):
+        alpha = (math.cos(i * math.pi / alpha_period) + 1) / 2
+        sln_xs, logprobs, entropies = sample_sln_x_using_auto_regression(num_envs, device, dim, opt_opti, if_train=True)
+        scores = sim.get_scores(probs=sln_xs).detach().to(th.float32)
+        scores = (scores - scores.min()) / (scores.std() + 1e-4)
+
+        obj_probs = logprobs.exp()
+        obj = -((obj_probs / obj_probs.mean()) * scores + (alpha * alpha_weight) * entropies).mean()
+
+        opt_base.zero_grad()
+        obj.backward()
+        opt_base.step()
+
+        if i % eval_gap == 0:
+            _sln_xs, _, _ = sample_sln_x_using_auto_regression(num_envs, device, dim, opt_opti, if_train=False)
+            _scores = sim.get_scores(_sln_xs)
+
+            sln_xs = th.vstack((sln_xs, _sln_xs))
+            scores = th.hstack((scores, _scores))
+
+        max_score, max_id = th.max(scores, dim=0)
+        if max_score > best_score:
+            best_score = max_score
+            best_sln_x = sln_xs[max_id]
+            print(f"best_score {best_score}  best_sln_x \n{enc.bool_to_str(best_sln_x)}")
+
+        if i % print_gap == 0:
+            used_time = time.time() - start_time
+            print(f"|{used_time:9.0f}  {i:6}  {obj.item():9.3f}  "
+                  f"score {scores.max().item():6.0f}  {best_score:6.0f}  "
+                  f"entropy {entropies.mean().item():6.3f}  alpha {alpha:5.3f}")
+
+            if i % (print_gap * 256) == 0:
+                print(f"best_score {best_score}  best_sln_x \n{enc.bool_to_str(best_sln_x)}")
+
 
 if __name__ == '__main__':
+    # run_v1_find_sln_x_using_grad()
+    # run_v2_find_sln_x_using_adam()
+    # run_v3_find_sln_x_using_opti()
     run_v4_find_sln_x_using_opti_and_buffer()
+    # run_v1_find_sln_x_using_auto_regression()
