@@ -25,7 +25,7 @@ INT = th.IntTensor
 TEN = th.Tensor
 
 IndexList = List[List[int]]
-DataDir = './data/graph_max_cut'
+
 '''check'''
 
 X_G14 = """

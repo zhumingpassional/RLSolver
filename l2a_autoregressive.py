@@ -2,17 +2,7 @@ import os
 from simulator import SimulatorAutoregressive
 from trick_local_search import *
 from util import EncoderBase64
-
-class Net(nn.Module):
-    def __init__(self, num_nodes, embedding_dim):
-        super().__init__()
-        self.embedding_dim = embedding_dim
-        self.embedding_layer = nn.Embedding(num_nodes, embedding_dim)
-        nn.init.orthogonal_(self.embedding_layer.weight)
-
-    def forward(self, ids):
-        embedded_x = self.embedding_layer(ids)
-        return embedded_x
+from net import PolicyMLP, Net
 
 
 def train_embedding_net(sim: SimulatorAutoregressive, net_path='embedding_net.pth'):
@@ -53,19 +43,6 @@ def train_embedding_net(sim: SimulatorAutoregressive, net_path='embedding_net.pt
         th.save(net, net_path)
     return net
 
-
-class PolicyMLP(nn.Module):
-    def __init__(self, node_dim, mid_dim, embedding_dim):
-        super().__init__()
-        self.net1 = nn.Sequential(nn.Linear(node_dim, mid_dim), nn.GELU(), nn.LayerNorm(mid_dim),
-                                  nn.Linear(mid_dim, mid_dim), nn.GELU(), nn.LayerNorm(mid_dim), )
-        self.net2 = nn.Sequential(nn.Linear(mid_dim + embedding_dim, mid_dim), nn.GELU(), nn.LayerNorm(mid_dim),
-                                  nn.Linear(mid_dim, 1), nn.Sigmoid(), )
-
-    def forward(self, xs, embedding_ws):
-        xs1 = self.net1(xs)
-        xs2 = self.net2(th.concat((xs1, embedding_ws), dim=1))
-        return xs2.squeeze(1)
 
 
 def roll_out_continuous(temp_xs, num_roll_continuous, rand_id_ary, num_sims, policy_net, embedding_net, dist_class,

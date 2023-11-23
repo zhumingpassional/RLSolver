@@ -15,6 +15,31 @@ try:
 except ImportError:
     plt = None
 
+class Net(nn.Module):
+    def __init__(self, num_nodes, embedding_dim):
+        super().__init__()
+        self.embedding_dim = embedding_dim
+        self.embedding_layer = nn.Embedding(num_nodes, embedding_dim)
+        nn.init.orthogonal_(self.embedding_layer.weight)
+
+    def forward(self, ids):
+        embedded_x = self.embedding_layer(ids)
+        return embedded_x
+
+class PolicyMLP(nn.Module):
+    def __init__(self, node_dim, mid_dim, embedding_dim):
+        super().__init__()
+        self.net1 = nn.Sequential(nn.Linear(node_dim, mid_dim), nn.GELU(), nn.LayerNorm(mid_dim),
+                                  nn.Linear(mid_dim, mid_dim), nn.GELU(), nn.LayerNorm(mid_dim), )
+        self.net2 = nn.Sequential(nn.Linear(mid_dim + embedding_dim, mid_dim), nn.GELU(), nn.LayerNorm(mid_dim),
+                                  nn.Linear(mid_dim, 1), nn.Sigmoid(), )
+
+    def forward(self, xs, embedding_ws):
+        xs1 = self.net1(xs)
+        xs2 = self.net2(th.concat((xs1, embedding_ws), dim=1))
+        return xs2.squeeze(1)
+
+
 class OptimizerLSTM(nn.Module):
     def __init__(self, inp_dim, mid_dim, out_dim, num_layers):
         super().__init__()
