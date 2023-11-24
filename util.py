@@ -12,6 +12,7 @@ from os import system
 from config import Config
 import math
 from enum import Enum
+from config import GraphDistriType
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -29,14 +30,11 @@ def calc_device(gpu_id: int):
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
     return device
 
-
-
-
 class MyGraph:
     def __init__(self):
         num_nodes = 0
         num_edges = 0
-        graph = List[int]
+        graph = List[Tuple[int, int, int]]
 
 def plot_nxgraph(g: nx.Graph()):
     import matplotlib.pyplot as plt
@@ -48,7 +46,7 @@ def plot_nxgraph(g: nx.Graph()):
 # read graph file, e.g., gset_14.txt, as networkx.Graph
 # The nodes in file start from 1, but the nodes start from 0 in our codes.
 def read_nxgraph(filename: str) -> nx.Graph():
-    g = nx.Graph()
+    graph = nx.Graph()
     with open(filename, 'r') as file:
         # lines = []
         line = file.readline()
@@ -60,20 +58,20 @@ def read_nxgraph(filename: str) -> nx.Graph():
                     num_nodes = int(strings[0])
                     num_edges = int(strings[1])
                     nodes = list(range(num_nodes))
-                    g.add_nodes_from(nodes)
+                    graph.add_nodes_from(nodes)
                     is_first_line = False
                 else:
                     node1, node2, weight = line.split(" ")
-                    g.add_edge(int(node1) - 1, int(node2) - 1, weight=weight)
+                    graph.add_edge(int(node1) - 1, int(node2) - 1, weight=weight)
             line = file.readline()
-    return g
+    return graph
 
 #
 def transfer_nxgraph_to_adjacencymatrix(graph: nx.Graph):
     return nx.to_numpy_matrix(graph)
 
 # the returned weightmatrix has the following format： node1 node2 weight
-# 1 2 1 // the weight of node1 and node2 is 1
+# For example: 1 2 3 // the weight of node1 and node2 is 3
 def transfer_nxgraph_to_weightmatrix(graph: nx.Graph):
     # edges = nx.edges(graph)
     res = np.array([])
@@ -113,7 +111,10 @@ def obj_maxcut(result: Union[Tensor, List[int], np.array], graph: nx.Graph):
 
 # write a tensor/list/np.array (dim: 1) to a txt file.
 # The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
-def write_result(result: Union[Tensor, List, np.array], filename: str = 'result/result.txt', obj: Union[int, float] = None, running_duration: Union[int, float] = None):
+def write_result(result: Union[Tensor, List, np.array],
+                 filename: str = './result/result.txt',
+                 obj: Union[int, float] = None,
+                 running_duration: Union[int, float] = None):
     # assert len(result.shape) == 1
     # N = result.shape[0]
     num_nodes = len(result)
@@ -234,11 +235,11 @@ def generate_write_adjacencymatrix_and_nxgraph(num_nodes: int,
                     file.write(f'{i + 1} {j + 1} {weight}\n')
     return adjacency_matrix, graph
 
-def write_nxgraph(g: nx.Graph(), new_filename: str):
+def write_nxgraph(g: nx.Graph(), filename: str):
     num_nodes = nx.number_of_nodes(g)
     num_edges = nx.number_of_edges(g)
     adjacency_matrix = nx.to_numpy_array(g)
-    with open(new_filename, 'w', encoding="UTF-8") as file:
+    with open(filename, 'w', encoding="UTF-8") as file:
         file.write(f'{num_nodes} {num_edges} \n')
         for i in range(num_nodes):
             for j in range(i + 1, num_nodes):
@@ -267,31 +268,8 @@ def rsetattr(obj, attr, val):
 def rgetattr(obj, attr, *args):
     def _getattr(obj, attr):
         return getattr(obj, attr, *args)
-
     return functools.reduce(_getattr, [obj] + attr.split('.'))
 
-
-class Opt_net(nn.Module):
-    def __init__(self, N, hidden_layers):
-        super(Opt_net, self).__init__()
-        self.N = N
-        self.hidden_layers = hidden_layers
-        self.lstm = nn.LSTM(self.N, self.hidden_layers, 1, batch_first=True)
-        self.output = nn.Linear(hidden_layers, self.N)
-
-    def forward(self, configuration, hidden_state, cell_state):
-        x, (h, c) = self.lstm(configuration, (hidden_state, cell_state))
-        return self.output(x).sigmoid(), h, c
-
-
-# def plot_figs(scoress: List[List[int]], num_steps: int, labels: List[str]):
-#     num = len(scoress)
-#     x = list(range(num_steps))
-#     dic = {'0': 'ro', '1': 'gs', '2': 'b^', '3': 'c>', '4': 'm<', '5': 'yp'}
-#     for i in range(num):
-#         plt(x, scoress[i], dic[str(i)], labels[i])
-#     plt.legend(labels, loc=0)
-#     plt.show()
 
 def plot_fig(scores: List[int], label: str):
     import matplotlib.pyplot as plt
@@ -385,7 +363,7 @@ def calc_avg_std_of_objs(directory: str, prefixes: List[str], time_limits: List[
     return res
 
 # transfer flot to binary. For example, 1e-7 -> 0, 1 + 1e-8 -> 1
-def float_to_binary(value: float) -> int:
+def transfer_float_to_binary(value: float) -> int:
     if abs(value) < 1e-4:
         value = 0
     elif abs(value - 1) < 1e-4:
@@ -422,7 +400,7 @@ def transfer_write_solver_result(filename: str, new_filename: str):
                 find_x = True
                 node = int(line.split('x[')[1].split(']')[0])
                 value = float(line.split(':')[1].split('\n')[0])
-                value = float_to_binary(value)
+                value = transfer_float_to_binary(value)
                 nodes.append(node)
                 values.append(value)
             if find_x and 'x[' not in line:
@@ -469,7 +447,6 @@ def get_adjacency_matrix(graph, num_nodes):
 def load_graph(graph_name: str):
     data_dir = Config.data_dir
     graph_types = Config.graph_distri_types
-
     if os.path.exists(f"{data_dir}/{graph_name}.txt"):
         txt_path = f"{data_dir}/{graph_name}.txt"
         graph, num_nodes, num_edges = load_graph_from_txt(txt_path=txt_path)
@@ -655,16 +632,6 @@ def build_adjacency_indies_auto(graph: MyGraph, if_bidirectional: bool = False) 
     return n0_to_n1s, n0_to_dts
 
 def obtain_num_nodes_auto(graph: GraphList) -> int:
-    # print(f"iter: {Config.iter}, graph: {graph}")
-    # Config.iter += 1
-    # num_nodes = 0
-    # for vec in graph:
-    #     print(f"vec: {vec}")
-    #     assert len(vec) == 3
-    #     n0, n1, distance = vec
-    #     if max(n0, n1) > num_nodes:
-    #         num_nodes = max(n0, n1)
-    # return num_nodes
     return max([max(n0, n1) for n0, n1, distance in graph]) + 1
 
 
