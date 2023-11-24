@@ -26,6 +26,18 @@ class Net(nn.Module):
         embedded_x = self.embedding_layer(ids)
         return embedded_x
 
+class Opt_net(nn.Module):
+    def __init__(self, N, hidden_layers):
+        super(Opt_net, self).__init__()
+        self.N = N
+        self.hidden_layers = hidden_layers
+        self.lstm = nn.LSTM(self.N, self.hidden_layers, 1, batch_first=True)
+        self.output = nn.Linear(hidden_layers, self.N)
+
+    def forward(self, configuration, hidden_state, cell_state):
+        x, (h, c) = self.lstm(configuration, (hidden_state, cell_state))
+        return self.output(x).sigmoid(), h, c
+
 class PolicyMLP(nn.Module):
     def __init__(self, node_dim, mid_dim, embedding_dim):
         super().__init__()

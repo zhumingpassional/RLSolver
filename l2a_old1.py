@@ -1,20 +1,9 @@
-import os.path
-
 import torch as th
-import torch.nn as nn
-from copy import deepcopy
-import numpy as np
-from torch import Tensor
-# from rlsolver.rlsolver_learn2opt.np_complete_problems.env.maxcut_env import MCSim
 from mcmc import MCMC
 from config import Config
-from util import Opt_net
-import pickle as pkl
-from util import calc_file_name
+from net import Opt_net
 from util import read_nxgraph
 from util import write_result
-# graph_node = {"14":800, "15":800, "22":2000, "49":3000, "50":3000, "55":5000, "70":10000  }
-
 
 def train(
           filename: str,
