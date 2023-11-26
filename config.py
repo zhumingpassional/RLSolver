@@ -1,5 +1,4 @@
 import torch as th
-# from util import calc_device
 from typing import List, Union, Tuple
 
 class GraphDistriType:
@@ -8,8 +7,7 @@ class GraphDistriType:
     barabasi_albert: str = 'barabasi_albert'
 
 def calc_device(gpu_id: int):
-    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
-    return device
+    return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
 GPU_ID: int = 0  # -1: cpu, >=0: gpu
 DEVICE: th.device = calc_device(GPU_ID)
