@@ -9,10 +9,10 @@ import networkx as nx
 import torch as th
 from torch import Tensor
 from os import system
-from config import Config
+from config import *
 import math
 from enum import Enum
-from config import GraphDistriType
+from config import *
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -24,11 +24,8 @@ INT = th.IntTensor
 TEN = th.Tensor
 GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
-DataDir = Config.gset_dir
-
-def calc_device(gpu_id: int):
-    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
-    return device
+from config import GSET_DIR
+DataDir = GSET_DIR
 
 class MyGraph:
     def __init__(self):
@@ -445,8 +442,8 @@ def get_adjacency_matrix(graph, num_nodes):
     return adjacency_matrix
 
 def load_graph(graph_name: str):
-    data_dir = Config.data_dir
-    graph_types = Config.graph_distri_types
+    data_dir = DATA_DIR
+    graph_types = GRAPH_DISTRI_TYPES
     if os.path.exists(f"{data_dir}/{graph_name}.txt"):
         txt_path = f"{data_dir}/{graph_name}.txt"
         graph, num_nodes, num_edges = load_graph_from_txt(txt_path=txt_path)
@@ -460,7 +457,7 @@ def load_graph(graph_name: str):
 
 def load_graph_auto(graph_name: str):
     import random
-    graph_types = Config.graph_distri_types
+    graph_types = GRAPH_DISTRI_TYPES
 
     if os.path.exists(f"{DataDir}/{graph_name}.txt"):
         txt_path = f"{DataDir}/{graph_name}.txt"
@@ -490,7 +487,7 @@ def save_graph_info_to_txt(txt_path, graph, num_nodes, num_edges):
 
 
 def generate_graph(num_nodes: int, g_type: str):
-    graph_types = Config.graph_distri_types
+    graph_types = GRAPH_DISTRI_TYPES
     assert g_type in graph_types
 
     if g_type == GraphDistriType.erdos_renyi:
@@ -517,7 +514,7 @@ def generate_graph_for_validation():
     g_type = 'powerlaw'
     num_valid = 6
     seed_num = 0
-    data_dir = Config.data_dir
+    data_dir = DATA_DIR
     os.makedirs(data_dir, exist_ok=True)
 
     '''generate'''
@@ -642,7 +639,7 @@ def convert_matrix_to_vector(matrix):
 
 def check_adjacency_matrix_vector():
     num_nodes = 32
-    graph_types = Config.graph_distri_types
+    graph_types = GRAPH_DISTRI_TYPES
 
     for g_type in graph_types:
         print(f"g_type {g_type}")
@@ -806,8 +803,8 @@ if __name__ == '__main__':
     # avg_std = calc_avg_std_of_obj(directory, prefix, time_limit)
 
     directory_result = 'result'
-    prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
-    # prefixes = ['syn_10_', 'syn_50_', 'syn_100_']
+    # prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
+    prefixes = ['syn_10_', 'syn_50_', 'syn_100_']
     time_limits = [0.5 * 3600]
     avgs_stds = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 

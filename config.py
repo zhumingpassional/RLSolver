@@ -1,18 +1,21 @@
 import torch as th
-from util import calc_device
+# from util import calc_device
 from typing import List, Union, Tuple
+
 class GraphDistriType:
     erdos_renyi: str = 'erdos_renyi'
     powerlaw: str = 'powerlaw'
     barabasi_albert: str = 'barabasi_albert'
 
+def calc_device(gpu_id: int):
+    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    return device
 
-class Config:
-    gpu_id: int = 0  # -1: cpu, >=0: gpu
-    device: th.device = calc_device(gpu_id)
-    data_dir: str = './data'
-    gset_dir: str = './data/gset'
-    graph_distri_types: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphDistriType.powerlaw, GraphDistriType.barabasi_albert]
+GPU_ID: int = 0  # -1: cpu, >=0: gpu
+DEVICE: th.device = calc_device(GPU_ID)
+DATA_DIR: str = './data'
+GSET_DIR: str = './data/gset'
+GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphDistriType.powerlaw, GraphDistriType.barabasi_albert]
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 
 

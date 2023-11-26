@@ -3,7 +3,7 @@ from simulator import MaxcutSimulatorAutoregressive
 from trick_local_search import *
 from util import EncoderBase64
 from net import PolicyMLP, Net
-from config import Config
+from config import *
 
 def train_embedding_net(sim: MaxcutSimulatorAutoregressive, net_path='embedding_net.pth'):
     num_nodes = sim.num_nodes
@@ -70,7 +70,7 @@ def roll_out_continuous(temp_xs, num_roll_continuous, rand_id_ary, num_sims, pol
 
 
 def run(graph_name):
-    device = Config.device
+    device = DEVICE
     # sim_name = 'gset_14'
     sim_name = graph_name
     # x_str = X_G14

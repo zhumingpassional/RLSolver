@@ -4,7 +4,7 @@ from simulator import MaxcutSimulatorReinforce
 from util import load_graph, load_graph_auto
 from torch.distributions.categorical import Categorical
 from net import PolicyGNN
-from config import Config
+from config import *
 def map_to_power_of_two(x):
     n = 0
     while 2 ** n <= x:
@@ -72,7 +72,7 @@ def check_gnn():
 
     num_sims = 8
 
-    device = Config.device
+    device = DEVICE
     graph = load_graph(graph_name=graph_name)
 
     sim = MaxcutSimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
@@ -118,7 +118,7 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
     gap_print = 2 ** 0
 
     '''build simulator'''
-    device = Config.device
+    device = DEVICE
     graph, _, _ = load_graph_auto(graph_name=graph_name)
 
     sim = MaxcutSimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
@@ -138,7 +138,7 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
     net_params = list(net.parameters())
     print(f"num_nodes {num_nodes}  num_node_features {sim.adjacency_feature.shape[1]}")
 
-    solver = TrickLocalSearch(simulator=sim, num_nodes=num_nodes)
+    trick = TrickLocalSearch(simulator=sim, num_nodes=num_nodes)
     optimizer = th.optim.Adam(net_params, lr=2e-3, maximize=True)
 
     '''evaluator'''
@@ -176,9 +176,9 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
             logprobs = logprobs - logprobs.mean()
 
             '''update xs via max local search'''
-            solver.reset(xs)
-            solver.random_search(num_iters=2 ** 6, num_spin=8, noise_std=0.2)
-            advantage_value = (solver.good_vs - vs).detach()
+            trick.reset(xs)
+            trick.random_search(num_iters=2 ** 6, num_spin=8, noise_std=0.2)
+            advantage_value = (trick.good_vs - vs).detach()
 
             objective = (logprobs.exp() * advantage_value).mean()
 
@@ -187,14 +187,14 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
             clip_grad_norm_(net.parameters(), 1)
             optimizer.step()
 
-            prev_xs = solver.good_xs.clone()
-            prev_vs = solver.good_vs.clone()
+            prev_xs = trick.good_xs.clone()
+            prev_vs = trick.good_vs.clone()
 
             if j1 > num_skip and j1 % gap_print == 0:
-                good_i = solver.good_vs.argmax()
+                good_i = trick.good_vs.argmax()
                 i = j2 * num_iter1 + j1
-                x = solver.good_xs[good_i]
-                v = solver.good_vs[good_i].item()
+                x = trick.good_xs[good_i]
+                v = trick.good_vs[good_i].item()
 
                 evaluator.record2(i=i, v=v, x=x)
                 evaluator.logging_print(v=v)
