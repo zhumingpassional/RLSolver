@@ -1,6 +1,6 @@
 import torch as th
 from mcmc import MCMC
-from config import Config
+from config import *
 from net import Opt_net
 from util import read_nxgraph
 from util import write_result
@@ -93,14 +93,14 @@ if __name__ == "__main__":
     import sys
 
     filename = 'data/gset/gset_14.txt'
-    gpu_id = Config.gpu_id
+    gpu_id = GPU_ID
     graph = read_nxgraph(filename)
     num_nodes = graph.number_of_nodes()
     hidden_layer_size = 4000
     learning_rate = 2e-5
     num_samples = 20
     episode_length = 30
-    device = Config.device
+    device = DEVICE
     th.manual_seed(7)
     opt_net = Opt_net(num_nodes, hidden_layer_size).to(device)
     optimizer = th.optim.Adam(opt_net.parameters(), lr=learning_rate)

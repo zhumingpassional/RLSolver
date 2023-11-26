@@ -18,7 +18,7 @@ from util import (load_graph_from_txt,
                     EncoderBase64,
                     calc_device
                   )
-from config import Config
+from config import *
 
 try:
     import matplotlib as mpl
@@ -221,7 +221,7 @@ class AgentDist(Agent):
         return best_sln_x, best_score
 
 def run():
-    gpu_id = Config.gpu_id
+    gpu_id = GPU_ID
     num_nodes = 50
     graph_name = f"powerlaw_{num_nodes}"
 
