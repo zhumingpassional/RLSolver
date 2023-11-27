@@ -3,6 +3,8 @@ from simulator import MaxcutSimulatorAutoregressive, MaxcutSimulatorReinforce
 from trick_local_search import *
 from util import EncoderBase64
 from net import PolicyMLP, Net
+from torch.distributions import Binomial
+
 from config import *
 
 def train_embedding_net(simulator: MaxcutSimulatorAutoregressive, net_path='embedding_net.pth'):
@@ -92,7 +94,6 @@ FUAYMjofiS5er"""  # 3023
     policy_net = PolicyMLP(node_dim=num_nodes, mid_dim=2 ** 8, embedding_dim=embedding_net.embedding_dim).to(device)
     optimizer = th.optim.Adam(policy_net.parameters(), lr=lr, maximize=True)
 
-    from torch.distributions import Binomial
     solutions = th.zeros((num_simulators, num_nodes), dtype=th.float32, device=device) + 0.5
     rand_id_ary = th.randperm(num_nodes, device=device)
     simulator_ids = th.arange(num_simulators, device=device)
