@@ -4,6 +4,7 @@ from simulator import MaxcutSimulatorReinforce
 from util import load_graph, load_graph_auto
 from torch.distributions.categorical import Categorical
 from net import PolicyGNN
+from evaluator import Evaluator2
 from config import *
 def map_to_power_of_two(x):
     n = 0
@@ -36,31 +37,31 @@ def train_embedding_net(adjacency_matrix, num_embed: int, num_epoch: int = 2 ** 
     for i in range(1, num_epoch + 1):
         mid = encoder(inp)
         out = decoder(mid)
-        obj = criterion(inp, out)
+        loss = criterion(inp, out)
 
         optimizer.zero_grad()
-        obj.backward()
+        loss.backward()
         clip_grad_norm_(params, 1)
         optimizer.step()
 
         if not (i % 512):
             print(
-                f"|lr {lr:9.3f}  {i:8}  obj*num_nodes {obj * num_nodes:9.3f}  mid {mid.min():9.2f} < {mid.max():9.2f}")
+                f"|lr {lr:9.3f}  {i:8}  obj*num_nodes {loss * num_nodes:9.3f}  mid {mid.min():9.2f} < {mid.max():9.2f}")
     del decoder
 
     encoder.eval()
     return encoder
 
 
-def build_input_tensor(xs, sim: MaxcutSimulatorReinforce, inp_dim, feature):
-    num_sims, num_nodes = xs.shape
+def build_input_tensor(solutions, sim: MaxcutSimulatorReinforce, inp_dim, feature):
+    num_sims, num_nodes = solutions.shape
 
-    inp = th.empty((num_sims, num_nodes, inp_dim), dtype=th.float32, device=xs.device)
-    inp[:, :, 0] = xs
-    inp[:, :, 1] = sim.calculate_obj_values_for_loop(xs, if_sum=False)
-    inp[:, :, 2] = sim.n0_num_n1
-    inp[:, :, 3:] = feature
-    return inp
+    input = th.empty((num_sims, num_nodes, inp_dim), dtype=th.float32, device=solutions.device)
+    input[:, :, 0] = solutions
+    input[:, :, 1] = sim.calculate_obj_values_for_loop(solutions, if_sum=False)
+    input[:, :, 2] = sim.n0_num_n1
+    input[:, :, 3:] = feature
+    return input
 
 
 def check_gnn():
@@ -73,7 +74,7 @@ def check_gnn():
     num_sims = 8
 
     device = DEVICE
-    graph = load_graph(graph_name=graph_name)
+    graph, _, _ = load_graph(graph_name=graph_name)
 
     sim = MaxcutSimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
 
@@ -91,8 +92,8 @@ def check_gnn():
     net = PolicyGNN(inp_dim=inp_dim, mid_dim=mid_dim, out_dim=out_dim).to(device)
     print(f"num_nodes {num_nodes}  num_node_features {sim.adjacency_feature.shape[1]}")
 
-    xs = sim.generate_xs_randomly(num_sims=num_sims)
-    inp = build_input_tensor(xs=xs, sim=sim, inp_dim=inp_dim, feature=sim.adjacency_feature)
+    xs = sim.generate_solutions_randomly(num_sims=num_sims)
+    inp = build_input_tensor(solutions=xs, sim=sim, inp_dim=inp_dim, feature=sim.adjacency_feature)
     out = net(inp, sim.adjacency_indies)
     print(out.shape)
 
@@ -121,7 +122,7 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
     device = DEVICE
     graph, _, _ = load_graph_auto(graph_name=graph_name)
 
-    sim = MaxcutSimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
+    simulator = MaxcutSimulatorReinforce(graph=graph, device=device, if_bidirectional=True)
 
     '''get adjacency_feature'''
     embed_net_path = f"{graph_name}_embedding_net.pth"
@@ -129,29 +130,29 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
         embed_net = th.load(embed_net_path, map_location=device)
         embed_net.eval()
     else:
-        embed_net = train_embedding_net(adjacency_matrix=sim.adjacency_matrix, num_embed=num_embed, num_epoch=2 ** 14)
+        embed_net = train_embedding_net(adjacency_matrix=simulator.adjacency_matrix, num_embed=num_embed, num_epoch=2 ** 14)
         th.save(embed_net, embed_net_path)
-    sim.adjacency_feature = embed_net(sim.adjacency_matrix).detach()
+    simulator.adjacency_feature = embed_net(simulator.adjacency_matrix).detach()
 
     '''build net'''
     net = PolicyGNN(inp_dim=inp_dim, mid_dim=mid_dim, out_dim=out_dim).to(device)
     net_params = list(net.parameters())
-    print(f"num_nodes {num_nodes}  num_node_features {sim.adjacency_feature.shape[1]}")
+    print(f"num_nodes {num_nodes}  num_node_features {simulator.adjacency_feature.shape[1]}")
 
-    trick = TrickLocalSearch(simulator=sim, num_nodes=num_nodes)
+    trick = TrickLocalSearch(simulator=simulator, num_nodes=num_nodes)
     optimizer = th.optim.Adam(net_params, lr=2e-3, maximize=True)
 
     '''evaluator'''
-    temp_xs = sim.generate_xs_randomly(num_sims=1)
-    temp_vs = sim.calculate_obj_values(temp_xs)
-    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, x=temp_xs[0], v=temp_vs[0].item())
+    temp_xs = simulator.generate_solutions_randomly(num_sims=1)
+    temp_vs = simulator.calculate_obj_values(temp_xs)
+    evaluator = Evaluator2(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_xs[0], obj=temp_vs[0].item())
     del temp_xs, temp_vs
 
     print("start searching")
     sim_ids = th.arange(num_sims, device=device)
     for j2 in range(1, num_reset + 1):
-        prev_xs = sim.generate_xs_randomly(num_sims)
-        prev_vs = sim.calculate_obj_values(prev_xs)
+        prev_xs = simulator.generate_solutions_randomly(num_sims)
+        prev_vs = simulator.calculate_obj_values(prev_xs)
 
         for j1 in range(1, num_iter1 + 1):
             prev_i = prev_vs.argmax()
@@ -164,9 +165,9 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
                 if i0 == 0:
                     output_tensor = th.ones((num_sims, num_nodes), dtype=th.float32, device=device) / num_nodes
                 else:
-                    input_tensor = build_input_tensor(xs=xs.clone().detach(), sim=sim, inp_dim=inp_dim,
-                                                      feature=sim.adjacency_feature.detach())
-                    output_tensor = net(input_tensor, sim.adjacency_indies)
+                    input_tensor = build_input_tensor(solutions=xs.clone().detach(), sim=simulator, inp_dim=inp_dim,
+                                                      feature=simulator.adjacency_feature.detach())
+                    output_tensor = net(input_tensor, simulator.adjacency_indies)
                 dist = Categorical(probs=output_tensor)
                 sample = dist.sample(th.Size((1,)))[0]
                 xs[sim_ids, sample] = th.logical_not(xs[sim_ids, sample])
@@ -196,8 +197,8 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
                 x = trick.good_xs[good_i]
                 v = trick.good_vs[good_i].item()
 
-                evaluator.record2(i=i, v=v, x=x)
-                evaluator.logging_print(v=v)
+                evaluator.record2(i=i, obj=v, x=x)
+                evaluator.logging_print(obj=v)
 
 
 if __name__ == '__main__':

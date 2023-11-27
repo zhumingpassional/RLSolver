@@ -142,11 +142,11 @@ class Agent:  # Demo
 
             if i % self.eval_gap:
                 sln_xs = self.sim.prob_to_bool(probs)
-                self.evaluator.evaluate_and_print(sln_xs=sln_xs, i=total_i + i, obj=obj_)
+                self.evaluator.evaluate_and_print(solutions=sln_xs, i=total_i + i, obj=obj_)
 
-        best_sln_x = self.evaluator.best_sln_x
+        best_solution = self.evaluator.best_solution
         best_score = self.evaluator.best_score
-        return best_sln_x, best_score
+        return best_solution, best_score
 
     def load_from_json(self, json_path: str):
         with open(json_path, "r") as file:
@@ -213,12 +213,12 @@ class AgentDist(Agent):
             probs.data[:] = prob_
 
             if i % self.eval_gap:
-                sln_xs = self.sim.prob_to_bool(probs)
-                self.evaluator.evaluate_and_print(sln_xs=sln_xs, i=total_i + i, obj=th.tensor(0))
+                solutions = self.sim.prob_to_bool(probs)
+                self.evaluator.evaluate_and_print(solutions=solutions, i=total_i + i, obj=th.tensor(0))
 
-        best_sln_x = self.evaluator.best_sln_x
+        best_solution = self.evaluator.best_solution
         best_score = self.evaluator.best_score
-        return best_sln_x, best_score
+        return best_solution, best_score
 
 def run():
     gpu_id = GPU_ID
@@ -249,21 +249,21 @@ def run():
     agent = AgentDist(graph_name=graph_name, gpu_id=gpu_id, json_path='auto_build')
     valid_opt_opti.load_state_dict(agent.opt_opti.state_dict())
 
-    best_sln_xs: list = [0, ] * num_valid
+    best_solutions: list = [0, ] * num_valid
     best_scores: list = [0, ] * num_valid
     for j in range(agent.num_opti):
         agent.sim.__init__(graph_name=graph_name, gpu_id=gpu_id)
-        _best_sln_x, _best_score = agent.search(j=j)
+        _best_solution, _best_score = agent.search(j=j)
 
         valid_opt_opti.load_state_dict(agent.opt_opti.state_dict())
         for j_valid in range(num_valid):
             _agent = agents[j_valid]
-            best_sln_x, best_score = _agent.search_for_valid(j=j)
-            best_sln_xs[j_valid] = best_sln_x
+            best_solution, best_score = _agent.search_for_valid(j=j)
+            best_solutions[j_valid] = best_solution
             best_scores[j_valid] = best_score
         print(f"| best_scores.avg {sum(best_scores) / len(best_scores)}")
 
-    print(f"\nbest_sln_x {best_sln_xs}"
+    print(f"\nbest_solution {best_solutions}"
           f"\nbest_score {best_scores}")
 
 

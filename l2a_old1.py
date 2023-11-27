@@ -1,7 +1,7 @@
 import torch as th
 from mcmc import MCMC
 from config import *
-from net import Opt_net
+from net import OptNet
 from util import read_nxgraph
 from util import write_result
 
@@ -10,7 +10,7 @@ def train(
           num_nodes: int,
           num_envs: int,
           device: th.device,
-          opt_net: Opt_net,
+          opt_net: OptNet,
           optimizer: th.optim,
           episode_length: int,
           hidden_layer_size: int):
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     episode_length = 30
     device = DEVICE
     th.manual_seed(7)
-    opt_net = Opt_net(num_nodes, hidden_layer_size).to(device)
+    opt_net = OptNet(num_nodes, hidden_layer_size).to(device)
     optimizer = th.optim.Adam(opt_net.parameters(), lr=learning_rate)
 
     train(filename, num_nodes, num_samples, device, opt_net, optimizer, episode_length, hidden_layer_size)
