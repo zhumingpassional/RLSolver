@@ -339,8 +339,8 @@ def run():
     solver.reset(xs.bool())
     for _ in range(16):
         solver.random_search(num_iters=repeat_times // 16)
-    now_max_info = solver.good_xs.t()
-    now_max_res = solver.good_vs
+    now_max_info = solver.good_solutions.t()
+    now_max_res = solver.good_objs
     del simulator
     del solver
 

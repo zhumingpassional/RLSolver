@@ -151,13 +151,13 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
     print("start searching")
     sim_ids = th.arange(num_sims, device=device)
     for j2 in range(1, num_reset + 1):
-        prev_xs = simulator.generate_solutions_randomly(num_sims)
-        prev_vs = simulator.calculate_obj_values(prev_xs)
+        prev_solutions = simulator.generate_solutions_randomly(num_sims)
+        prev_objs = simulator.calculate_obj_values(prev_solutions)
 
         for j1 in range(1, num_iter1 + 1):
-            prev_i = prev_vs.argmax()
-            xs = prev_xs[prev_i:prev_i + 1].repeat(num_sims, 1)
-            vs = prev_vs[prev_i:prev_i + 1].repeat(num_sims)
+            prev_i = prev_objs.argmax()
+            solutions = prev_solutions[prev_i:prev_i + 1].repeat(num_sims, 1)
+            objs = prev_objs[prev_i:prev_i + 1].repeat(num_sims)
 
             '''update xs via probability, obtain logprobs for VPG'''
             logprobs = th.empty((num_sims, num_iter0), dtype=th.float32, device=device)
@@ -165,21 +165,21 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
                 if i0 == 0:
                     output_tensor = th.ones((num_sims, num_nodes), dtype=th.float32, device=device) / num_nodes
                 else:
-                    input_tensor = build_input_tensor(solutions=xs.clone().detach(), sim=simulator, inp_dim=inp_dim,
+                    input_tensor = build_input_tensor(solutions=solutions.clone().detach(), sim=simulator, inp_dim=inp_dim,
                                                       feature=simulator.adjacency_feature.detach())
                     output_tensor = net(input_tensor, simulator.adjacency_indies)
-                dist = Categorical(probs=output_tensor)
-                sample = dist.sample(th.Size((1,)))[0]
-                xs[sim_ids, sample] = th.logical_not(xs[sim_ids, sample])
+                distri = Categorical(probs=output_tensor)
+                sample = distri.sample(th.Size((1,)))[0]
+                solutions[sim_ids, sample] = th.logical_not(solutions[sim_ids, sample])
 
-                logprobs[:, i0] = dist.log_prob(sample)
+                logprobs[:, i0] = distri.log_prob(sample)
             logprobs = logprobs.mean(dim=1)
             logprobs = logprobs - logprobs.mean()
 
             '''update xs via max local search'''
-            trick.reset(xs)
+            trick.reset(solutions)
             trick.random_search(num_iters=2 ** 6, num_spin=8, noise_std=0.2)
-            advantage_value = (trick.good_vs - vs).detach()
+            advantage_value = (trick.good_objs - objs).detach()
 
             objective = (logprobs.exp() * advantage_value).mean()
 
@@ -188,17 +188,17 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
             clip_grad_norm_(net.parameters(), 1)
             optimizer.step()
 
-            prev_xs = trick.good_xs.clone()
-            prev_vs = trick.good_vs.clone()
+            prev_solutions = trick.good_solutions.clone()
+            prev_objs = trick.good_objs.clone()
 
             if j1 > num_skip and j1 % gap_print == 0:
-                good_i = trick.good_vs.argmax()
+                good_i = trick.good_objs.argmax()
                 i = j2 * num_iter1 + j1
-                x = trick.good_xs[good_i]
-                v = trick.good_vs[good_i].item()
+                solution = trick.good_solutions[good_i]
+                obj = trick.good_objs[good_i].item()
 
-                evaluator.record2(i=i, obj=v, x=x)
-                evaluator.logging_print(obj=v)
+                evaluator.record2(i=i, obj=obj, x=solution)
+                evaluator.logging_print(obj=obj)
 
 
 if __name__ == '__main__':

@@ -84,7 +84,6 @@ FUAYMjofiS5er"""  # 3023
     num_nodes = simulator.num_nodes
 
     best_solution = enc.str_to_bool(x_str).to(device)
-    # best_x = sim.generate_xs_randomly(num_sims=1)[0]
     best_obj = simulator.calculate_obj_values(best_solution[None, :])[0]
     print(f"{graph_name:32}  num_nodes {simulator.num_nodes:4}  obj_value {best_obj.item()}  ")
 
