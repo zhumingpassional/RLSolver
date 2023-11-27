@@ -18,9 +18,9 @@ class Net(nn.Module):
         embedded_x = self.embedding_layer(ids)
         return embedded_x
 
-class Opt_net(nn.Module):
+class OptNet(nn.Module):
     def __init__(self, N, hidden_layers):
-        super(Opt_net, self).__init__()
+        super(OptNet, self).__init__()
         self.N = N
         self.hidden_layers = hidden_layers
         self.lstm = nn.LSTM(self.N, self.hidden_layers, 1, batch_first=True)
@@ -38,10 +38,10 @@ class PolicyMLP(nn.Module):
         self.net2 = nn.Sequential(nn.Linear(mid_dim + embedding_dim, mid_dim), nn.GELU(), nn.LayerNorm(mid_dim),
                                   nn.Linear(mid_dim, 1), nn.Sigmoid(), )
 
-    def forward(self, xs, embedding_ws):
-        xs1 = self.net1(xs)
-        xs2 = self.net2(th.concat((xs1, embedding_ws), dim=1))
-        return xs2.squeeze(1)
+    def forward(self, solutions, embedding_ws):
+        solutions1 = self.net1(solutions)
+        solutions2 = self.net2(th.concat((solutions1, embedding_ws), dim=1))
+        return solutions2.squeeze(1)
 
 class PolicyGNN(nn.Module):
     def __init__(self, inp_dim, mid_dim, out_dim):

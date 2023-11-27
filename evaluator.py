@@ -19,23 +19,76 @@ class Evaluator:
     def __init__(self, sim, enc):
         self.start_time = time.time()
         self.best_score = -th.inf
-        self.best_sln_x = 'none'
+        self.best_solution = 'none'
         self.get_scores = sim.get_scores
         self.bool_to_str = enc.bool_to_str
 
-    def evaluate_and_print(self, sln_xs, i, obj):
-        scores = self.get_scores(sln_xs)
+    def evaluate_and_print(self, solutions, i, obj):
+        scores = self.get_scores(solutions)
         used_time = time.time() - self.start_time
 
         max_score, max_id = th.max(scores, dim=0)
         if max_score > self.best_score:
             self.best_score = max_score
-            self.best_sln_x = sln_xs[max_id]
-            print(f"best_score {self.best_score}  best_sln_x \n{self.bool_to_str(self.best_sln_x)}")
+            self.best_solution = solutions[max_id]
+            print(f"best_score {self.best_score}  best_sln_x \n{self.bool_to_str(self.best_solution)}")
 
         print(f"|{used_time:9.0f}  {i:6}  {obj.item():9.3f}  "
               f"max_score {max_score.item():9.0f}  "
               f"best_score {self.best_score:9.0f}")
+
+class Evaluator2:
+    def __init__(self, save_dir: str, num_nodes: int, solution: TEN, obj: int):
+        self.start_timer = time.time()
+        self.recorder1 = []
+        self.recorder2 = []
+        self.encoder_base64 = EncoderBase64(num_nodes=num_nodes)
+
+        self.best_solution = solution  # solution x
+        self.best_obj = obj  # objective value of solution x
+
+        self.save_dir = save_dir
+        os.makedirs(self.save_dir, exist_ok=True)
+
+    def record1(self, i: float, obj: int):
+        self.recorder1.append((i, obj))
+
+    def record2(self, i: float, obj: int, x: TEN):
+        self.recorder2.append((i, obj))
+
+        if obj > self.best_obj:
+            self.best_solution = x
+            self.best_obj = obj
+            self.logging_print(obj=obj, if_show_x=True)
+
+    def plot_record(self, fig_dpi: int = 300):
+        if plt is None:
+            return
+
+        if len(self.recorder1) == 0 or len(self.recorder2) == 0:
+            return
+        recorder1 = np.array(self.recorder1)
+        recorder2 = np.array(self.recorder2)
+        np.save(f"{self.save_dir}/recorder1.npy", recorder1)
+        np.save(f"{self.save_dir}/recorder2.npy", recorder2)
+
+        plt.plot(recorder1[:, 0], recorder1[:, 1], linestyle='-', label='real time')
+        plt.plot(recorder2[:, 0], recorder2[:, 1], linestyle=':', label='back test')
+        plt.scatter(recorder2[:, 0], recorder2[:, 1])
+
+        plt.title(f"best_obj_value {self.best_obj}")
+        plt.axis('auto')
+        plt.legend()
+        plt.grid()
+
+        plt.savefig(f"{self.save_dir}/recorder.jpg", dpi=fig_dpi)
+        plt.close('all')
+
+    def logging_print(self, obj: float, if_show_x: bool = False):
+        used_time = int(time.time() - self.start_timer)
+        x_str = self.encoder_base64.bool_to_str(self.best_solution) if if_show_x else ''
+        i = self.recorder2[-1][0]
+        print(f"| used_time {used_time:8}  i {i:8}  good_value {obj:8}  best_value {self.best_obj:8}  {x_str}")
 
 
 X_G14 = """
@@ -128,7 +181,7 @@ hI1MHL$$n7W32E96659blS3WAnnGOr0Vwg7MMvyKS8ignmH_pfy7g1TeTVF1R7SSnUPCojEBO7Sz4ds6
 """  # 9583, SOTA=9595
 
 
-def check_solution_x():
+def check_solution():
     from util import load_graph
     from simulator import MaxcutSimulator
     graph_name = 'gset_14'

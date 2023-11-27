@@ -335,12 +335,12 @@ def run():
     simulator = SimulatorGraphMaxCut(graph=graph, device=device)
     solver = SolverLocalSearch(simulator=simulator, num_nodes=num_nodes)
 
-    xs = simulator.generate_xs_randomly(num_sims=total_mcmc_num)
+    xs = simulator.generate_solutions_randomly(num_sims=total_mcmc_num)
     solver.reset(xs.bool())
     for _ in range(16):
         solver.random_search(num_iters=repeat_times // 16)
-    now_max_info = solver.good_xs.t()
-    now_max_res = solver.good_vs
+    now_max_info = solver.good_solutions.t()
+    now_max_res = solver.good_objs
     del simulator
     del solver
 
