@@ -7,7 +7,7 @@ from torch.nn.utils import clip_grad_norm_
 from simulator import MaxcutSimulator, MaxcutSimulatorAutoregressive
 from evaluator import X_G14, X_G15, X_G49, X_G50, X_G22, X_G55, X_G70
 from evaluator import Evaluator, Evaluator2
-from util import EncoderBase64
+from util import EncoderBase64, calc_device
 TEN = th.Tensor
 
 '''local search'''
@@ -190,7 +190,7 @@ def check_generate_best_x():
     if os.name == 'nt':  # windows new type
         num_sims = 2 ** 4
 
-    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    device = calc_device(gpu_id)
 
     '''simulator'''
     simulator = MaxcutSimulator(graph_name=graph_name, device=device)
@@ -294,7 +294,7 @@ hUH4vj0nAzi24"""
         num_reset = 2 ** 1
         num_iter0 = 2 ** 2
 
-    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    device = calc_device(gpu_id)
 
     '''simulator'''
     simulator = MaxcutSimulatorAutoregressive(graph_name=graph_name, device=device)

@@ -2,7 +2,7 @@ import torch as th
 from util import load_graph, load_graph_auto
 from util import convert_matrix_to_vector
 from typing import List, Union, Tuple
-from util import build_adjacency_matrix_auto, build_adjacency_indies_auto, obtain_num_nodes_auto, GraphList
+from util import build_adjacency_matrix_auto, build_adjacency_indies_auto, obtain_num_nodes_auto, GraphList, calc_device
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ INT = th.IntTensor
 
 class MaxcutSimulator:  # Markov Chain Monte Carlo Simulator
     def __init__(self, graph_name: str = 'powerlaw_64', gpu_id: int = -1, graph_tuple=None):
-        device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+        device = calc_device(gpu_id)
         int_type = th.int32
         self.device = device
         self.int_type = int_type
