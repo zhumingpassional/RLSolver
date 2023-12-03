@@ -278,6 +278,69 @@ def plot_fig(scores: List[int], label: str):
     plt.savefig('../result/' + label + '.png')
     plt.show()
 
+def plot_fig_over_durations(objs: List[int], durations: List[int], label: str):
+    import matplotlib.pyplot as plt
+    plt.figure()
+    x = durations
+    dic = {'0': 'ro-', '1': 'gs', '2': 'b^', '3': 'c>', '4': 'm<', '5': 'yp'}
+    plt.plot(x, objs, dic['0'])
+    plt.legend([label], loc=0)
+    plt.savefig('./result/' + label + '.png')
+    plt.show()
+
+# return: num_nodes, time_limit, obj,
+def read_result_comments(filename: str):
+    num_nodes, time_limit, obj = None, None, None
+    with open(filename, 'r') as file:
+        # lines = []
+        line = file.readline()
+        while line is not None and line != '':
+            if '//' in line:
+                if 'num_nodes:' in line:
+                    num_nodes = float(line.split('num_nodes:')[1])
+                    break
+                if 'time_limit:' in line:
+                    time_limit = float(line.split("time_limit: ('TIME_LIMIT', <class 'float'>, ")[1].split(",")[0])
+                if 'obj:' in line:
+                    obj = float(line.split('obj:')[1])
+            line = file.readline()
+    return int(num_nodes), int(time_limit), obj
+
+def read_result_comments_multifiles(dir: str, prefixes: str):
+    res = {}
+    num_nodess = set()
+    time_limits = set()
+    # for prefix in prefixes:
+    files = calc_txt_files_with_prefix(dir, prefixes)
+    for i in range(len(files)):
+        file = files[i]
+        num_nodes, time_limit, obj = read_result_comments(file)
+        num_nodess.add(num_nodes)
+        time_limits.add(time_limit)
+        if str(num_nodes) in res.keys():
+            if str(time_limit) in res[str(num_nodes)].keys():
+                res[str(num_nodes)][str(time_limit)].append(obj)
+            else:
+                res[str(num_nodes)][str(time_limit)] = [obj]
+            # res[str(num_nodes)] = {**res[str(num_nodes)], **tmp_dict}
+        else:
+            res[str(num_nodes)] = {str(time_limit): [obj]}
+    num_nodess = list(num_nodess)
+    num_nodess.sort()
+    time_limits = list(time_limits)
+    time_limits.sort()
+    for num_nodes in num_nodess:
+        objs = []
+        for time_limit in time_limits:
+            obj = np.mean(res[str(num_nodes)][str(time_limit)])
+            objs.append(obj)
+        label = f"num_nodes={num_nodes}"
+        print(f"objs: {objs}, time_limits: {time_limits}, label: {label}")
+        if(isinstance(objs, str)):
+            aaa = 1
+        plot_fig_over_durations(objs, time_limits, label)
+
+
 def calc_txt_files_with_prefix(directory: str, prefix: str):
     res = []
     files = os.listdir(directory)
@@ -802,11 +865,13 @@ if __name__ == '__main__':
     # time_limit = 3600
     # avg_std = calc_avg_std_of_obj(directory, prefix, time_limit)
 
-    directory_result = 'result'
-    # prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
-    prefixes = ['syn_10_', 'syn_50_', 'syn_100_']
-    time_limits = [0.5 * 3600]
-    avgs_stds = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
+    if_calc_avg_std = False
+    if if_calc_avg_std:
+        directory_result = 'result'
+        # prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
+        prefixes = ['syn_10_', 'syn_50_', 'syn_100_']
+        time_limits = [0.5 * 3600]
+        avgs_stds = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 
     # filename = 'result/syn_10_21_1800.sta'
     # new_filename = 'result/syn_10_21_1800.txt'
@@ -815,5 +880,11 @@ if __name__ == '__main__':
     # from_extension = '.sov'
     # to_extension = '.txt'
     # transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
+
+    if_plot = True
+    if(if_plot):
+        dir = './result/syn_powerlaw_gurobi'
+        prefixes = 'graph_powerlaw_'
+        read_result_comments_multifiles(dir, prefixes)
 
     print()
