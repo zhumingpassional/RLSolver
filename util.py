@@ -87,11 +87,11 @@ def transfer_nxgraph_to_weightmatrix(graph: nx.Graph):
 
 # weightmatrix: format of each vector: node1 node2 weight
 # num_nodes: num of nodes
-def transfer_weightmatrix_to_nxgraph(edges: List[List[int]], num_nodes: int) -> nx.Graph():
+def transfer_weightmatrix_to_nxgraph(weightmatrix: List[List[int]], num_nodes: int) -> nx.Graph():
     graph = nx.Graph()
     nodes = list(range(num_nodes))
     graph.add_nodes_from(nodes)
-    for i, j, weight in edges:
+    for i, j, weight in weightmatrix:
         graph.add_edge(i, j, weight=weight)
     return graph
 
@@ -232,6 +232,14 @@ def generate_write_adjacencymatrix_and_nxgraph(num_nodes: int,
                     file.write(f'{i + 1} {j + 1} {weight}\n')
     return adjacency_matrix, graph
 
+def generate_write_distribution(num_nodess: List[int], num_graphs: int, graph_type: GraphDistriType, dir: str):
+    for num_nodes in num_nodess:
+        for i in range(num_graphs):
+            weightmatrix, num_nodes, num_edges = generate_graph(num_nodes, graph_type)
+            graph = transfer_weightmatrix_to_nxgraph(weightmatrix, num_nodes)
+            filename = dir + '/' + graph_type + '_' + str(num_nodes) + '_ID' + str(i)
+            write_nxgraph(graph, filename)
+
 def write_nxgraph(g: nx.Graph(), filename: str):
     num_nodes = nx.number_of_nodes(g)
     num_edges = nx.number_of_edges(g)
@@ -336,8 +344,6 @@ def read_result_comments_multifiles(dir: str, prefixes: str):
             objs.append(obj)
         label = f"num_nodes={num_nodes}"
         print(f"objs: {objs}, time_limits: {time_limits}, label: {label}")
-        if(isinstance(objs, str)):
-            aaa = 1
         plot_fig_over_durations(objs, time_limits, label)
 
 
@@ -881,10 +887,20 @@ if __name__ == '__main__':
     # to_extension = '.txt'
     # transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
 
-    if_plot = True
+    if_plot = False
     if(if_plot):
         dir = './result/syn_powerlaw_gurobi'
         prefixes = 'graph_powerlaw_'
         read_result_comments_multifiles(dir, prefixes)
+
+    if_generate_distribution = True
+    if if_generate_distribution:
+        num_nodess = [20, 40, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+        # num_nodess = [20]
+        num_graphs = 20
+        graph_type = GraphDistriType.powerlaw
+        dir = './data/syn_powerlaw'
+        generate_write_distribution(num_nodess, num_graphs, graph_type, dir)
+
 
     print()
