@@ -47,7 +47,7 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         values.append(value)
     with open(f"{new_filename}.txt", 'w', encoding="UTF-8") as new_file:
         write_statistics(model, new_file, True)
-        new_file.write(f"num_nodes: {len(nodes)}\n")
+        new_file.write(f"// num_nodes: {len(nodes)}\n")
         for i in range(len(nodes)):
             new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
 
