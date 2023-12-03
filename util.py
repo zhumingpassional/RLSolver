@@ -899,7 +899,7 @@ if __name__ == '__main__':
         # num_nodess = [20]
         num_graphs = 20
         graph_type = GraphDistriType.powerlaw
-        dir = './data/syn_powerlaw'
+        dir = './data/syndistri2'
         generate_write_distribution(num_nodess, num_graphs, graph_type, dir)
 
 
