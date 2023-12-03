@@ -30,8 +30,9 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
     if not os.path.exists(directory):
         os.mkdir(directory)
     if running_duration is None:
-        new_filename = filename + '.txt'
+        new_filename = filename
     else:
+        filename = filename.replace('.txt', '')
         new_filename = filename + '_' + str(int(running_duration))
 
     vars = model.getVars()
@@ -46,20 +47,23 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         values.append(value)
     with open(f"{new_filename}.txt", 'w', encoding="UTF-8") as new_file:
         write_statistics(model, new_file, True)
+        new_file.write(f"num_nodes: {len(nodes)}\n")
         for i in range(len(nodes)):
             new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
 
-    with open(f"{new_filename}.sta", 'w', encoding="UTF-8") as new_file:
-        write_statistics(model, new_file, False)
-    with open(f"{new_filename}.sov", 'w', encoding="UTF-8") as new_file:
-        new_file.write('values of vars: \n')
-        vars = model.getVars()
-        for var in vars:
-            new_file.write(f'{var.VarName}: {var.x}\n')
-    model.write(f"{new_filename}.mst")
-    model.write(f"{new_filename}.lp")
-    model.write(f"{new_filename}.mps")
-    model.write(f"{new_filename}.sol")
+    if_write_others = False
+    if if_write_others:
+        with open(f"{new_filename}.sta", 'w', encoding="UTF-8") as new_file:
+            write_statistics(model, new_file, False)
+        with open(f"{new_filename}.sov", 'w', encoding="UTF-8") as new_file:
+            new_file.write('values of vars: \n')
+            vars = model.getVars()
+            for var in vars:
+                new_file.write(f'{var.VarName}: {var.x}\n')
+        model.write(f"{new_filename}.mst")
+        model.write(f"{new_filename}.lp")
+        model.write(f"{new_filename}.mps")
+        model.write(f"{new_filename}.sol")
 
 def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = False):
     model = Model("maxcut")
@@ -94,7 +98,8 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         sys.exit()
 
     elif model.getAttr('SolCount') >= 1:  # get the SolCount:
-        result_filename = '../result/result'
+        # result_filename = '../result/result'
+        result_filename = calc_result_file_name(filename)
         write_result_gurobi(model, result_filename, time_limit)
 
     num_vars = model.getAttr(GRB.Attr.NumVars)
@@ -126,7 +131,7 @@ def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], 
     avg_std = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 
 if __name__ == '__main__':
-    select_single_file = True
+    select_single_file = False
     if select_single_file:
         filename = '../data/syn/syn_50_176.txt'
         time_limits = [0.5 * 3600]
@@ -135,11 +140,18 @@ if __name__ == '__main__':
         prefixes = ['syn_50_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     else:
-        prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
-        # prefixes = ['syn_10_']
-        # time_limits = [0.5 * 3600, 1 * 3600]
-        time_limits = [0.5 * 3600]
-        directory_data = '../data/syn'
+        if_use_syn = False
+        # time_limits = [0.5 * 3600]
+        time_limits = [10 * 60, 20 * 60, 30 * 60, 40 * 60, 50 * 60, 60 * 60]
+        if if_use_syn:
+            prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
+            directory_data = '../data/syn'
+
+        if_use_syndistri = True
+        if if_use_syndistri:
+            prefixes = ['powerlaw_20_']
+            directory_data = '../data/syndistri2'
+
         directory_result = '../result'
         run_gurobi_over_multiple_files(prefixes, time_limits, directory_data, directory_result)
         avg_std = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
