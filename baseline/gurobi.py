@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['powerlaw_20_']
+            prefixes = ['powerlaw_']
             directory_data = '../data/syndistri2'
 
         directory_result = '../result'
