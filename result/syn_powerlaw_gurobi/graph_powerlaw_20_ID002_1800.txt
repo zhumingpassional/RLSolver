@@ -3,6 +3,7 @@
 // gap: 0.0
 // obj_bound: 46.0
 // time_limit: ('TIME_LIMIT', <class 'float'>, 1800.0, 0.0, inf, inf)
+// num_nodes: 20
 1 2
 2 2
 3 2
