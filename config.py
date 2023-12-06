@@ -16,4 +16,9 @@ GSET_DIR: str = './data/gset'
 GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphDistriType.powerlaw, GraphDistriType.barabasi_albert]
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 
+GUROBI_INTERVAL = 5 * 60  # seconds, the interval of writing results to txt files
+GUROBI_TIME_LIMITS = [1 * 3600]  # seconds
+
+
+
 

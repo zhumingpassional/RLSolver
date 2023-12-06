@@ -1,3 +1,5 @@
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import copy
 from torch.autograd import Variable
 import os
@@ -296,9 +298,9 @@ def plot_fig_over_durations(objs: List[int], durations: List[int], label: str):
     plt.savefig('./result/' + label + '.png')
     plt.show()
 
-# return: num_nodes, time_limit, obj,
+# return: num_nodes, running_duration:, obj,
 def read_result_comments(filename: str):
-    num_nodes, time_limit, obj = None, None, None
+    num_nodes, running_duration, obj = None, None, None
     with open(filename, 'r') as file:
         # lines = []
         line = file.readline()
@@ -307,44 +309,44 @@ def read_result_comments(filename: str):
                 if 'num_nodes:' in line:
                     num_nodes = float(line.split('num_nodes:')[1])
                     break
-                if 'time_limit:' in line:
-                    time_limit = float(line.split("time_limit: ('TIME_LIMIT', <class 'float'>, ")[1].split(",")[0])
+                if 'running_duration:' in line:
+                    running_duration = obtain_first_number(line)
                 if 'obj:' in line:
                     obj = float(line.split('obj:')[1])
             line = file.readline()
-    return int(num_nodes), int(time_limit), obj
+    return int(num_nodes), running_duration, obj
 
 def read_result_comments_multifiles(dir: str, prefixes: str):
     res = {}
     num_nodess = set()
-    time_limits = set()
+    running_durations = set()
     # for prefix in prefixes:
     files = calc_txt_files_with_prefix(dir, prefixes)
     for i in range(len(files)):
         file = files[i]
-        num_nodes, time_limit, obj = read_result_comments(file)
+        num_nodes, running_duration, obj = read_result_comments(file)
         num_nodess.add(num_nodes)
-        time_limits.add(time_limit)
+        running_durations.add(running_duration)
         if str(num_nodes) in res.keys():
-            if str(time_limit) in res[str(num_nodes)].keys():
-                res[str(num_nodes)][str(time_limit)].append(obj)
+            if str(running_duration) in res[str(num_nodes)].keys():
+                res[str(num_nodes)][str(running_duration)].append(obj)
             else:
-                res[str(num_nodes)][str(time_limit)] = [obj]
+                res[str(num_nodes)][str(running_duration)] = [obj]
             # res[str(num_nodes)] = {**res[str(num_nodes)], **tmp_dict}
         else:
-            res[str(num_nodes)] = {str(time_limit): [obj]}
+            res[str(num_nodes)] = {str(running_duration): [obj]}
     num_nodess = list(num_nodess)
     num_nodess.sort()
-    time_limits = list(time_limits)
-    time_limits.sort()
+    running_durations = list(running_durations)
+    running_durations.sort()
     for num_nodes in num_nodess:
         objs = []
-        for time_limit in time_limits:
-            obj = np.mean(res[str(num_nodes)][str(time_limit)])
+        for running_duration in running_durations:
+            obj = np.mean(res[str(num_nodes)][str(running_duration)])
             objs.append(obj)
         label = f"num_nodes={num_nodes}"
-        print(f"objs: {objs}, time_limits: {time_limits}, label: {label}")
-        plot_fig_over_durations(objs, time_limits, label)
+        print(f"objs: {objs}, running_duration: {running_durations}, label: {label}")
+        plot_fig_over_durations(objs, running_durations, label)
 
 
 def calc_txt_files_with_prefix(directory: str, prefix: str):
@@ -445,6 +447,20 @@ def fetch_node(line: str):
     else:
         node = None
     return node
+
+# e.g., s = "// time_limit: ('TIME_LIMIT', <class 'float'>, 36.0, 0.0, inf, inf)",
+# then returns 36
+def obtain_first_number(s: str):
+    res = ''
+    pass_first_digit = False
+    for i in range(len(s)):
+        if s[i].isdigit():
+            res += s[i]
+            pass_first_digit = True
+        elif pass_first_digit:
+            break
+    value = int(res)
+    return value
 
 # transfer result file,
 # e.g.,
@@ -834,6 +850,9 @@ class EncoderBase64:
 
 
 if __name__ == '__main__':
+    s = "// time_limit: ('TIME_LIMIT', <class 'float'>, 36.0, 0.0, inf, inf)"
+    val = obtain_first_number(s)
+
     read_txt = True
     if read_txt:
         graph1 = read_nxgraph('data/gset/gset_14.txt')
@@ -877,7 +896,7 @@ if __name__ == '__main__':
         directory_result = 'result'
         # prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
         prefixes = ['syn_10_', 'syn_50_', 'syn_100_']
-        time_limits = [0.5 * 3600]
+        time_limits = GUROBI_TIME_LIMITS
         avgs_stds = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 
     # filename = 'result/syn_10_21_1800.sta'
@@ -888,13 +907,13 @@ if __name__ == '__main__':
     # to_extension = '.txt'
     # transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
 
-    if_plot = False
+    if_plot = True
     if(if_plot):
-        dir = './result/syn_powerlaw_gurobi'
-        prefixes = 'graph_powerlaw_'
+        dir = './result/syndistri2_gurobi'
+        prefixes = 'powerlaw_200_'
         read_result_comments_multifiles(dir, prefixes)
 
-    if_generate_distribution = True
+    if_generate_distribution = False
     if if_generate_distribution:
         num_nodess = [20, 40, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]
         # num_nodess = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]
