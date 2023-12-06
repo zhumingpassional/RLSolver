@@ -1,7 +1,10 @@
+import numpy as np
 from gurobipy import *
 import os
+import copy
 from typing import List
 import networkx as nx
+import time
 import sys
 from util import read_nxgraph
 from util import calc_txt_files_with_prefix
@@ -9,7 +12,70 @@ from util import calc_result_file_name
 from util import calc_avg_std_of_objs
 from util import plot_fig
 from util import fetch_node
-from util import transfer_float_to_binary
+from util import (transfer_float_to_binary,
+                  obtain_first_number)
+from config import *
+
+# 定义回调函数，每隔一段时间将当前找到的最佳可行解输出到当前目录下以 solution 开头
+# 的文件中。同时，将当前进展输出到 report.txt 报告中。
+def mycallback(model, where):
+    if where == GRB.Callback.MIPSOL:
+        # MIP solution callback
+        currentTime = time.time()
+        running_duation = int((currentTime - model._startTime) / model._interval) * model._interval
+
+        # Statistics
+        objbnd = model.cbGet(GRB.Callback.MIPSOL_OBJBND)
+        obj = model.cbGet(GRB.Callback.MIPSOL_OBJ)
+        # gap = abs(obj - objbnd) / (obj + 1e-6)
+
+        # Export solution to a file
+        solutionfile = open("solution_" + str(running_duation) + ".txt", 'w')
+
+        # filename = copy.deepcopy(model._reportFile.name) # ok, successful
+        filename = copy.deepcopy(model._attribute['result_filename'])
+        filename = filename.replace('.txt', '')
+        filename = filename + '_' + str(running_duation) + '.txt';
+
+        # vars = model.getVars()
+        # nodes: List[int] = []
+        # values: List[int] = []
+        # for var in vars:
+        #     node = fetch_node(var.VarName)
+        #     if node is None:
+        #         break
+        #     value = transfer_float_to_binary(var.x)
+        #     nodes.append(node)
+        #     values.append(value)
+
+        if running_duation < GUROBI_INTERVAL:
+            return
+        with open(filename, 'w', encoding="UTF-8") as new_file:
+            write_statistics_in_mycallback(model, new_file, add_slash=True)
+            new_file.write(f"// num_nodes: {model._attribute['num_nodes']}\n")
+            # for i in range(len(nodes)):
+            #     new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
+            varlist = model.getVars()
+            soln = model.cbGetSolution(varlist)
+            for i in range(len(varlist)):
+                value = round(soln[i]) + 1
+                new_file.write(f"{i + 1}  {value}\n")
+            # for var, soln in zip(varlist, soln):
+            #     solutionfile.write('%s %d\n' % (var.VarName, soln))
+
+
+        # varlist = model.getVars()
+        # soln = model.cbGetSolution(varlist)
+        # solutionfile.write('Objective %e\n' % obj)
+        # for var, soln in zip(varlist, soln):
+        #     solutionfile.write('%s %.16e\n' % (var.VarName, soln))
+        # solutionfile.close()
+        #
+        # # Export statistics
+        # msg = str(currentTime - model._startTime) + " : " + "Solution Obj: " + str(obj) + " Solution Gap: " + str(
+        #     gap) + "\n"
+        # model._reportFile.write(msg)
+        # model._reportFile.flush()
 
 # the file has been open
 def write_statistics(model, new_file, add_slash = False):
@@ -20,6 +86,41 @@ def write_statistics(model, new_file, add_slash = False):
     new_file.write(f"{prefix}obj_bound: {model.ObjBound}\n")
     # new_file.write(f"time_limit: {time_limit}\n")
     time_limit = model.getParamInfo("TIME_LIMIT")
+    new_file.write(f"{prefix}time_limit: {time_limit}\n")
+
+def write_statistics_in_mycallback(model, new_file, add_slash = False):
+    if model.getAttr('SolCount') == 0:
+        return
+
+    currentTime = time.time()
+    running_duation = int((currentTime - model._startTime) / model._interval) * model._interval
+
+    # Statistics
+    objbnd = model.cbGet(GRB.Callback.MIPSOL_OBJBND)
+    obj = model.cbGet(GRB.Callback.MIPSOL_OBJ)
+    gap = abs(obj - objbnd) / (obj + 1e-6)
+
+    # varlist = model.getVars()
+    # soln = model.cbGetSolution(varlist)
+    # new_file.write('Objective %e\n' % obj)
+    # for var, soln in zip(varlist, soln):
+    #     new_file.write('%s %.16e\n' % (var.VarName, soln))
+    # new_file.close()
+
+    # # Export statistics
+    # msg = str(currentTime - model._startTime) + " : " + "Solution Obj: " + str(obj) + " Solution Gap: " + str(
+    #     gap) + "\n"
+    # model._reportFile.write(msg)
+    # model._reportFile.flush()
+
+    prefix = '// ' if add_slash else ''
+    new_file.write(f"{prefix}obj: {obj}\n")
+    new_file.write(f"{prefix}running_duration: {running_duation}\n")
+    new_file.write(f"{prefix}gap: {gap}\n")
+    new_file.write(f"{prefix}obj_bound: {objbnd}\n")
+    # new_file.write(f"time_limit: {time_limit}\n")
+    time_limit = model.getParamInfo("TIME_LIMIT")
+    # time_limit2 = model.params['TimeLimit']
     new_file.write(f"{prefix}time_limit: {time_limit}\n")
 
 # running_duration (seconds) is included.
@@ -87,7 +188,16 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
             model.addConstr(y[(i, j)] + x[i] + x[j] <= 2, name='C0b_' + str(i) + '_' + str(j))
     if time_limit is not None:
         model.setParam('TimeLimit', time_limit)
-    model.optimize()
+
+    # reportFile = open('../result/', 'w')
+
+    result_filename = calc_result_file_name(filename)
+
+    model._startTime = time.time()
+    # model._reportFile = open(result_filename, 'w')
+    model._interval = GUROBI_INTERVAL  # 每隔一段时间输出当前可行解，单位秒
+    model._attribute = {'data_filename': filename, 'result_filename': result_filename, 'num_nodes': num_nodes}
+    model.optimize(mycallback)
 
     if model.status == GRB.INFEASIBLE:
         model.computeIIS()
@@ -99,7 +209,6 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     elif model.getAttr('SolCount') >= 1:  # get the SolCount:
         # result_filename = '../result/result'
-        result_filename = calc_result_file_name(filename)
         write_result_gurobi(model, result_filename, time_limit)
 
     num_vars = model.getAttr(GRB.Attr.NumVars)
@@ -119,6 +228,8 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     alg_name = 'Gurobi'
     if plot_fig_:
         plot_fig(scores, alg_name)
+
+    print(f"model.Runtime: {model.Runtime}")
     print()
 
 def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], directory_data: str = 'data', directory_result: str = 'result'):
@@ -134,17 +245,18 @@ if __name__ == '__main__':
     select_single_file = False
     if select_single_file:
         filename = '../data/syn/syn_50_176.txt'
-        time_limits = [0.5 * 3600]
+        time_limits = GUROBI_TIME_LIMITS
         run_using_gurobi(filename, time_limit=time_limits[0], plot_fig_=False)
         directory = '../result'
         prefixes = ['syn_50_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     else:
         if_use_syn = False
-        # time_limits = [0.5 * 3600]
-        time_limits = [10 * 60, 20 * 60, 30 * 60, 40 * 60, 50 * 60, 60 * 60]
+        # time_limits = GUROBI_TIME_LIMITS
+        # time_limits = [10 * 60, 20 * 60, 30 * 60, 40 * 60, 50 * 60, 60 * 60]
         if if_use_syn:
-            prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
+            # prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
+            prefixes = ['syn_1000_']
             directory_data = '../data/syn'
 
         if_use_syndistri = True
@@ -153,8 +265,8 @@ if __name__ == '__main__':
             directory_data = '../data/syndistri2'
 
         directory_result = '../result'
-        run_gurobi_over_multiple_files(prefixes, time_limits, directory_data, directory_result)
-        avg_std = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
+        run_gurobi_over_multiple_files(prefixes, GUROBI_TIME_LIMITS, directory_data, directory_result)
+        avg_std = calc_avg_std_of_objs(directory_result, prefixes, GUROBI_TIME_LIMITS)
 
     pass
 
