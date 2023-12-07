@@ -412,12 +412,13 @@ def calc_avg_std_of_obj(directory: str, prefix: str, time_limit: int):
             obj_bound_ = line4.split('obj_bound:')
             obj_bound = float(obj_bound_[1]) if len(obj_bound_) >= 2 else None
             obj_bounds.append(obj_bound)
-
+    if len(objs) == 0:
+        return
     avg_obj = np.average(objs)
     std_obj = np.std(objs)
     avg_running_duration = np.average(running_durations)
-    avg_gap = np.average(gaps)
-    avg_obj_bound = np.average(obj_bounds)
+    avg_gap = np.average(gaps) if None not in gaps else None
+    avg_obj_bound = np.average(obj_bounds) if None not in obj_bounds else None
     print(f'{directory} prefix {prefix}, suffix {suffix}: avg_obj {avg_obj}, std_obj {std_obj}, avg_running_duration {avg_running_duration}, avg_gap {avg_gap}, avg_obj_bound {avg_obj_bound}')
     if time_limit != init_time_limit:
         print()
@@ -454,7 +455,7 @@ def obtain_first_number(s: str):
     res = ''
     pass_first_digit = False
     for i in range(len(s)):
-        if s[i].isdigit():
+        if s[i].isdigit() or s[i] == '.':
             res += s[i]
             pass_first_digit = True
         elif pass_first_digit:
@@ -907,20 +908,20 @@ if __name__ == '__main__':
     # to_extension = '.txt'
     # transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
 
-    if_plot = True
+    if_plot = False
     if(if_plot):
-        dir = './result/syndistri2_gurobi'
+        dir = 'result/syn_PL_gurobi'
         prefixes = 'powerlaw_200_'
         read_result_comments_multifiles(dir, prefixes)
 
-    if_generate_distribution = False
+    if_generate_distribution = True
     if if_generate_distribution:
         num_nodess = [20, 40, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]
         # num_nodess = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]
         # num_nodess = [20]
         num_graphs = 30
-        graph_type = GraphDistriType.powerlaw
-        dir = './data/syndistri2'
+        graph_type = GraphDistriType.erdos_renyi
+        dir = 'data/syn_ER'
         generate_write_distribution(num_nodess, num_graphs, graph_type, dir)
 
 

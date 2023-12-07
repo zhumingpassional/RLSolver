@@ -30,12 +30,12 @@ def mycallback(model, where):
         # gap = abs(obj - objbnd) / (obj + 1e-6)
 
         # Export solution to a file
-        solutionfile = open("solution_" + str(running_duation) + ".txt", 'w')
+        # solutionfile = open("solution_" + str(running_duation) + ".txt", 'w')
 
         # filename = copy.deepcopy(model._reportFile.name) # ok, successful
         filename = copy.deepcopy(model._attribute['result_filename'])
         filename = filename.replace('.txt', '')
-        filename = filename + '_' + str(running_duation) + '.txt';
+        filename = filename + '_' + str(running_duation) + '.txt'
 
         # vars = model.getVars()
         # nodes: List[int] = []
@@ -55,10 +55,10 @@ def mycallback(model, where):
             new_file.write(f"// num_nodes: {model._attribute['num_nodes']}\n")
             # for i in range(len(nodes)):
             #     new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
-            varlist = model.getVars()
+            varlist = [v for v in model.getVars() if 'x' in v.VarName]
             soln = model.cbGetSolution(varlist)
             for i in range(len(varlist)):
-                value = round(soln[i]) + 1
+                value = int(round(soln[i]) + 1) if not GUROBI_VAR_CONTINUOUS else soln[i]
                 new_file.write(f"{i + 1}  {value}\n")
             # for var, soln in zip(varlist, soln):
             #     solutionfile.write('%s %d\n' % (var.VarName, soln))
@@ -82,7 +82,8 @@ def write_statistics(model, new_file, add_slash = False):
     prefix = '// ' if add_slash else ''
     new_file.write(f"{prefix}obj: {model.objVal}\n")
     new_file.write(f"{prefix}running_duration: {model.Runtime}\n")
-    new_file.write(f"{prefix}gap: {model.MIPGap}\n")
+    if not GUROBI_VAR_CONTINUOUS:
+        new_file.write(f"{prefix}gap: {model.MIPGap}\n")
     new_file.write(f"{prefix}obj_bound: {model.ObjBound}\n")
     # new_file.write(f"time_limit: {time_limit}\n")
     time_limit = model.getParamInfo("TIME_LIMIT")
@@ -143,14 +144,20 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         node = fetch_node(var.VarName)
         if node is None:
             break
-        value = transfer_float_to_binary(var.x)
+        if GUROBI_VAR_CONTINUOUS:
+            value = var.x
+        else:
+            value = transfer_float_to_binary(var.x)
         nodes.append(node)
         values.append(value)
     with open(f"{new_filename}.txt", 'w', encoding="UTF-8") as new_file:
         write_statistics(model, new_file, True)
         new_file.write(f"// num_nodes: {len(nodes)}\n")
         for i in range(len(nodes)):
-            new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
+            if GUROBI_VAR_CONTINUOUS:
+                new_file.write(f"{nodes[i] + 1} {values[i]}\n")
+            else:
+                new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
 
     if_write_others = False
     if if_write_others:
@@ -175,8 +182,10 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     num_nodes = nx.number_of_nodes(graph)
     nodes = list(range(num_nodes))
 
+    y_lb = adjacency_matrix.min()
+    y_ub = adjacency_matrix.max()
     x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
-    y = model.addVars(num_nodes, num_nodes, vtype=GRB.BINARY, name="y")
+    y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
     model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
                     GRB.MAXIMIZE)
 
@@ -197,6 +206,34 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     # model._reportFile = open(result_filename, 'w')
     model._interval = GUROBI_INTERVAL  # 每隔一段时间输出当前可行解，单位秒
     model._attribute = {'data_filename': filename, 'result_filename': result_filename, 'num_nodes': num_nodes}
+
+    if GUROBI_VAR_CONTINUOUS:
+        # for v in model.getVars():
+        #     v.setAttr('vtype', GRB.CONTINUOUS)
+        model.update()
+        r = model.relax()
+        r.update()
+        r.optimize(mycallback)
+        if_write_others = False
+        if if_write_others:
+            r.write("../result/result.lp")
+            r.write("../result/result.mps")
+            r.write("../result/result.sol")
+        x_values = []
+        # for i in range(num_nodes):
+        #     var = r.getVarByName(x[i].VarName)
+        #     x_values.append(var.x)
+        # var = r.getVarByName(x.VarName)
+        vars_in_model = [var for var in model.getVars() if "x" in var.VarName]
+        name = "x"
+        names_to_retrieve = [f"{name}[{i}]" for i in range(num_nodes)]
+
+        for i in range(num_nodes):
+            var = r.getVarByName(names_to_retrieve[i])
+            x_values.append(var.x)
+        print(f'values of x: {x_values}')
+        return x_values
+
     model.optimize(mycallback)
 
     if model.status == GRB.INFEASIBLE:
@@ -218,6 +255,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     vars = model.getVars()
 
 
+
     if model.getAttr('SolCount') == 0:  # model.getAttr(GRB.Attr.SolCount)
         print("No solution.")
     print("SolCount: ", model.getAttr('SolCount'))
@@ -231,6 +269,12 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     print(f"model.Runtime: {model.Runtime}")
     print()
+
+    x_values = []
+    for i in range(num_nodes):
+        x_values.append(x[i].x)
+    print(f'values of x: {x_values}')
+    return x_values
 
 def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], directory_data: str = 'data', directory_result: str = 'result'):
     for prefix in prefixes:
@@ -261,8 +305,8 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['powerlaw_']
-            directory_data = '../data/syndistri2'
+            prefixes = ['powerlaw_1']
+            directory_data = '../data/syn_PL'
 
         directory_result = '../result'
         run_gurobi_over_multiple_files(prefixes, GUROBI_TIME_LIMITS, directory_data, directory_result)
