@@ -909,7 +909,7 @@ if __name__ == '__main__':
 
     if_plot = True
     if(if_plot):
-        dir = './result/syndistri2_gurobi'
+        dir = 'result/syn_PL_gurobi'
         prefixes = 'powerlaw_200_'
         read_result_comments_multifiles(dir, prefixes)
 
