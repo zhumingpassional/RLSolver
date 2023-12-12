@@ -97,16 +97,32 @@ def transfer_weightmatrix_to_nxgraph(weightmatrix: List[List[int]], num_nodes: i
         graph.add_edge(i, j, weight=weight)
     return graph
 
+# max total cuts
 def obj_maxcut(result: Union[Tensor, List[int], np.array], graph: nx.Graph):
     num_nodes = len(result)
-    cut = 0
-    adj_matrix = nx.to_numpy_matrix(graph)
+    obj = 0
+    adj_matrix = transfer_nxgraph_to_adjacencymatrix(graph)
     for i in range(num_nodes):
         for j in range(i + 1, num_nodes):
             if result[i] != result[j]:
-                cut += adj_matrix[(i, j)]
-    return cut
+                obj += adj_matrix[(i, j)]
+    return obj
 
+# min total cuts
+def obj_graph_partitioning(solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
+    num_nodes = len(solution)
+    obj = 0
+    adj_matrix = transfer_nxgraph_to_adjacencymatrix(graph)
+    sum1 = 0
+    for i in range(num_nodes):
+        if solution[i] == 0:
+            sum1 += 1
+        for j in range(num_nodes):
+            if i != j and solution[i] != solution[j]:
+                obj -= adj_matrix[(i, j)]
+    if sum1 != num_nodes / 2:
+        return -INF
+    return obj
 
 # write a tensor/list/np.array (dim: 1) to a txt file.
 # The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
@@ -598,7 +614,7 @@ def generate_graph(num_nodes: int, g_type: str):
 def generate_graph_for_validation():
     import random
     num_nodes_list = [20, 50, 100, 200, 300]
-    g_type = 'powerlaw'
+    g_type = GRAPH_DISTRI_TYPE
     num_valid = 6
     seed_num = 0
     data_dir = DATA_DIR

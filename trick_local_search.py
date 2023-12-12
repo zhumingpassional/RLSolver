@@ -356,11 +356,11 @@ hUH4vj0nAzi24"""
                 i = j2 * num_iter1 + j1
 
                 good_i = trick.good_objs.argmax()
-                good_x = trick.good_solutions[good_i]
-                good_v = trick.good_objs[good_i].item()
+                good_solution = trick.good_solutions[good_i]
+                good_obj = trick.good_objs[good_i].item()
 
-                if_show_x = evaluator.record2(i=i, obj=good_v, x=good_x)
-                evaluator.logging_print(obj=good_v, if_show_x=if_show_x)
+                if_show_x = evaluator.record2(i=i, obj=good_obj, solution=good_solution)
+                evaluator.logging_print(obj=good_obj, if_show_x=if_show_x)
 
         if if_reinforce:
             best_solution = evaluator.best_solution

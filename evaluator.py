@@ -53,11 +53,11 @@ class Evaluator2:
     def record1(self, i: float, obj: int):
         self.recorder1.append((i, obj))
 
-    def record2(self, i: float, obj: int, x: TEN):
+    def record2(self, i: float, obj: int, solution: TEN):
         self.recorder2.append((i, obj))
 
         if obj > self.best_obj:
-            self.best_solution = x
+            self.best_solution = solution
             self.best_obj = obj
             self.logging_print(obj=obj, if_show_x=True)
 

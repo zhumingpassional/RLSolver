@@ -197,7 +197,7 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
                 solution = trick.good_solutions[good_i]
                 obj = trick.good_objs[good_i].item()
 
-                evaluator.record2(i=i, obj=obj, x=solution)
+                evaluator.record2(i=i, obj=obj, solution=solution)
                 evaluator.logging_print(obj=obj)
 
 
