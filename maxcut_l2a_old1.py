@@ -1,9 +1,18 @@
+import os.path
+
 import torch as th
-from mcmc import MCMC
-from config import *
+import torch.nn as nn
+from copy import deepcopy
+import numpy as np
+from torch import Tensor
+# from rlsolver.rlsolver_learn2opt.np_complete_problems.env.maxcut_env import MCSim
+from mcmc_sim import MCMCSim
+
 from net import OptNet
-from util import read_nxgraph
-from util import write_result
+import pickle as pkl
+from util import (read_nxgraph,
+                  write_result,
+                 calc_result_file_name)
 
 def train(
           filename: str,
@@ -14,7 +23,7 @@ def train(
           optimizer: th.optim,
           episode_length: int,
           hidden_layer_size: int):
-    mcmc_sim = MCMC(filename=filename, num_samples=num_envs, device=device, episode_length=episode_length)
+    mcmc_sim = MCMCSim(filename=filename, num_samples=num_envs, device=device, episode_length=episode_length)
 
 
     num_layers = 1
@@ -81,9 +90,8 @@ def train(
                     #loss = 0
                     #h, c = h_init.clone(), c_init.clone()
             val, idx = loss_list.max(dim=-1)
-            file_name = filename.replace("data", "result")
-            file_name = file_name.replace(".txt", "_" + str(int(val.item())) + ".txt")
-            write_result(xs[idx], file_name)
+            result_file_name = calc_result_file_name(filename)
+            write_result(xs[idx], result_file_name)
             mcmc_sim.best_x = xs[idx]
             print(f"epoch:{epoch} | test :",  loss_list.max().item())
 
@@ -93,14 +101,15 @@ if __name__ == "__main__":
     import sys
 
     filename = 'data/gset/gset_14.txt'
-    gpu_id = GPU_ID
+    gpu_id = 5
     graph = read_nxgraph(filename)
     num_nodes = graph.number_of_nodes()
     hidden_layer_size = 4000
     learning_rate = 2e-5
     num_samples = 20
     episode_length = 30
-    device = DEVICE
+
+    device = th.device(f"cuda:{gpu_id}" if (th.cuda.is_available() and (gpu_id >= 0)) else "cpu")
     th.manual_seed(7)
     opt_net = OptNet(num_nodes, hidden_layer_size).to(device)
     optimizer = th.optim.Adam(opt_net.parameters(), lr=learning_rate)
