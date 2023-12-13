@@ -195,10 +195,6 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
                         GRB.MAXIMIZE)
     elif PROBLEM_NAME == ProblemName.graph_partitioning:
-        # for i in range(num_nodes):
-        #     for j in range(num_nodes):
-        #         if adjacency_matrix[i, j] == 0:
-        #             adjacency_matrix[i, j] = INF
         y_lb = adjacency_matrix.min()
         y_ub = adjacency_matrix.max()
         x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
