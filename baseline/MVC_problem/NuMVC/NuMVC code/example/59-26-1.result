@@ -1,0 +1,8 @@
+c This is NuMVC, a local search solver for the Minimum Vertex Cover (and also Maximum Independent Set) problem.
+c Best found vertex cover size = 1475
+c Best found independent set size = 59
+c The following output is the found independent set.
+8	33	55	94	128	136	169	191	212	245	274	293	323	355	365	393	418	465	485	509	544	570	582	608	630	665	686	713	738	766	785	823	852	867	906	917	962	969	1005	1030	1050	1076	1118	1129	1148	1179	1219	1248	1263	1294	1303	1352	1359	1402	1419	1450	1469	1486	1529	
+c searchSteps = 7455015
+c solveTime = 21.51
+c This is NuMVC, a local search solver for the Minimum Vertex Cover (and also Maximum Independent Set) problem.

@@ -476,7 +476,7 @@ def obtain_first_number(s: str):
             pass_first_digit = True
         elif pass_first_digit:
             break
-    value = int(res)
+    value = int(float(res))
     return value
 
 # transfer result file,
@@ -924,13 +924,13 @@ if __name__ == '__main__':
     # to_extension = '.txt'
     # transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
 
-    if_plot = False
+    if_plot = True
     if(if_plot):
         dir = 'result/syn_PL_gurobi'
-        prefixes = 'powerlaw_200_'
+        prefixes = 'powerlaw_900_'
         read_result_comments_multifiles(dir, prefixes)
 
-    if_generate_distribution = True
+    if_generate_distribution = False
     if if_generate_distribution:
         num_nodess = [20, 40, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]
         # num_nodess = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]

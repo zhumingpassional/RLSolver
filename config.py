@@ -27,9 +27,9 @@ GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphD
 
 PROBLEM_NAME = ProblemName.graph_partitioning
 
-INF = 1e9
+INF = 1e6
 
-GUROBI_INTERVAL = 10 * 60  # seconds, the interval of writing results to txt files
+GUROBI_INTERVAL = 5 * 60  # seconds, the interval of writing results to txt files
 GUROBI_TIME_LIMITS = [1 * 3600]  # seconds
 GUROBI_VAR_CONTINUOUS = False
 
