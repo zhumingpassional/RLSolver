@@ -1,2 +1,2 @@
-# The codes in this dir are only for minimum vertex cover problem
+# The codes in this dir are only for minimum vertex cover
 
