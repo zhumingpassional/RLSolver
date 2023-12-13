@@ -66,7 +66,7 @@ if __name__ == '__main__':
     init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
 
     init_temperature = 4
-    num_steps = 8000
+    num_steps = 8000 * 3
     sa_score, sa_solution, sa_scores = simulated_annealing(init_solution, init_temperature, num_steps, graph)
 
     # write result

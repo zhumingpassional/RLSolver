@@ -6,6 +6,8 @@ from typing import List
 import networkx as nx
 import time
 import sys
+import matplotlib.pyplot as plt
+
 from util import read_nxgraph
 from util import calc_txt_files_with_prefix
 from util import calc_result_file_name
@@ -13,6 +15,7 @@ from util import calc_avg_std_of_objs
 from util import plot_fig
 from util import fetch_node
 from util import (transfer_float_to_binary,
+                  transfer_nxgraph_to_adjacencymatrix,
                   obtain_first_number)
 from config import *
 
@@ -177,24 +180,41 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     model = Model("maxcut")
 
     graph = read_nxgraph(filename)
+    nx.draw_networkx(graph)
+    plt.show()
 
-    adjacency_matrix = nx.to_numpy_array(graph)
+    adjacency_matrix = transfer_nxgraph_to_adjacencymatrix(graph)
     num_nodes = nx.number_of_nodes(graph)
     nodes = list(range(num_nodes))
 
-    y_lb = adjacency_matrix.min()
-    y_ub = adjacency_matrix.max()
-    x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
-    y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
-    model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
-                    GRB.MAXIMIZE)
-
+    if PROBLEM_NAME == ProblemName.maxcut:
+        y_lb = adjacency_matrix.min()
+        y_ub = adjacency_matrix.max()
+        x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+        y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
+        model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
+                        GRB.MAXIMIZE)
+    elif PROBLEM_NAME == ProblemName.graph_partitioning:
+        y_lb = adjacency_matrix.min()
+        y_ub = adjacency_matrix.max()
+        x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+        y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
+        model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
+                           GRB.MINIMIZE)
 
     # constrs
-    for j in nodes:
-        for i in range(0, j):
-            model.addConstr(y[(i, j)] - x[i] - x[j] <= 0, name='C0a_' + str(i) + '_' + str(j))
-            model.addConstr(y[(i, j)] + x[i] + x[j] <= 2, name='C0b_' + str(i) + '_' + str(j))
+    if PROBLEM_NAME in [ProblemName.maxcut, ProblemName.graph_partitioning]:
+        # y_{i, j} = x_i XOR x_j
+        for j in nodes:
+            for i in range(0, j):
+                model.addConstr(y[(i, j)] <= x[i] + x[j], name='C0b_' + str(i) + '_' + str(j))
+                model.addConstr(y[(i, j)] <= 2 - x[i] - x[j], name='C0a_' + str(i) + '_' + str(j))
+                model.addConstr(y[(i, j)] >= x[i] - x[j], name='C0c_' + str(i) + '_' + str(j))
+                model.addConstr(y[(i, j)] >= -x[i] + x[j], name='C0d_' + str(i) + '_' + str(j))
+
+    if PROBLEM_NAME == ProblemName.graph_partitioning:
+        model.addConstr(quicksum(x[j] for j in nodes) == num_nodes / 2, name='C1')
+
     if time_limit is not None:
         model.setParam('TimeLimit', time_limit)
 
@@ -286,13 +306,13 @@ def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], 
     avg_std = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 
 if __name__ == '__main__':
-    select_single_file = False
+    select_single_file = True
     if select_single_file:
-        filename = '../data/syn/syn_50_176.txt'
+        filename = '../data/syn/syn_4_5.txt'
         time_limits = GUROBI_TIME_LIMITS
-        run_using_gurobi(filename, time_limit=time_limits[0], plot_fig_=False)
+        run_using_gurobi(filename, time_limit=time_limits[0], plot_fig_=True)
         directory = '../result'
-        prefixes = ['syn_50_']
+        prefixes = ['syn_10_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     else:
         if_use_syn = False
