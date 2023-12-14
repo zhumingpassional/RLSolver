@@ -124,6 +124,24 @@ def obj_graph_partitioning(solution: Union[Tensor, List[int], np.array], graph: 
         return -INF
     return obj
 
+def cover_all_edges(solution: List[int], graph: nx.Graph):
+    cover_all = True
+    for node1, node2 in graph.edges:
+        if solution[node1] == 0 and solution[node2] == 0:
+            cover_all = False
+            break
+    return cover_all
+
+def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
+    num_nodes = len(solution)
+    obj = 0
+    for i in range(num_nodes):
+        if solution[i] == 1:
+            obj -= 1
+    if not cover_all_edges(solution, graph):
+            return -INF
+    return obj
+
 # write a tensor/list/np.array (dim: 1) to a txt file.
 # The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
 def write_result(result: Union[Tensor, List, np.array],
