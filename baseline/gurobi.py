@@ -157,7 +157,7 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         write_statistics(model, new_file, True)
         new_file.write(f"// num_nodes: {len(nodes)}\n")
         for i in range(len(nodes)):
-            if GUROBI_VAR_CONTINUOUS:
+            if GUROBI_VAR_CONTINUOUS or PROBLEM_NAME == ProblemName.minimum_vertex_cover:
                 new_file.write(f"{nodes[i] + 1} {values[i]}\n")
             else:
                 new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
@@ -180,6 +180,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     model = Model("maxcut")
 
     graph = read_nxgraph(filename)
+    edges = list(graph.edges)
     nx.draw_networkx(graph)
     plt.show()
 
@@ -201,6 +202,10 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
         model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
                            GRB.MINIMIZE)
+    elif PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+        x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+        model.setObjective(quicksum(x[j] for j in nodes),
+                           GRB.MINIMIZE)
 
     # constrs
     if PROBLEM_NAME in [ProblemName.maxcut, ProblemName.graph_partitioning]:
@@ -214,6 +219,11 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     if PROBLEM_NAME == ProblemName.graph_partitioning:
         model.addConstr(quicksum(x[j] for j in nodes) == num_nodes / 2, name='C1')
+
+    if PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+        for i in range(len(edges)):
+            node1, node2 = edges[i]
+            model.addConstr(x[node1] + x[node2] >= 1, name=f'C0_{node1}_{node2}')
 
     if time_limit is not None:
         model.setParam('TimeLimit', time_limit)
@@ -315,14 +325,14 @@ def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], 
 if __name__ == '__main__':
     select_single_file = False
     if select_single_file:
-        filename = '../data/syn/syn_4_5.txt'
+        filename = '../data/syn/syn_10_21.txt'
         time_limits = GUROBI_TIME_LIMITS
         run_using_gurobi(filename, time_limit=time_limits[0], plot_fig_=True)
         directory = '../result'
         prefixes = ['syn_10_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     else:
-        if_use_syn = True
+        if_use_syn = False
         # time_limits = GUROBI_TIME_LIMITS
         # time_limits = [10 * 60, 20 * 60, 30 * 60, 40 * 60, 50 * 60, 60 * 60]
         if if_use_syn:
@@ -330,9 +340,9 @@ if __name__ == '__main__':
             prefixes = ['syn_1000_']
             directory_data = '../data/syn'
 
-        if_use_syndistri = False
+        if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['powerlaw_1']
+            prefixes = ['powerlaw_1000_']
             directory_data = '../data/syn_PL'
 
         directory_result = '../result'
