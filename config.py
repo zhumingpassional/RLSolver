@@ -25,12 +25,15 @@ GRAPH_DISTRI_TYPE = GraphDistriType.powerlaw
 GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphDistriType.powerlaw, GraphDistriType.barabasi_albert]
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 
-PROBLEM_NAME = ProblemName.graph_partitioning
+PROBLEM_NAME = ProblemName.maxcut
 
 INF = 1e6
 
-GUROBI_INTERVAL = 5 * 60  # seconds, the interval of writing results to txt files
-GUROBI_TIME_LIMITS = [1 * 3600]  # seconds
+
+GUROBI_INTERVAL = None  # seconds, the interval of writing results to txt files
+# GUROBI_TIME_LIMITS = [1 * 3600]  # seconds
+GUROBI_TIME_LIMITS = [600, 1200, 1800, 2400, 3000, 3600]  # seconds
+# GUROBI_TIME_LIMITS2 = list(range(10 * 60, 1 * 3600 + 1, 10 * 60))  # seconds
 GUROBI_VAR_CONTINUOUS = False
 
 

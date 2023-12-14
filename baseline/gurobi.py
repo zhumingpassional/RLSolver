@@ -51,7 +51,7 @@ def mycallback(model, where):
         #     nodes.append(node)
         #     values.append(value)
 
-        if running_duation < GUROBI_INTERVAL:
+        if GUROBI_INTERVAL is not None and running_duation < GUROBI_INTERVAL:
             return
         with open(filename, 'w', encoding="UTF-8") as new_file:
             write_statistics_in_mycallback(model, new_file, add_slash=True)
@@ -233,7 +233,11 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         model.update()
         r = model.relax()
         r.update()
-        r.optimize(mycallback)
+        if GUROBI_INTERVAL is None:
+            r.optimize()
+        else:
+            r.optimize(mycallback)
+
         if_write_others = False
         if if_write_others:
             r.write("../result/result.lp")
@@ -254,7 +258,10 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         print(f'values of x: {x_values}')
         return x_values
 
-    model.optimize(mycallback)
+    if GUROBI_INTERVAL is None:
+        model.optimize()
+    else:
+        model.optimize(mycallback)
 
     if model.status == GRB.INFEASIBLE:
         model.computeIIS()
@@ -306,7 +313,7 @@ def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], 
     avg_std = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 
 if __name__ == '__main__':
-    select_single_file = True
+    select_single_file = False
     if select_single_file:
         filename = '../data/syn/syn_4_5.txt'
         time_limits = GUROBI_TIME_LIMITS
@@ -315,7 +322,7 @@ if __name__ == '__main__':
         prefixes = ['syn_10_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     else:
-        if_use_syn = False
+        if_use_syn = True
         # time_limits = GUROBI_TIME_LIMITS
         # time_limits = [10 * 60, 20 * 60, 30 * 60, 40 * 60, 50 * 60, 60 * 60]
         if if_use_syn:
@@ -323,7 +330,7 @@ if __name__ == '__main__':
             prefixes = ['syn_1000_']
             directory_data = '../data/syn'
 
-        if_use_syndistri = True
+        if_use_syndistri = False
         if if_use_syndistri:
             prefixes = ['powerlaw_1']
             directory_data = '../data/syn_PL'
