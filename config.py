@@ -25,7 +25,7 @@ GRAPH_DISTRI_TYPE = GraphDistriType.powerlaw
 GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphDistriType.powerlaw, GraphDistriType.barabasi_albert]
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 
-PROBLEM_NAME = ProblemName.minimum_vertex_cover
+PROBLEM_NAME = ProblemName.maxcut
 
 INF = 1e6
 
