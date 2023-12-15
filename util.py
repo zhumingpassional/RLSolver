@@ -328,14 +328,16 @@ def plot_fig_over_durations(objs: List[int], durations: List[int], label: str):
     plt.figure()
     x = durations
     dic = {'0': 'ro-', '1': 'gs', '2': 'b^', '3': 'c>', '4': 'm<', '5': 'yp'}
+    # plt.ylim(0, max(objs))
     plt.plot(x, objs, dic['0'])
     plt.legend([label], loc=0)
     plt.savefig('./result/' + label + '.png')
     plt.show()
 
-# return: num_nodes, running_duration:, obj,
+# return: num_nodes, ID, running_duration:, obj,
 def read_result_comments(filename: str):
-    num_nodes, running_duration, obj = None, None, None
+    num_nodes, ID, running_duration, obj = None, None, None, None
+    ID = int(filename.split('ID')[1].split('_')[0])
     with open(filename, 'r') as file:
         # lines = []
         line = file.readline()
@@ -349,36 +351,44 @@ def read_result_comments(filename: str):
                 if 'obj:' in line:
                     obj = float(line.split('obj:')[1])
             line = file.readline()
-    return int(num_nodes), running_duration, obj
+    return int(num_nodes), ID, running_duration, obj
 
 def read_result_comments_multifiles(dir: str, prefixes: str, running_durations: List[int]):
     res = {}
     num_nodess = set()
     # for prefix in prefixes:
     files = calc_txt_files_with_prefix(dir, prefixes)
+    num_ids = NUM_IDS
     for i in range(len(files)):
         file = files[i]
-        num_nodes, running_duration, obj = read_result_comments(file)
+        num_nodes, ID, running_duration, obj = read_result_comments(file)
+        if running_duration not in running_durations:
+            continue
         index = running_durations.index(running_duration)
         num_nodess.add(num_nodes)
         if str(num_nodes) not in res.keys():
-            res[str(num_nodes)] = [None] * len(running_durations)
-        if str(running_duration) not in res[str(num_nodes)].keys():
-            res[str(num_nodes)] = [None] * len(running_durations)
-        res[str(num_nodes)][index] = obj
+            res[str(num_nodes)] = [[None] * len(running_durations) for _ in range(num_ids)]
+        res[str(num_nodes)][ID][index] = obj
             # res[str(num_nodes)] = {**res[str(num_nodes)], **tmp_dict}
     for num_nodes_str in res.keys():
-        last_nonNone = None
-        for i in range(len(running_durations)):
-            if res[num_nodes_str][i] is None and last_nonNone is not None:
-                res[num_nodes_str][i] = last_nonNone
+        for ID in range(num_ids):
+            last_nonNone = None
+            for i in range(len(running_durations)):
+                if res[num_nodes_str][ID][i] is not None:
+                    last_nonNone = res[num_nodes_str][ID][i]
+                if res[num_nodes_str][ID][i] is None and last_nonNone is not None:
+                    res[num_nodes_str][ID][i] = last_nonNone
 
     num_nodess = list(num_nodess)
     num_nodess.sort()
     for num_nodes in num_nodess:
         objs = []
-        for running_duration in running_durations:
-            obj = np.mean(res[str(num_nodes)][str(running_duration)])
+        for i in range(len(running_durations)):
+            sum_obj = 0
+            for ID in range(num_ids):
+                if res[str(num_nodes)][ID][i] is not None:
+                    sum_obj += res[str(num_nodes)][ID][i]
+            obj = sum_obj / num_ids
             objs.append(obj)
         label = f"num_nodes={num_nodes}"
         print(f"objs: {objs}, running_duration: {running_durations}, label: {label}")
@@ -947,8 +957,9 @@ if __name__ == '__main__':
     if_plot = True
     if(if_plot):
         dir = 'result/syn_PL_gurobi'
-        prefixes = 'powerlaw_900_'
-        read_result_comments_multifiles(dir, prefixes)
+        prefixes = 'powerlaw_1400_'
+        running_durations = RUNNING_DURATIONS
+        read_result_comments_multifiles(dir, prefixes, running_durations)
 
     if_generate_distribution = False
     if if_generate_distribution:

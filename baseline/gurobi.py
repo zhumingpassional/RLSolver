@@ -342,7 +342,7 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['powerlaw_1000_']
+            prefixes = ['powerlaw_1000_ID5']
             directory_data = '../data/syn_PL'
 
         directory_result = '../result'
