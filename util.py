@@ -132,14 +132,15 @@ def cover_all_edges(solution: List[int], graph: nx.Graph):
             break
     return cover_all
 
-def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
+def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph: nx.Graph, need_check_cover_all_edges=True):
     num_nodes = len(solution)
     obj = 0
     for i in range(num_nodes):
         if solution[i] == 1:
             obj -= 1
-    if not cover_all_edges(solution, graph):
-            return -INF
+    if need_check_cover_all_edges:
+        if not cover_all_edges(solution, graph):
+                return -INF
     return obj
 
 # write a tensor/list/np.array (dim: 1) to a txt file.
@@ -327,14 +328,16 @@ def plot_fig_over_durations(objs: List[int], durations: List[int], label: str):
     plt.figure()
     x = durations
     dic = {'0': 'ro-', '1': 'gs', '2': 'b^', '3': 'c>', '4': 'm<', '5': 'yp'}
+    # plt.ylim(0, max(objs))
     plt.plot(x, objs, dic['0'])
     plt.legend([label], loc=0)
     plt.savefig('./result/' + label + '.png')
     plt.show()
 
-# return: num_nodes, running_duration:, obj,
+# return: num_nodes, ID, running_duration:, obj,
 def read_result_comments(filename: str):
-    num_nodes, running_duration, obj = None, None, None
+    num_nodes, ID, running_duration, obj = None, None, None, None
+    ID = int(filename.split('ID')[1].split('_')[0])
     with open(filename, 'r') as file:
         # lines = []
         line = file.readline()
@@ -348,35 +351,44 @@ def read_result_comments(filename: str):
                 if 'obj:' in line:
                     obj = float(line.split('obj:')[1])
             line = file.readline()
-    return int(num_nodes), running_duration, obj
+    return int(num_nodes), ID, running_duration, obj
 
-def read_result_comments_multifiles(dir: str, prefixes: str):
+def read_result_comments_multifiles(dir: str, prefixes: str, running_durations: List[int]):
     res = {}
     num_nodess = set()
-    running_durations = set()
     # for prefix in prefixes:
     files = calc_txt_files_with_prefix(dir, prefixes)
+    num_ids = NUM_IDS
     for i in range(len(files)):
         file = files[i]
-        num_nodes, running_duration, obj = read_result_comments(file)
+        num_nodes, ID, running_duration, obj = read_result_comments(file)
+        if running_duration not in running_durations:
+            continue
+        index = running_durations.index(running_duration)
         num_nodess.add(num_nodes)
-        running_durations.add(running_duration)
-        if str(num_nodes) in res.keys():
-            if str(running_duration) in res[str(num_nodes)].keys():
-                res[str(num_nodes)][str(running_duration)].append(obj)
-            else:
-                res[str(num_nodes)][str(running_duration)] = [obj]
+        if str(num_nodes) not in res.keys():
+            res[str(num_nodes)] = [[None] * len(running_durations) for _ in range(num_ids)]
+        res[str(num_nodes)][ID][index] = obj
             # res[str(num_nodes)] = {**res[str(num_nodes)], **tmp_dict}
-        else:
-            res[str(num_nodes)] = {str(running_duration): [obj]}
+    for num_nodes_str in res.keys():
+        for ID in range(num_ids):
+            last_nonNone = None
+            for i in range(len(running_durations)):
+                if res[num_nodes_str][ID][i] is not None:
+                    last_nonNone = res[num_nodes_str][ID][i]
+                if res[num_nodes_str][ID][i] is None and last_nonNone is not None:
+                    res[num_nodes_str][ID][i] = last_nonNone
+
     num_nodess = list(num_nodess)
     num_nodess.sort()
-    running_durations = list(running_durations)
-    running_durations.sort()
     for num_nodes in num_nodess:
         objs = []
-        for running_duration in running_durations:
-            obj = np.mean(res[str(num_nodes)][str(running_duration)])
+        for i in range(len(running_durations)):
+            sum_obj = 0
+            for ID in range(num_ids):
+                if res[str(num_nodes)][ID][i] is not None:
+                    sum_obj += res[str(num_nodes)][ID][i]
+            obj = sum_obj / num_ids
             objs.append(obj)
         label = f"num_nodes={num_nodes}"
         print(f"objs: {objs}, running_duration: {running_durations}, label: {label}")
@@ -945,8 +957,9 @@ if __name__ == '__main__':
     if_plot = True
     if(if_plot):
         dir = 'result/syn_PL_gurobi'
-        prefixes = 'powerlaw_900_'
-        read_result_comments_multifiles(dir, prefixes)
+        prefixes = 'powerlaw_1400_'
+        running_durations = RUNNING_DURATIONS
+        read_result_comments_multifiles(dir, prefixes, running_durations)
 
     if_generate_distribution = False
     if if_generate_distribution:

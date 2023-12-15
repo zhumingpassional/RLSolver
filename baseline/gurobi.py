@@ -157,7 +157,7 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         write_statistics(model, new_file, True)
         new_file.write(f"// num_nodes: {len(nodes)}\n")
         for i in range(len(nodes)):
-            if GUROBI_VAR_CONTINUOUS or PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+            if GUROBI_VAR_CONTINUOUS or PROBLEM == Problem.minimum_vertex_cover:
                 new_file.write(f"{nodes[i] + 1} {values[i]}\n")
             else:
                 new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
@@ -188,27 +188,27 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     num_nodes = nx.number_of_nodes(graph)
     nodes = list(range(num_nodes))
 
-    if PROBLEM_NAME == ProblemName.maxcut:
+    if PROBLEM == Problem.maxcut:
         y_lb = adjacency_matrix.min()
         y_ub = adjacency_matrix.max()
         x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
         y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
         model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
                         GRB.MAXIMIZE)
-    elif PROBLEM_NAME == ProblemName.graph_partitioning:
+    elif PROBLEM == Problem.graph_partitioning:
         y_lb = adjacency_matrix.min()
         y_ub = adjacency_matrix.max()
         x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
         y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
         model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
                            GRB.MINIMIZE)
-    elif PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+    elif PROBLEM == Problem.minimum_vertex_cover:
         x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
         model.setObjective(quicksum(x[j] for j in nodes),
                            GRB.MINIMIZE)
 
     # constrs
-    if PROBLEM_NAME in [ProblemName.maxcut, ProblemName.graph_partitioning]:
+    if PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
         # y_{i, j} = x_i XOR x_j
         for j in nodes:
             for i in range(0, j):
@@ -217,10 +217,10 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
                 model.addConstr(y[(i, j)] >= x[i] - x[j], name='C0c_' + str(i) + '_' + str(j))
                 model.addConstr(y[(i, j)] >= -x[i] + x[j], name='C0d_' + str(i) + '_' + str(j))
 
-    if PROBLEM_NAME == ProblemName.graph_partitioning:
+    if PROBLEM == Problem.graph_partitioning:
         model.addConstr(quicksum(x[j] for j in nodes) == num_nodes / 2, name='C1')
 
-    if PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+    if PROBLEM == Problem.minimum_vertex_cover:
         for i in range(len(edges)):
             node1, node2 = edges[i]
             model.addConstr(x[node1] + x[node2] >= 1, name=f'C0_{node1}_{node2}')
@@ -342,7 +342,7 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['powerlaw_1000_']
+            prefixes = ['powerlaw_1000_ID5']
             directory_data = '../data/syn_PL'
 
         directory_result = '../result'

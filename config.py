@@ -3,7 +3,7 @@ from typing import List, Union, Tuple
 from enum import Enum, unique
 
 @unique
-class ProblemName(Enum):
+class Problem(Enum):
     maxcut = 'maxcut'
     graph_partitioning = 'graph_partitioning'
     minimum_vertex_cover = 'minimum_vertex_cover'
@@ -24,11 +24,14 @@ GSET_DIR: str = './data/gset'
 GRAPH_DISTRI_TYPE = GraphDistriType.powerlaw
 GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphDistriType.powerlaw, GraphDistriType.barabasi_albert]
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
+NUM_IDS = 30  # ID0, ..., ID29
 
-PROBLEM_NAME = ProblemName.minimum_vertex_cover
+PROBLEM = Problem.maxcut
 
 INF = 1e6
 
+# RUNNING_DURATIONS = [600, 1200, 1800, 2400, 3000, 3600]  # store results
+RUNNING_DURATIONS = [300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600]  # store results
 
 GUROBI_INTERVAL = 10 * 60  # seconds, the interval of writing results to txt files
 GUROBI_TIME_LIMITS = [1 * 3600]  # seconds

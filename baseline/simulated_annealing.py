@@ -14,11 +14,11 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
     print('simulated_annealing')
     start_time = time.time()
     curr_solution = copy.deepcopy(init_solution)
-    if PROBLEM_NAME == ProblemName.maxcut:
+    if PROBLEM == Problem.maxcut:
         curr_score = obj_maxcut(curr_solution, graph)
-    elif PROBLEM_NAME == ProblemName.graph_partitioning:
+    elif PROBLEM == Problem.graph_partitioning:
         curr_score = obj_graph_partitioning(curr_solution, graph)
-    elif PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+    elif PROBLEM == Problem.minimum_vertex_cover:
         curr_score = obj_minimum_vertex_cover(curr_solution, graph)
         edges = list(graph.edges)
     init_score = curr_score
@@ -28,11 +28,11 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
         # The temperature decreases
         temperature = init_temperature * (1 - (k + 1) / num_steps)
         new_solution = copy.deepcopy(curr_solution)
-        if PROBLEM_NAME == ProblemName.maxcut:
+        if PROBLEM == Problem.maxcut:
             index = random.randint(0, num_nodes - 1)
             new_solution[index] = (new_solution[index] + 1) % 2
             new_score = obj_maxcut(new_solution, graph)
-        elif PROBLEM_NAME == ProblemName.graph_partitioning:
+        elif PROBLEM == Problem.graph_partitioning:
             while True:
                 index = random.randint(0, num_nodes - 1)
                 index2 = random.randint(0, num_nodes - 1)
@@ -43,7 +43,11 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
             new_solution[index] = new_solution[index2]
             new_solution[index2] = tmp
             new_score = obj_graph_partitioning(new_solution, graph)
-        elif PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+        elif PROBLEM == Problem.minimum_vertex_cover:
+            print(f"SA is not suitable for {Problem.minimum_vertex_cover}")
+            suitable = False
+            if not suitable:
+                raise ValueError("")
             while True:
                 index = random.randint(0, num_nodes - 1)
                 if new_solution[index] == 0:
@@ -53,7 +57,7 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
                 if cover_all_edges(new_solution2, graph):
                     break
             new_solution[index] = 0
-            new_score = obj_minimum_vertex_cover(new_solution, graph)
+            new_score = obj_minimum_vertex_cover(new_solution, graph, False)
         scores.append(new_score)
         delta_e = curr_score - new_score
         if delta_e < 0:
@@ -77,9 +81,9 @@ if __name__ == '__main__':
 
     # run alg
     # init_solution = list(np.random.randint(0, 2, graph.number_of_nodes()))
-    if PROBLEM_NAME in [ProblemName.maxcut, ProblemName.graph_partitioning]:
+    if PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
         init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
-    if PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+    if PROBLEM == Problem.minimum_vertex_cover:
         init_solution = [1] * int(graph.number_of_nodes())
 
     init_temperature = 4
