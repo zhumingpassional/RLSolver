@@ -3,7 +3,7 @@ from typing import List, Union, Tuple
 from enum import Enum, unique
 
 @unique
-class ProblemName(Enum):
+class Problem(Enum):
     maxcut = 'maxcut'
     graph_partitioning = 'graph_partitioning'
     minimum_vertex_cover = 'minimum_vertex_cover'
@@ -25,7 +25,7 @@ GRAPH_DISTRI_TYPE = GraphDistriType.powerlaw
 GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphDistriType.powerlaw, GraphDistriType.barabasi_albert]
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 
-PROBLEM_NAME = ProblemName.minimum_vertex_cover
+PROBLEM = Problem.minimum_vertex_cover
 
 INF = 1e6
 

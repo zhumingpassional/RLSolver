@@ -132,14 +132,15 @@ def cover_all_edges(solution: List[int], graph: nx.Graph):
             break
     return cover_all
 
-def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
+def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph: nx.Graph, need_check_cover_all_edges=True):
     num_nodes = len(solution)
     obj = 0
     for i in range(num_nodes):
         if solution[i] == 1:
             obj -= 1
-    if not cover_all_edges(solution, graph):
-            return -INF
+    if need_check_cover_all_edges:
+        if not cover_all_edges(solution, graph):
+                return -INF
     return obj
 
 # write a tensor/list/np.array (dim: 1) to a txt file.
@@ -350,29 +351,30 @@ def read_result_comments(filename: str):
             line = file.readline()
     return int(num_nodes), running_duration, obj
 
-def read_result_comments_multifiles(dir: str, prefixes: str):
+def read_result_comments_multifiles(dir: str, prefixes: str, running_durations: List[int]):
     res = {}
     num_nodess = set()
-    running_durations = set()
     # for prefix in prefixes:
     files = calc_txt_files_with_prefix(dir, prefixes)
     for i in range(len(files)):
         file = files[i]
         num_nodes, running_duration, obj = read_result_comments(file)
+        index = running_durations.index(running_duration)
         num_nodess.add(num_nodes)
-        running_durations.add(running_duration)
-        if str(num_nodes) in res.keys():
-            if str(running_duration) in res[str(num_nodes)].keys():
-                res[str(num_nodes)][str(running_duration)].append(obj)
-            else:
-                res[str(num_nodes)][str(running_duration)] = [obj]
+        if str(num_nodes) not in res.keys():
+            res[str(num_nodes)] = [None] * len(running_durations)
+        if str(running_duration) not in res[str(num_nodes)].keys():
+            res[str(num_nodes)] = [None] * len(running_durations)
+        res[str(num_nodes)][index] = obj
             # res[str(num_nodes)] = {**res[str(num_nodes)], **tmp_dict}
-        else:
-            res[str(num_nodes)] = {str(running_duration): [obj]}
+    for num_nodes_str in res.keys():
+        last_nonNone = None
+        for i in range(len(running_durations)):
+            if res[num_nodes_str][i] is None and last_nonNone is not None:
+                res[num_nodes_str][i] = last_nonNone
+
     num_nodess = list(num_nodess)
     num_nodess.sort()
-    running_durations = list(running_durations)
-    running_durations.sort()
     for num_nodes in num_nodess:
         objs = []
         for running_duration in running_durations:

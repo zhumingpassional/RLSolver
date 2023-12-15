@@ -168,14 +168,14 @@ if __name__ == '__main__':
     alg_name = 'GR'
 
     # maxcut
-    if PROBLEM_NAME == ProblemName.maxcut:
+    if PROBLEM == Problem.maxcut:
         gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph)
 
     # graph_partitioning
-    if PROBLEM_NAME == ProblemName.graph_partitioning:
+    if PROBLEM == Problem.graph_partitioning:
         gr_score, gr_solution, gr_scores = greedy_graph_partitioning(init_solution, graph)
 
-    if PROBLEM_NAME == ProblemName.minimum_vertex_cover:
+    if PROBLEM == Problem.minimum_vertex_cover:
         init_solution = [0] * graph.number_of_nodes()
         gr_score, gr_solution, gr_scores = greedy_weak_minimum_vertex_cover(init_solution, graph)
         obj = obj_minimum_vertex_cover(gr_solution, graph)
