@@ -148,9 +148,9 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         if node is None:
             break
         if GUROBI_VAR_CONTINUOUS:
-            value = var.x
+            value = var.solution
         else:
-            value = transfer_float_to_binary(var.x)
+            value = transfer_float_to_binary(var.solution)
         nodes.append(node)
         values.append(value)
     with open(f"{new_filename}.txt", 'w', encoding="UTF-8") as new_file:
@@ -170,7 +170,7 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
             new_file.write('values of vars: \n')
             vars = model.getVars()
             for var in vars:
-                new_file.write(f'{var.VarName}: {var.x}\n')
+                new_file.write(f'{var.VarName}: {var.solution}\n')
         model.write(f"{new_filename}.mst")
         model.write(f"{new_filename}.lp")
         model.write(f"{new_filename}.mps")
@@ -264,7 +264,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
         for i in range(num_nodes):
             var = r.getVarByName(names_to_retrieve[i])
-            x_values.append(var.x)
+            x_values.append(var.solution)
         print(f'values of x: {x_values}')
         return x_values
 
@@ -309,7 +309,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     x_values = []
     for i in range(num_nodes):
-        x_values.append(x[i].x)
+        x_values.append(x[i].solution)
     print(f'values of x: {x_values}')
     return x_values
 
