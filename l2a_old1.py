@@ -6,7 +6,7 @@ from copy import deepcopy
 import numpy as np
 from torch import Tensor
 # from rlsolver.rlsolver_learn2opt.np_complete_problems.env.maxcut_env import MCSim
-from mcmc_sim import MCMCSim
+from simulator import MCMCSim
 
 from net import OptNet
 import pickle as pkl
@@ -35,23 +35,23 @@ def train(
         if (epoch + 1) % 500 == 0:
             episode_length = max(episode_length - 1, 5)
         loss_list = th.zeros(episode_length * num_envs).to(device)
-        x_prev = mcmc_sim.init(True)
+        prev_solution = mcmc_sim.init(True)
         gamma0 = 0.98
         gamma = gamma0 ** episode_length
         for step in range(episode_length):
             #print(x_prev.shape)
             #print(x_prev.reshape(num_env, N, 1).shape)
             #x, h, c = opt_net(x_prev.reshape(num_env, N, 1), prev_h, prev_c)
-            x, hidden, cell = opt_net(x_prev.reshape(num_envs, 1, num_nodes), prev_hidden, prev_cell)
+            solution, hidden, cell = opt_net(prev_solution.reshape(num_envs, 1, num_nodes), prev_hidden, prev_cell)
 
             #x = x.reshape(num_env, N)
-            l = mcmc_sim.obj(x.reshape(num_envs, num_nodes))
+            l = mcmc_sim.obj(solution.reshape(num_envs, num_nodes))
             loss_list[num_envs * (step):num_envs * (step + 1)] = l.detach()
             loss -= l.sum()
             #print(x_prev.shape, x.shape)
-            l = mcmc_sim.calc_obj_for_two_graphs_vmap(x_prev.reshape(num_envs, num_nodes), x.reshape(num_envs, num_nodes))
+            l = mcmc_sim.calc_obj_for_two_graphs_vmap(prev_solution.reshape(num_envs, num_nodes), solution.reshape(num_envs, num_nodes))
             loss -= 0.2 * l.sum()#max(0.05, (500-epoch) / 500) * l.sum()
-            x_prev = x.detach()
+            prev_solution = solution.detach()
             #prev_h, prev_c = h.detach(), c.detach()
             gamma /= gamma0
 
@@ -71,18 +71,18 @@ def train(
             loss = 0
             #loss_list = []
             loss_list = th.zeros(episode_length * num_envs * 2).to(device)
-            x = mcmc_sim.init(True)
-            xs = th.zeros(episode_length * num_envs * 2, num_nodes).to(device)
+            solution = mcmc_sim.init(True)
+            solutions = th.zeros(episode_length * num_envs * 2, num_nodes).to(device)
             for step in range(episode_length * 2):
-                x, hidden, cell = opt_net(x.detach().reshape(num_envs, 1, num_nodes), hidden, cell)
-                x = x.reshape(num_envs, num_nodes)
-                x2 = x.detach()
-                x2 = (x2>0.5).to(th.float32)
+                solution, hidden, cell = opt_net(solution.detach().reshape(num_envs, 1, num_nodes), hidden, cell)
+                solution = solution.reshape(num_envs, num_nodes)
+                solution2 = solution.detach()
+                solution2 = (solution2>0.5).to(th.float32)
                 # print(a)
                 # assert 0
-                l = mcmc_sim.obj(x2)
+                l = mcmc_sim.obj(solution2)
                 loss_list[num_envs * (step):num_envs * (step + 1)] = l.detach()
-                xs[num_envs * step: num_envs * (step + 1)] = x2.detach()
+                solutions[num_envs * step: num_envs * (step + 1)] = solution2.detach()
                 #if (step + 6) % 2 == 0:
                     #optimizer.zero_grad()
                     #loss.backward()
@@ -91,8 +91,8 @@ def train(
                     #h, c = h_init.clone(), c_init.clone()
             val, idx = loss_list.max(dim=-1)
             result_file_name = calc_result_file_name(filename)
-            write_result(xs[idx], result_file_name)
-            mcmc_sim.best_x = xs[idx]
+            write_result(solutions[idx], result_file_name)
+            mcmc_sim.best_solution = solutions[idx]
             print(f"epoch:{epoch} | test :",  loss_list.max().item())
 
 

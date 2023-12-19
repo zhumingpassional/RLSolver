@@ -96,5 +96,5 @@ vqe_optimizer = MinimumEigenOptimizer(vqe)
 result = vqe_optimizer.solve(qp)
 print(result.prettyprint())
 
-colors = ["r" if result.x[i] == 0 else "c" for i in range(n)]
+colors = ["r" if result.solution[i] == 0 else "c" for i in range(n)]
 draw_graph(G, colors, pos)
