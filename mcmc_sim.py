@@ -4,7 +4,6 @@ from copy import deepcopy
 import numpy as np
 from torch import Tensor
 # from functorch import vmap
-# from rlsolver.rlsolver_learn2opt.np_complete_problems.env._base_env import _BaseEnv
 from util import read_nxgraph
 import networkx as nx
 class MCMCSim():
