@@ -274,7 +274,7 @@ def generate_write_distribution(num_nodess: List[int], num_graphs: int, graph_ty
         for i in range(num_graphs):
             weightmatrix, num_nodes, num_edges = generate_graph(num_nodes, graph_type)
             graph = transfer_weightmatrix_to_nxgraph(weightmatrix, num_nodes)
-            filename = dir + '/' + graph_type + '_' + str(num_nodes) + '_ID' + str(i) + '.txt'
+            filename = dir + '/' + graph_type.value + '_' + str(num_nodes) + '_ID' + str(i) + '.txt'
             write_nxgraph(graph, filename)
 
 def write_nxgraph(g: nx.Graph(), filename: str):
@@ -961,14 +961,15 @@ if __name__ == '__main__':
         running_durations = RUNNING_DURATIONS
         read_result_comments_multifiles(dir, prefixes, running_durations)
 
-    if_generate_distribution = False
+    if_generate_distribution = True
     if if_generate_distribution:
-        num_nodess = [20, 40, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]
+        num_nodess = [20, 40] + list(range(100, 3001, 100))
+        # num_nodess = list(range(2100, 3001, 100))
         # num_nodess = [1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000]
         # num_nodess = [20]
         num_graphs = 30
-        graph_type = GraphDistriType.erdos_renyi
-        dir = 'data/syn_ER'
+        graph_type = GraphDistriType.barabasi_albert
+        dir = 'data/syn_BA'
         generate_write_distribution(num_nodess, num_graphs, graph_type, dir)
 
 
