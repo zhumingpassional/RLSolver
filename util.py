@@ -8,12 +8,15 @@ import torch.nn as nn
 import numpy as np
 from typing import List, Union, Tuple
 import networkx as nx
+import pandas as pd
 import torch as th
 from torch import Tensor
 from os import system
 from config import *
 import math
 from enum import Enum
+import tqdm
+import re
 from config import *
 try:
     import matplotlib as mpl
@@ -894,7 +897,61 @@ class EncoderBase64:
         x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.int8)
         return x_bool
 
+def transfer_result_txt_to_csv():
+    def time_limit_str(input_string):
+        # 使用正则表达式提取浮点数
+        matches = re.findall(r'[-+]?\d*\.\d+|\d+', input_string)
+        return matches[0]
+    def extract_info_from_filename(file_name):
+        parts = file_name.split('_')
+        info_dict = {
+            'graph_type': parts[0],
+            'num_nodes': int(parts[1]),
+            'random_seed_id': int(parts[2][2:]),  # 从 'ID' 后的部分提取
+            'exec_time': int(parts[3][:-4])  # 从文件扩展名前的部分提取
+        }
+        return info_dict
+    def read_key_value_file(directory, filename):
+        file_path = f"{directory}/{filename}"
+        result_dict = {}
+        solution_sequence = ''
+        with open(file_path, 'r') as file:
+            for line in file:
+                if not line.startswith('//'):
+                    break
+                key, value = map(str.strip, line[2:].split(':', 1))
+                result_dict[key] = value
+        result_dict['time_limit'] = time_limit_str(result_dict['time_limit'])
+        result_dict = {key: float(value) for key, value in result_dict.items()}
+        result_dict.update(extract_info_from_filename(filename))
+        # enc = EncoderBase64(num_nodes=result_dict['num_nodes'])
+        # x_bool = np.equal(np.array(list(map(int, solution_sequence))), 1)
+        # result_dict['solution'] = enc.bool_to_str(x_bool=x_bool)
+        # print(result_dict)
+        return result_dict
+    def read_all_files_in_directory(directory):
+        data_dict_list = []
+        file_names = sorted(os.listdir(directory))
+        for file_name in tqdm.tqdm(file_names):
+            if file_name.endswith(".txt"):
+                data_dict = read_key_value_file(directory, file_name)
+                data_dict_list.append(data_dict)
+        return data_dict_list
+    # 例子
+    data_dir = './data/syn_PL_solution'
+    data_dicts = read_all_files_in_directory(data_dir)
+    df = pd.DataFrame(data_dicts)
 
+    desired_order = ['graph_type', 'num_nodes', 'random_seed_id', 'exec_time', 'obj', 'time_limit',
+                     'running_duration', 'gap', 'obj_bound', ]  # 'solution']
+    df = df[desired_order]  # 重新指定 DataFrame 的列顺序
+
+    # 制定排序的列名优先级
+    priority_columns = ['graph_type', 'num_nodes', 'random_seed_id', 'exec_time']
+    # 使用 sort_values 方法进行排序
+    df = df.sort_values(by=priority_columns)
+    print(df[['graph_type', 'num_nodes', 'random_seed_id', 'obj', 'exec_time', ]])  # 'solution']])
+    df.to_csv('syn_PL_solution.csv', index=False)
 
 if __name__ == '__main__':
     s = "// time_limit: ('TIME_LIMIT', <class 'float'>, 36.0, 0.0, inf, inf)"
