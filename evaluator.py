@@ -4,6 +4,7 @@ import math
 import numpy as np
 import torch as th
 from util import EncoderBase64
+
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -15,7 +16,8 @@ except ImportError:
 
 TEN = th.Tensor
 
-class Evaluator:
+
+class Evaluator0:  # todo 标记后，将在下一次PR里把所有 Evaluator0 改为 Evaluator
     def __init__(self, sim, enc):
         self.start_time = time.time()
         self.best_score = -th.inf
@@ -37,29 +39,34 @@ class Evaluator:
               f"max_score {max_score.item():9.0f}  "
               f"best_score {self.best_score:9.0f}")
 
-class Evaluator2:
-    def __init__(self, save_dir: str, num_nodes: int, solution: TEN, obj: int):
+
+class Evaluator:
+    def __init__(self, save_dir: str, num_nodes: int, x: TEN, v: float):
         self.start_timer = time.time()
         self.recorder1 = []
         self.recorder2 = []
         self.encoder_base64 = EncoderBase64(num_nodes=num_nodes)
 
-        self.best_solution = solution  # solution x
-        self.best_obj = obj  # objective value of solution x
+        self.best_x = x  # solution x
+        self.best_v = v  # objective value of solution x
 
         self.save_dir = save_dir
         os.makedirs(self.save_dir, exist_ok=True)
 
-    def record1(self, i: float, obj: int):
-        self.recorder1.append((i, obj))
+        self.record1(i=0, v=self.best_v)
+        self.record2(i=0, v=self.best_v, x=self.best_x)
 
-    def record2(self, i: float, obj: int, solution: TEN):
-        self.recorder2.append((i, obj))
+    def record1(self, i: float, v: float):
+        self.recorder1.append((i, v))
 
-        if obj > self.best_obj:
-            self.best_solution = solution
-            self.best_obj = obj
-            self.logging_print(obj=obj, if_show_x=True)
+    def record2(self, i: float, v: float, x: TEN):
+        self.recorder2.append((i, v))
+
+        if_update = v > self.best_v
+        if if_update:
+            self.best_x = x
+            self.best_v = v
+        return if_update
 
     def plot_record(self, fig_dpi: int = 300):
         if plt is None:
@@ -76,7 +83,7 @@ class Evaluator2:
         plt.plot(recorder2[:, 0], recorder2[:, 1], linestyle=':', label='back test')
         plt.scatter(recorder2[:, 0], recorder2[:, 1])
 
-        plt.title(f"best_obj_value {self.best_obj}")
+        plt.title(f"best_obj_value {self.best_v}")
         plt.axis('auto')
         plt.legend()
         plt.grid()
@@ -84,22 +91,37 @@ class Evaluator2:
         plt.savefig(f"{self.save_dir}/recorder.jpg", dpi=fig_dpi)
         plt.close('all')
 
-    def logging_print(self, obj: float, if_show_x: bool = False):
+    def logging_print(self, x: TEN, v: float, show_str: str = '', if_show_x: bool = False):
         used_time = int(time.time() - self.start_timer)
-        x_str = self.encoder_base64.bool_to_str(self.best_solution) if if_show_x else ''
+        x_str = self.encoder_base64.bool_to_str(x) if if_show_x else ''
         i = self.recorder2[-1][0]
-        print(f"| used_time {used_time:8}  i {i:8}  good_value {obj:8}  best_value {self.best_obj:8}  {x_str}")
+        print(f"|{i:6} {used_time:4} sec  v {v:6.0f} < {self.best_v:6.0f}  "
+              f"{show_str}  {x_str}")
+
+
+'''check'''
+
+
+def check_evaluator():
+    gpu_id = 0
+    graph_name, num_nodes = 'gset_14', 800
+
+    temp_xs = th.zeros((1, num_nodes))
+    temp_vs = th.ones((1,))
+
+    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, x=temp_xs[0], v=temp_vs[0].item())
+    assert isinstance(evaluator, Evaluator)
 
 
 X_G14 = """
 11Re2ycMx2zCiEhQl5ey$HyYnkUhDVE6KkPnuuhcWXwUO9Rn1fxrt_cn_g6iZFQex1YpwjD_j7KzbNN71qVekltv3QscNQJjrnrqHfsnOKWJzg9nJhZ$qh69
 $X_BvBQirx$i3F
 """  # 3064, SOTA=3064
-"""
+X_G14_1 = """
 11Re2ydMx2zCiEhQl5ey$PyYnkUhDVE6KkQnuuhc0XwUO9RnXfxrt_dn_g6aZFQ8x1YpwbD_j7KzaNN71qVuklpv3Q_cNQJjnnrrHjsnOKWIzg9nJxZ$qh69
 $n_BHBRirx$i3F
 """  # 3064, SOTA=3064
-"""
+X_G14_2 = """
 2_aNz3Of4z2pJnKaGwN30k3TEHXKoWnvhHaE77KPlU5XdsaE_UCA81PE1LvJSmbN4_Ti5Qo1IOh2Aeeu_BWNHGC6yb1GebiIAEAAkI9EdhVj2LsEiKS2BKvs
 0E1qkqaJ840Jym
 """  # 3064, SOTA=3064
@@ -181,13 +203,12 @@ hI1MHL$$n7W32E96659blS3WAnnGOr0Vwg7MMvyKS8ignmH_pfy7g1TeTVF1R7SSnUPCojEBO7Sz4ds6
 """  # 9583, SOTA=9595
 
 
-def check_solution():
-    from util import load_graph
-    from simulator import MaxcutSimulator
+def check_solution_x():
+    from graph_max_cut_simulator import SimulatorGraphMaxCut, load_graph
     graph_name = 'gset_14'
 
     graph = load_graph(graph_name=graph_name)
-    simulator = MaxcutSimulator(graph=graph)
+    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph=graph)
 
     x_str = X_G14
     num_nodes = simulator.num_nodes
@@ -196,3 +217,8 @@ def check_solution():
     x = encoder.str_to_bool(x_str)
     vs = simulator.calculate_obj_values(xs=x[None, :])
     print(f"objective value  {vs[0].item():8.2f}  solution {x_str}")
+
+
+if __name__ == '__main__':
+    check_evaluator()
+    check_solution_x()

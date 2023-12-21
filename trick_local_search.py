@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
 from simulator import MaxcutSimulator, MaxcutSimulatorAutoregressive
 from evaluator import X_G14, X_G15, X_G49, X_G50, X_G22, X_G55, X_G70
-from evaluator import Evaluator, Evaluator2
+from evaluator import Evaluator0, Evaluator
 from util import EncoderBase64, calc_device
 TEN = th.Tensor
 
@@ -303,7 +303,7 @@ hUH4vj0nAzi24"""
     '''evaluator'''
     temp_solutions = simulator.generate_solutions_randomly(num_sims=1)
     temp_objs = simulator.calculate_obj_values(solutions=temp_solutions)
-    evaluator = Evaluator2(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
+    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
 
     '''trick'''
     trick = TrickLocalSearch(simulator=simulator, num_nodes=simulator.num_nodes)

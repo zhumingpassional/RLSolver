@@ -8,7 +8,7 @@ import numpy as np
 import torch as th
 import torch.nn as nn
 from tqdm import tqdm
-from evaluator import Evaluator
+from evaluator import Evaluator0
 from simulator import MaxcutSimulator
 from util import (load_graph_from_txt,
                     save_graph_info_to_txt,
@@ -94,7 +94,7 @@ class Agent:  # Demo
         self.opt_base = th.optim.Adam(self.opt_opti.parameters(), lr=self.learning_rate)
 
         '''init evaluator'''
-        self.evaluator = Evaluator(sim=self.sim, enc=self.enc)
+        self.evaluator = Evaluator0(sim=self.sim, enc=self.enc)
 
     def iter_reset(self):
         probs = self.sim.get_rand_probs(num_envs=self.num_envs)
