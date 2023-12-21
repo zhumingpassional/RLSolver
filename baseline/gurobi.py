@@ -148,9 +148,9 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         if node is None:
             break
         if GUROBI_VAR_CONTINUOUS:
-            value = var.solution
+            value = var.x
         else:
-            value = transfer_float_to_binary(var.solution)
+            value = transfer_float_to_binary(var.x)
         nodes.append(node)
         values.append(value)
     with open(f"{new_filename}.txt", 'w', encoding="UTF-8") as new_file:
@@ -182,7 +182,8 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     graph = read_nxgraph(filename)
     edges = list(graph.edges)
     nx.draw_networkx(graph)
-    plt.show()
+    if plot_fig_:
+        plt.show()
 
     adjacency_matrix = transfer_nxgraph_to_adjacencymatrix(graph)
     num_nodes = nx.number_of_nodes(graph)
@@ -309,7 +310,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     x_values = []
     for i in range(num_nodes):
-        x_values.append(x[i].solution)
+        x_values.append(x[i].x)
     print(f'values of x: {x_values}')
     return x_values
 
@@ -342,8 +343,8 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['powerlaw_1000_ID5']
-            directory_data = '../data/syn_PL'
+            prefixes = ['barabasi_albert_100_']
+            directory_data = '../data/syn_BA'
 
         directory_result = '../result'
         run_gurobi_over_multiple_files(prefixes, GUROBI_TIME_LIMITS, directory_data, directory_result)
