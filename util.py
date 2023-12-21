@@ -67,7 +67,7 @@ def read_nxgraph(filename: str) -> nx.Graph():
 
 #
 def transfer_nxgraph_to_adjacencymatrix(graph: nx.Graph):
-    return nx.to_numpy_matrix(graph)
+    return nx.to_numpy_array(graph)
 
 # the returned weightmatrix has the following format： node1 node2 weight
 # For example: 1 2 3 // the weight of node1 and node2 is 3
