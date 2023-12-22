@@ -855,47 +855,7 @@ def check_convert_sln_x():
     assert all(x_bool == sim.prob_to_bool(x_prob))
 
 
-class EncoderBase64:
-    def __init__(self, num_nodes: int):
-        self.num_nodes = num_nodes
 
-        self.base_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$"
-        self.base_num = len(self.base_digits)
-
-    def bool_to_str(self, x_bool: TEN) -> str:
-        x_int = int(''.join([('1' if i else '0') for i in x_bool.tolist()]), 2)
-
-        '''bin_int_to_str'''
-        base_num = len(self.base_digits)
-        x_str = ""
-        while True:
-            remainder = x_int % base_num
-            x_str = self.base_digits[remainder] + x_str
-            x_int //= base_num
-            if x_int == 0:
-                break
-
-        x_str = '\n'.join([x_str[i:i + 120] for i in range(0, len(x_str), 120)])
-        return x_str.zfill(math.ceil(self.num_nodes // 6 + 1))
-
-    def str_to_bool(self, x_str: str) -> TEN:
-        x_b64 = x_str.replace('\n', '')
-
-        '''b64_str_to_int'''
-        x_int = 0
-        base_len = len(x_b64)
-        for i in range(base_len):
-            digit = self.base_digits.index(x_b64[i])
-            power = base_len - 1 - i
-            x_int += digit * (self.base_num ** power)
-
-        return self.int_to_bool(x_int)
-
-    def int_to_bool(self, x_int: int) -> TEN:
-        x_bin: str = bin(x_int)[2:]
-        x_bool = th.zeros(self.num_nodes, dtype=th.int8)
-        x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.int8)
-        return x_bool
 
 def transfer_result_txt_to_csv():
     def time_limit_str(input_string):

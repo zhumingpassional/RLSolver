@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
 
 from simulator import SimulatorGraphMaxCut
-from local_search import SolverLocalSearch, show_gpu_memory
+from local_search import TrickLocalSearch, show_gpu_memory
 from evaluator import Evaluator
 
 
@@ -96,10 +96,10 @@ class PolicyGNN(nn.Module):
         return xs
 
 
-def metropolis_hastings_sampling(prob, start_xs, num_iters):  # mcmc sampling with transition kernel and accept ratio
-    xs = start_xs.clone()
-    num_sims, num_nodes = xs.shape
-    device = xs.device
+def metropolis_hastings_sampling(prob, start_solutions, num_iters):  # mcmc sampling with transition kernel and accept ratio
+    solutions = start_solutions.clone()
+    num_sims, num_nodes = solutions.shape
+    device = solutions.device
 
     sim_ids = th.arange(num_sims, device=device)
 
@@ -109,17 +109,16 @@ def metropolis_hastings_sampling(prob, start_xs, num_iters):  # mcmc sampling wi
             break
 
         ids = th.randint(low=0, high=num_nodes, size=(num_sims,), device=device)
-        chosen_p = prob[ids]
-        chosen_xs = xs[sim_ids, ids]
-        chosen_ps = th.where(chosen_xs, chosen_p, 1 - chosen_p)
+        chosen_prob = prob[ids]
+        chosen_solutions = solutions[sim_ids, ids]
+        chosen_probs = th.where(chosen_solutions, chosen_prob, 1 - chosen_prob)
 
-        accept_rates = (1 - chosen_ps) / chosen_ps
+        accept_rates = (1 - chosen_probs) / chosen_probs
         accept_masks = th.rand(num_sims, device=device).lt(accept_rates)
-        xs[sim_ids, ids] = th.where(accept_masks, th.logical_not(chosen_xs), chosen_xs)
+        solutions[sim_ids, ids] = th.where(accept_masks, th.logical_not(chosen_solutions), chosen_solutions)
 
         count += accept_masks.sum()
-    return xs
-
+    return solutions
 
 def run_in_single_graph():
     gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
@@ -146,15 +145,15 @@ def run_in_single_graph():
     num_nodes = sim.num_nodes
 
     '''addition'''
-    solver = SolverLocalSearch(simulator=sim, num_nodes=num_nodes)
+    trick = TrickLocalSearch(simulator=sim, num_nodes=num_nodes)
 
-    xs = sim.generate_xs_randomly(num_sims=num_sims)
-    solver.reset(xs)
+    solutions = sim.generate_solutions_randomly(num_sims=num_sims)
+    trick.reset(solutions)
     for _ in range(8):
-        solver.random_search(num_iters=8)
-    temp_xs = solver.good_xs
-    temp_vs = solver.good_vs
-    evaluator = Evaluator(save_dir=f"{sim_name}_{gpu_id}", num_nodes=num_nodes, x=temp_xs[0], v=temp_vs[0].item())
+        trick.random_search(num_iters=8)
+    temp_solutions = trick.good_solutions
+    temp_objs = trick.good_objs
+    evaluator = Evaluator(save_dir=f"{sim_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
 
     '''model'''
     net = PolicyMLP(inp_dim=num_nodes, mid_dim=mid_dim, out_dim=num_nodes).to(device)
@@ -171,16 +170,16 @@ def run_in_single_graph():
         probs0 = th.rand(size=(1, num_nodes), device=device) * 0.02 + 0.49
         probs1 = net.auto_regression(probs0, ids_ary=ids_ary).clip(1e-9, 1 - 1e-9)
 
-        start_xs = temp_xs.repeat(num_repeat, 1)
-        xs = metropolis_hastings_sampling(prob=probs1[0], start_xs=start_xs, num_iters=int(num_nodes * 0.2))
-        vs = solver.reset(xs)
+        start_solutions = temp_solutions.repeat(num_repeat, 1)
+        solutions = metropolis_hastings_sampling(prob=probs1[0], start_solutions=start_solutions, num_iters=int(num_nodes * 0.2))
+        objs = trick.reset(solutions)
         for _ in range(4):
-            xs, vs, num_update = solver.random_search(num_iters=8)
+            solutions, objs, num_update = trick.random_search(num_iters=8)
 
-        advantages = vs.detach().float()
+        advantages = objs.detach().float()
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-        logprobs = th.log(th.where(xs, probs1, 1 - probs1)).sum(dim=1)
+        logprobs = th.log(th.where(solutions, probs1, 1 - probs1)).sum(dim=1)
         obj_values = (soft_max(logprobs) * advantages).sum()
 
         objective = obj_values  # + obj_entropy
@@ -190,31 +189,31 @@ def run_in_single_graph():
         optimizer.step()
 
         '''update temp_xs'''
-        xs = xs.reshape(num_repeat, num_sims, num_nodes)
-        vs = vs.reshape(num_repeat, num_sims)
-        temp_i = vs.argmax(dim=0)
-        temp_xs = xs[temp_i, sim_ids]
-        temp_vs = vs[temp_i, sim_ids]
+        solutions = solutions.reshape(num_repeat, num_sims, num_nodes)
+        objs = objs.reshape(num_repeat, num_sims)
+        temp_i = objs.argmax(dim=0)
+        temp_solutions = solutions[temp_i, sim_ids]
+        temp_objs = objs[temp_i, sim_ids]
 
         '''update good_x'''
-        good_i = temp_vs.argmax()
-        good_x = temp_xs[good_i]
-        good_v = temp_vs[good_i]
-        if_show_x = evaluator.record2(i=i, v=good_v, x=good_x)
+        good_i = temp_objs.argmax()
+        good_solution = temp_solutions[good_i]
+        good_obj = temp_objs[good_i]
+        if_show_solution = evaluator.record2(i=i, obj=good_obj, solution=good_solution)
         # if_show_x = if_show_x and (good_v >= 3050)
 
-        if (i + 1) % show_gap == 0 or if_show_x:
+        if (i + 1) % show_gap == 0 or if_show_solution:
             entropy = -th.mean(probs1 * th.log2(probs1), dim=1)
             obj_entropy = entropy.mean()
 
             show_str = (f"| obj {obj_values:9.3f}  entropy {obj_entropy:9.3f} "
-                        f"| cut_value {temp_vs.float().mean().long():6} < {temp_vs.max():6}")
-            evaluator.logging_print(x=good_x, v=good_v, show_str=show_str, if_show_x=if_show_x)
+                        f"| cut_value {temp_objs.float().mean().long():6} < {temp_objs.max():6}")
+            evaluator.logging_print(solution=good_solution, obj=good_obj, show_str=show_str, if_show_solution=if_show_solution)
 
         if (i + 1) % reset_gap == 0:
             print(f"| reset {show_gpu_memory(device=device)}")
-            temp_xs[0, :] = evaluator.best_x
-            temp_xs[1:] = sim.generate_xs_randomly(num_sims=num_sims - 1)
+            temp_solutions[0, :] = evaluator.best_solution
+            temp_solutions[1:] = sim.generate_solutions_randomly(num_sims=num_sims - 1)
 
             th.save(net.state_dict(), save_path)
 
@@ -245,15 +244,15 @@ def run_in_graph_distribution():
     num_nodes = sim.num_nodes
 
     '''addition'''
-    solver = SolverLocalSearch(simulator=sim, num_nodes=num_nodes)
+    trick = TrickLocalSearch(simulator=sim, num_nodes=num_nodes)
 
-    xs = sim.generate_xs_randomly(num_sims=num_sims)
-    solver.reset(xs)
+    solutions = sim.generate_solutions_randomly(num_sims=num_sims)
+    trick.reset(solutions)
     for _ in range(8):
-        solver.random_search(num_iters=8)
-    temp_xs = solver.good_xs
-    temp_vs = solver.good_vs
-    evaluator = Evaluator(save_dir=f"{sim_name}_{gpu_id}", num_nodes=num_nodes, x=temp_xs[0], v=temp_vs[0].item())
+        trick.random_search(num_iters=8)
+    temp_solutions = trick.good_solutions
+    temp_objs = trick.good_objs
+    evaluator = Evaluator(save_dir=f"{sim_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
 
     '''model'''
     net = PolicyGNN(inp_dim=num_nodes, mid_dim=mid_dim, out_dim=mid_dim, adj_matrix=sim.adjacency_matrix).to(device)
@@ -269,16 +268,16 @@ def run_in_graph_distribution():
         probs0 = th.rand(size=(1, num_nodes), device=device) * 0.02 + 0.49
         probs1 = net.auto_regression(probs0, ids_ary=ids_ary).clip(1e-9, 1 - 1e-9)
 
-        start_xs = temp_xs.repeat(num_repeat, 1)
-        xs = metropolis_hastings_sampling(prob=probs1[0], start_xs=start_xs, num_iters=int(num_nodes * 0.2))
-        vs = solver.reset(xs)
+        start_solutions = temp_solutions.repeat(num_repeat, 1)
+        solutions = metropolis_hastings_sampling(prob=probs1[0], start_solutions=start_solutions, num_iters=int(num_nodes * 0.2))
+        objs = trick.reset(solutions)
         for _ in range(4):
-            xs, vs, num_update = solver.random_search(num_iters=8)
+            solutions, objs, num_update = trick.random_search(num_iters=8)
 
-        advantages = vs.detach().float()
+        advantages = objs.detach().float()
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-        logprobs = th.log(th.where(xs, probs1, 1 - probs1)).sum(dim=1)
+        logprobs = th.log(th.where(solutions, probs1, 1 - probs1)).sum(dim=1)
         obj_values = (soft_max(logprobs) * advantages).sum()
 
         objective = obj_values  # + obj_entropy
@@ -288,36 +287,39 @@ def run_in_graph_distribution():
         optimizer.step()
 
         '''update temp_xs'''
-        xs = xs.reshape(num_repeat, num_sims, num_nodes)
-        vs = vs.reshape(num_repeat, num_sims)
-        temp_i = vs.argmax(dim=0)
-        temp_xs = xs[temp_i, sim_ids]
-        temp_vs = vs[temp_i, sim_ids]
+        solutions = solutions.reshape(num_repeat, num_sims, num_nodes)
+        objs = objs.reshape(num_repeat, num_sims)
+        temp_i = objs.argmax(dim=0)
+        temp_solutions = solutions[temp_i, sim_ids]
+        temp_objs = objs[temp_i, sim_ids]
 
         '''update good_x'''
-        good_i = temp_vs.argmax()
-        good_x = temp_xs[good_i]
-        good_v = temp_vs[good_i]
-        if_show_x = evaluator.record2(i=i, v=good_v, x=good_x)
+        good_i = temp_objs.argmax()
+        good_solution = temp_solutions[good_i]
+        good_obj = temp_objs[good_i]
+        if_show_solution = evaluator.record2(i=i, obj=good_obj, solution=good_solution)
         # if_show_x = if_show_x and (good_v >= 3050)
 
-        if (i + 1) % show_gap == 0 or if_show_x:
+        if (i + 1) % show_gap == 0 or if_show_solution:
             entropy = -th.mean(probs1 * th.log2(probs1), dim=1)
             obj_entropy = entropy.mean()
 
             show_str = (f"| obj {obj_values:9.3f}  entropy {obj_entropy:9.3f} "
-                        f"| cut_value {temp_vs.float().mean().long():6} < {temp_vs.max():6}")
-            evaluator.logging_print(x=good_x, v=good_v, show_str=show_str, if_show_x=if_show_x)
+                        f"| cut_value {temp_objs.float().mean().long():6} < {temp_objs.max():6}")
+            evaluator.logging_print(solution=good_solution, obj=good_obj, show_str=show_str, if_show_solution=if_show_solution)
 
         if (i + 1) % reset_gap == 0:
             print(f"| reset {show_gpu_memory(device=device)}")
             sim = SimulatorGraphMaxCut(sim_name=sim_name, device=device)
-            temp_xs[:] = sim.generate_xs_randomly(num_sims=num_sims - 1)
+            temp_solutions[:] = sim.generate_solutions_randomly(num_sims=num_sims - 1)
             net.adj_matrix = sim.adjacency_matrix
 
             th.save(net.state_dict(), save_path)
 
 
 if __name__ == '__main__':
-    run_in_single_graph()
-    # run_in_graph_distribution()
+    select_single = 0
+    if select_single == 1:
+        run_in_single_graph()
+    else:
+        run_in_graph_distribution()
