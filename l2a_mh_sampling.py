@@ -311,7 +311,7 @@ def run_in_graph_distribution():
         if (i + 1) % reset_gap == 0:
             print(f"| reset {show_gpu_memory(device=device)}")
             sim = SimulatorGraphMaxCut(sim_name=sim_name, device=device)
-            temp_solutions[:] = sim.generate_solutions_randomly(num_sims=num_sims - 1)
+            temp_solutions[:] = sim.generate_solutions_randomly(num_sims=num_sims)
             net.adj_matrix = sim.adjacency_matrix
 
             th.save(net.state_dict(), save_path)
