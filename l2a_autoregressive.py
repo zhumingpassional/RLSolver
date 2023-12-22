@@ -1,6 +1,6 @@
 import os
 from simulator import MaxcutSimulatorAutoregressive, MaxcutSimulatorReinforce
-from trick_local_search import *
+from local_search import *
 from util import EncoderBase64
 from net import PolicyMLP, Net
 from torch.distributions import Binomial

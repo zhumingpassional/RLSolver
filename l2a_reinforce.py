@@ -1,4 +1,4 @@
-from trick_local_search import *
+from local_search import *
 from torch.nn.utils import clip_grad_norm_
 from simulator import MaxcutSimulatorReinforce
 from util import load_graph, load_graph_auto
