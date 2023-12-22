@@ -404,7 +404,7 @@ class MCMCSim():
 
 GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
-DataDir = './data/graph_max_cut'
+DataDir = './data/gset'
 
 
 def load_graph_from_txt(txt_path: str = 'G14.txt') -> GraphList:
@@ -601,7 +601,7 @@ class SimulatorGraphMaxCut:
             values = values.float() / 2
         return values
 
-    def generate_xs_randomly(self, num_sims):
-        xs = th.randint(0, 2, size=(num_sims, self.num_nodes), dtype=th.bool, device=self.device)
-        xs[:, 0] = 0
-        return xs
+    def generate_solutions_randomly(self, num_sims):
+        solutions = th.randint(0, 2, size=(num_sims, self.num_nodes), dtype=th.bool, device=self.device)
+        solutions[:, 0] = 0
+        return solutions
