@@ -1,14 +1,12 @@
 import os
 import sys
-import time
 
 import torch as th
 import torch.nn as nn
-import tqdm
 from torch.nn.utils import clip_grad_norm_
 
-from graph_max_cut_simulator import SimulatorGraphMaxCut
-from graph_max_cut_local_search import SolverLocalSearch, show_gpu_memory, update_xs_by_vs, EncoderBase64
+from simulator import SimulatorGraphMaxCut
+from local_search import SolverLocalSearch, show_gpu_memory
 from evaluator import Evaluator
 
 
@@ -152,7 +150,7 @@ def run_in_single_graph():
 
     xs = sim.generate_xs_randomly(num_sims=num_sims)
     solver.reset(xs)
-    for _ in tqdm.trange(8, ascii=True):
+    for _ in range(8):
         solver.random_search(num_iters=8)
     temp_xs = solver.good_xs
     temp_vs = solver.good_vs
@@ -251,7 +249,7 @@ def run_in_graph_distribution():
 
     xs = sim.generate_xs_randomly(num_sims=num_sims)
     solver.reset(xs)
-    for _ in tqdm.trange(8, ascii=True):
+    for _ in range(8):
         solver.random_search(num_iters=8)
     temp_xs = solver.good_xs
     temp_vs = solver.good_vs
