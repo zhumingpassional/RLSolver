@@ -33,7 +33,7 @@ INF = 1e6
 # RUNNING_DURATIONS = [600, 1200, 1800, 2400, 3000, 3600]  # store results
 RUNNING_DURATIONS = [300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 3300, 3600]  # store results
 
-GUROBI_INTERVAL = 10 * 60  # seconds, the interval of writing results to txt files
+GUROBI_INTERVAL = 100  # seconds, the interval of writing results to txt files
 GUROBI_TIME_LIMITS = [1 * 3600]  # seconds
 # GUROBI_TIME_LIMITS = [600, 1200, 1800, 2400, 3000, 3600]  # seconds
 # GUROBI_TIME_LIMITS2 = list(range(10 * 60, 1 * 3600 + 1, 10 * 60))  # seconds
