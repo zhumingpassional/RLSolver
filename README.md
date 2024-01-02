@@ -34,6 +34,9 @@ Maxcut
 2) __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh for China users). 
   
 
+## Results
+
+链接: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw 提取码: gc8y
 
 ## Run algorithms
 
