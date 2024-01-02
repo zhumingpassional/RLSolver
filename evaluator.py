@@ -1,8 +1,8 @@
 import os
 import time
-import math
 import numpy as np
 import torch as th
+from typing import Union
 
 try:
     import matplotlib as mpl
@@ -14,15 +14,20 @@ except ImportError:
     plt = None
 
 TEN = th.Tensor
+ARY = np.ndarray
+
 
 class EncoderBase64:
     def __init__(self, num_nodes: int):
+        num_power = 6
         self.num_nodes = num_nodes
+        self.num_length = -int(-(num_nodes / num_power) // 1)  # ceil(num_nodes / num_power)
 
         self.base_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$"
         self.base_num = len(self.base_digits)
+        assert self.base_num == 2 ** num_power
 
-    def bool_to_str(self, x_bool: TEN) -> str:
+    def bool_to_str(self, x_bool: Union[TEN, ARY]) -> str:
         x_int = int(''.join([('1' if i else '0') for i in x_bool.tolist()]), 2)
 
         '''bin_int_to_str'''
@@ -35,11 +40,14 @@ class EncoderBase64:
             if x_int == 0:
                 break
 
-        x_str = '\n'.join([x_str[i:i + 120] for i in range(0, len(x_str), 120)])
-        return x_str.zfill(math.ceil(self.num_nodes // 6 + 1))
+        if len(x_str) > 120:
+            x_str = '\n'.join([x_str[i:i + 120] for i in range(0, len(x_str), 120)])
+        if len(x_str) > 64:
+            x_str = f"\n{x_str}"
+        return x_str.zfill(self.num_length)
 
     def str_to_bool(self, x_str: str) -> TEN:
-        x_b64 = x_str.replace('\n', '')
+        x_b64 = x_str.replace('\n', '').replace(' ', '')
 
         '''b64_str_to_int'''
         x_int = 0
@@ -49,63 +57,38 @@ class EncoderBase64:
             power = base_len - 1 - i
             x_int += digit * (self.base_num ** power)
 
-        return self.int_to_bool(x_int)
-
-    def int_to_bool(self, x_int: int) -> TEN:
         x_bin: str = bin(x_int)[2:]
-        x_bool = th.zeros(self.num_nodes, dtype=th.int8)
-        x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.int8)
+        x_bool = th.zeros(self.num_nodes, dtype=th.bool)
+        x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.bool)
         return x_bool
-
-class Evaluator0:  # todo 标记后，将在下一次PR里把所有 Evaluator0 改为 Evaluator
-    def __init__(self, sim, enc):
-        self.start_time = time.time()
-        self.best_score = -th.inf
-        self.best_solution = 'none'
-        self.get_scores = sim.get_scores
-        self.bool_to_str = enc.bool_to_str
-
-    def evaluate_and_print(self, solutions, i, obj):
-        scores = self.get_scores(solutions)
-        used_time = time.time() - self.start_time
-
-        max_score, max_id = th.max(scores, dim=0)
-        if max_score > self.best_score:
-            self.best_score = max_score
-            self.best_solution = solutions[max_id]
-            print(f"best_score {self.best_score}  best_sln_x \n{self.bool_to_str(self.best_solution)}")
-
-        print(f"|{used_time:9.0f}  {i:6}  {obj.item():9.3f}  "
-              f"max_score {max_score.item():9.0f}  "
-              f"best_score {self.best_score:9.0f}")
 
 
 class Evaluator:
-    def __init__(self, save_dir: str, num_nodes: int, solution: TEN, obj: float):
+    def __init__(self, save_dir: str, num_nodes: int, solution: TEN, obj_value: float):
         self.start_timer = time.time()
         self.recorder1 = []
         self.recorder2 = []
         self.encoder_base64 = EncoderBase64(num_nodes=num_nodes)
 
-        self.best_solution = solution  # solution x
-        self.best_obj = obj  # objective value of solution x
+        self.best_x = solution  # solution x
+        self.best_v = obj_value  # objective value of solution x
 
         self.save_dir = save_dir
         os.makedirs(self.save_dir, exist_ok=True)
 
-        self.record1(i=0, obj=self.best_obj)
-        self.record2(i=0, obj=self.best_obj, solution=self.best_solution)
+        self.record1(i=0, obj_value=self.best_v)
+        self.record2(i=0, obj_value=self.best_v, solution=self.best_x)
 
-    def record1(self, i: float, obj: float):
-        self.recorder1.append((i, obj))
+    def record1(self, i: float, obj_value: float):
+        self.recorder1.append((i, obj_value))
 
-    def record2(self, i: float, obj: float, solution: TEN):
-        self.recorder2.append((i, obj))
+    def record2(self, i: float, obj_value: float, solution: TEN):
+        self.recorder2.append((i, obj_value))
 
-        if_update = obj > self.best_obj
+        if_update = obj_value > self.best_v
         if if_update:
-            self.best_solution = solution
-            self.best_obj = obj
+            self.best_x = solution
+            self.best_v = obj_value
         return if_update
 
     def plot_record(self, fig_dpi: int = 300):
@@ -123,7 +106,7 @@ class Evaluator:
         plt.plot(recorder2[:, 0], recorder2[:, 1], linestyle=':', label='back test')
         plt.scatter(recorder2[:, 0], recorder2[:, 1])
 
-        plt.title(f"best_obj_value {self.best_obj}")
+        plt.title(f"best_obj_value {self.best_v}")
         plt.axis('auto')
         plt.legend()
         plt.grid()
@@ -131,11 +114,11 @@ class Evaluator:
         plt.savefig(f"{self.save_dir}/recorder.jpg", dpi=fig_dpi)
         plt.close('all')
 
-    def logging_print(self, solution: TEN, obj: float, show_str: str = '', if_show_solution: bool = False):
+    def logging_print(self, solution: TEN, obj_value: float, show_str: str = '', if_show_solution: bool = False):
         used_time = int(time.time() - self.start_timer)
         solution_str = self.encoder_base64.bool_to_str(solution) if if_show_solution else ''
         i = self.recorder2[-1][0]
-        print(f"|{i:6} {used_time:4} sec  v {obj:6.0f} < {self.best_obj:6.0f}  "
+        print(f"|{i:6} {used_time:4} sec  v {obj_value:6.0f} < {self.best_v:6.0f}  "
               f"{show_str}  {solution_str}")
 
 
@@ -149,7 +132,8 @@ def check_evaluator():
     temp_solutions = th.zeros((1, num_nodes))
     temp_objs = th.ones((1,))
 
-    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
+    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0],
+                          obj_value=temp_objs[0].item())
     assert isinstance(evaluator, Evaluator)
 
 
@@ -244,18 +228,18 @@ hI1MHL$$n7W32E96659blS3WAnnGOr0Vwg7MMvyKS8ignmH_pfy7g1TeTVF1R7SSnUPCojEBO7Sz4ds6
 
 
 def check_solution_x():
-    from simulator import SimulatorGraphMaxCut, load_graph
+    from graph_max_cut_simulator import SimulatorGraphMaxCut, load_graph
     graph_name = 'gset_14'
 
     graph = load_graph(graph_name=graph_name)
-    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph=graph)
+    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph_list=graph)
 
     x_str = X_G14
     num_nodes = simulator.num_nodes
     encoder = EncoderBase64(num_nodes=num_nodes)
 
     x = encoder.str_to_bool(x_str)
-    vs = simulator.calculate_obj_values(xs=x[None, :])
+    vs = simulator.calculate_obj_values(solutions=x[None, :])
     print(f"objective value  {vs[0].item():8.2f}  solution {x_str}")
 
 
