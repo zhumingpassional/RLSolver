@@ -144,6 +144,8 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
     nodes: List[int] = []
     values: List[int] = []
     for var in vars:
+        if "x" not in var.VarName:
+            continue
         node = fetch_node(var.VarName)
         if node is None:
             break
