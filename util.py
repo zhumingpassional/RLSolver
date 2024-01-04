@@ -978,7 +978,7 @@ if __name__ == '__main__':
         running_durations = RUNNING_DURATIONS
         read_result_comments_multifiles(dir, prefixes, running_durations)
 
-    if_generate_distribution = True
+    if_generate_distribution = False
     if if_generate_distribution:
         num_nodess = [20, 40] + list(range(100, 3001, 100))
         # num_nodess = list(range(2100, 3001, 100))
