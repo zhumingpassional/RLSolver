@@ -4,7 +4,7 @@ from simulator import MaxcutSimulatorReinforce
 from util import load_graph, load_graph_auto
 from torch.distributions.categorical import Categorical
 from net import PolicyGNN
-from evaluator import Evaluator
+from evaluator import Evaluator1
 from config import *
 def map_to_power_of_two(x):
     n = 0
@@ -145,7 +145,7 @@ def search_and_evaluate_reinforce(graph_name='gset_14', num_nodes=800, gpu_id=0)
     '''evaluator'''
     temp_xs = simulator.generate_solutions_randomly(num_sims=1)
     temp_vs = simulator.calculate_obj_values(temp_xs)
-    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_xs[0], obj=temp_vs[0].item())
+    evaluator = Evaluator1(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_xs[0], obj=temp_vs[0].item())
     del temp_xs, temp_vs
 
     print("start searching")
