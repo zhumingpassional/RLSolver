@@ -7,7 +7,7 @@ from torch.nn.utils import clip_grad_norm_
 
 from simulator import SimulatorGraphMaxCut
 from local_search import TrickLocalSearch, show_gpu_memory
-from evaluator import Evaluator
+from evaluator import Evaluator1
 
 
 class BnMLP(nn.Module):
@@ -153,7 +153,7 @@ def run_in_single_graph():
         trick.random_search(num_iters=8)
     temp_solutions = trick.good_solutions
     temp_objs = trick.good_objs
-    evaluator = Evaluator(save_dir=f"{sim_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
+    evaluator = Evaluator1(save_dir=f"{sim_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
 
     '''model'''
     net = PolicyMLP(inp_dim=num_nodes, mid_dim=mid_dim, out_dim=num_nodes).to(device)
@@ -252,7 +252,7 @@ def run_in_graph_distribution():
         trick.random_search(num_iters=8)
     temp_solutions = trick.good_solutions
     temp_objs = trick.good_objs
-    evaluator = Evaluator(save_dir=f"{sim_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
+    evaluator = Evaluator1(save_dir=f"{sim_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
 
     '''model'''
     net = PolicyGNN(inp_dim=num_nodes, mid_dim=mid_dim, out_dim=mid_dim, adj_matrix=sim.adjacency_matrix).to(device)

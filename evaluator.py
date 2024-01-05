@@ -1,8 +1,8 @@
 import os
 import time
-import math
 import numpy as np
 import torch as th
+from typing import Union
 
 try:
     import matplotlib as mpl
@@ -14,15 +14,20 @@ except ImportError:
     plt = None
 
 TEN = th.Tensor
+ARY = np.ndarray
+
 
 class EncoderBase64:
     def __init__(self, num_nodes: int):
+        num_power = 6
         self.num_nodes = num_nodes
+        self.num_length = -int(-(num_nodes / num_power) // 1)  # ceil(num_nodes / num_power)
 
         self.base_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$"
         self.base_num = len(self.base_digits)
+        assert self.base_num == 2 ** num_power
 
-    def bool_to_str(self, x_bool: TEN) -> str:
+    def bool_to_str(self, x_bool: Union[TEN, ARY]) -> str:
         x_int = int(''.join([('1' if i else '0') for i in x_bool.tolist()]), 2)
 
         '''bin_int_to_str'''
@@ -35,11 +40,14 @@ class EncoderBase64:
             if x_int == 0:
                 break
 
-        x_str = '\n'.join([x_str[i:i + 120] for i in range(0, len(x_str), 120)])
-        return x_str.zfill(math.ceil(self.num_nodes // 6 + 1))
+        if len(x_str) > 120:
+            x_str = '\n'.join([x_str[i:i + 120] for i in range(0, len(x_str), 120)])
+        if len(x_str) > 64:
+            x_str = f"\n{x_str}"
+        return x_str.zfill(self.num_length)
 
     def str_to_bool(self, x_str: str) -> TEN:
-        x_b64 = x_str.replace('\n', '')
+        x_b64 = x_str.replace('\n', '').replace(' ', '')
 
         '''b64_str_to_int'''
         x_int = 0
@@ -49,13 +57,11 @@ class EncoderBase64:
             power = base_len - 1 - i
             x_int += digit * (self.base_num ** power)
 
-        return self.int_to_bool(x_int)
-
-    def int_to_bool(self, x_int: int) -> TEN:
         x_bin: str = bin(x_int)[2:]
-        x_bool = th.zeros(self.num_nodes, dtype=th.int8)
-        x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.int8)
+        x_bool = th.zeros(self.num_nodes, dtype=th.bool)
+        x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.bool)
         return x_bool
+
 
 class Evaluator0:  # todo 标记后，将在下一次PR里把所有 Evaluator0 改为 Evaluator
     def __init__(self, sim, enc):
@@ -80,7 +86,7 @@ class Evaluator0:  # todo 标记后，将在下一次PR里把所有 Evaluator0 �
               f"best_score {self.best_score:9.0f}")
 
 
-class Evaluator:
+class Evaluator1:
     def __init__(self, save_dir: str, num_nodes: int, solution: TEN, obj: float):
         self.start_timer = time.time()
         self.recorder1 = []
@@ -139,6 +145,65 @@ class Evaluator:
               f"{show_str}  {solution_str}")
 
 
+class Evaluator:
+    def __init__(self, save_dir: str, num_nodes: int, x: TEN, v: float):
+        self.start_timer = time.time()
+        self.recorder1 = []
+        self.recorder2 = []
+        self.encoder_base64 = EncoderBase64(num_nodes=num_nodes)
+
+        self.best_x = x  # solution x
+        self.best_v = v  # objective value of solution x
+
+        self.save_dir = save_dir
+        os.makedirs(self.save_dir, exist_ok=True)
+
+        self.record1(i=0, v=self.best_v)
+        self.record2(i=0, v=self.best_v, x=self.best_x)
+
+    def record1(self, i: float, v: float):
+        self.recorder1.append((i, v))
+
+    def record2(self, i: float, v: float, x: TEN):
+        self.recorder2.append((i, v))
+
+        if_update = v > self.best_v
+        if if_update:
+            self.best_x = x
+            self.best_v = v
+        return if_update
+
+    def plot_record(self, fig_dpi: int = 300):
+        if plt is None:
+            return
+
+        if len(self.recorder1) == 0 or len(self.recorder2) == 0:
+            return
+        recorder1 = np.array(self.recorder1)
+        recorder2 = np.array(self.recorder2)
+        np.save(f"{self.save_dir}/recorder1.npy", recorder1)
+        np.save(f"{self.save_dir}/recorder2.npy", recorder2)
+
+        plt.plot(recorder1[:, 0], recorder1[:, 1], linestyle='-', label='real time')
+        plt.plot(recorder2[:, 0], recorder2[:, 1], linestyle=':', label='back test')
+        plt.scatter(recorder2[:, 0], recorder2[:, 1])
+
+        plt.title(f"best_obj_value {self.best_v}")
+        plt.axis('auto')
+        plt.legend()
+        plt.grid()
+
+        plt.savefig(f"{self.save_dir}/recorder.jpg", dpi=fig_dpi)
+        plt.close('all')
+
+    def logging_print(self, x: TEN, v: float, show_str: str = '', if_show_x: bool = False):
+        used_time = int(time.time() - self.start_timer)
+        x_str = self.encoder_base64.bool_to_str(x) if if_show_x else ''
+        i = self.recorder2[-1][0]
+        print(f"|{i:6} {used_time:4} sec  v {v:6.0f} < {self.best_v:6.0f}  "
+              f"{show_str}  {x_str}")
+
+
 '''check'''
 
 
@@ -146,10 +211,10 @@ def check_evaluator():
     gpu_id = 0
     graph_name, num_nodes = 'gset_14', 800
 
-    temp_solutions = th.zeros((1, num_nodes))
-    temp_objs = th.ones((1,))
+    temp_xs = th.zeros((1, num_nodes))
+    temp_vs = th.ones((1,))
 
-    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, solution=temp_solutions[0], obj=temp_objs[0].item())
+    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, x=temp_xs[0], v=temp_vs[0].item())
     assert isinstance(evaluator, Evaluator)
 
 
@@ -244,11 +309,11 @@ hI1MHL$$n7W32E96659blS3WAnnGOr0Vwg7MMvyKS8ignmH_pfy7g1TeTVF1R7SSnUPCojEBO7Sz4ds6
 
 
 def check_solution_x():
-    from simulator import SimulatorGraphMaxCut, load_graph
+    from graph_max_cut_simulator import SimulatorGraphMaxCut, load_graph_list
     graph_name = 'gset_14'
 
-    graph = load_graph(graph_name=graph_name)
-    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph=graph)
+    graph = load_graph_list(graph_name=graph_name)
+    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph_list=graph)
 
     x_str = X_G14
     num_nodes = simulator.num_nodes
@@ -259,6 +324,50 @@ def check_solution_x():
     print(f"objective value  {vs[0].item():8.2f}  solution {x_str}")
 
 
+def check_solution_x_via_load_graph_info_from_data_dir():
+    from graph_max_cut_mh_sampling import SimulatorGraphMaxCut
+    from graph_utils import load_graph_list_from_txt
+    from graph_load_from_gurobi_results import load_graph_info_from_data_dir
+
+    gpu_id = -1
+    excel_id = 152  # num_nodes==400, ID=0
+
+    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    '''config:simulator'''
+    graph_type = ['ErdosRenyi', 'PowerLaw', 'BarabasiAlbert'][2]
+    '''simulator'''
+    csv_path = f"./data/syn_{graph_type}_3600.csv"
+    csv_id = excel_id - 2
+
+    txt_path, sim_name = load_graph_info_from_data_dir(csv_path, csv_id)
+    graph_list = load_graph_list_from_txt(txt_path=txt_path)
+    simulator = SimulatorGraphMaxCut(sim_name=sim_name, graph_list=graph_list, device=device)
+
+    num_sims = 4
+    xs = simulator.generate_xs_randomly(num_sims=num_sims)
+    obj = simulator.calculate_obj_values(xs=xs)
+    obj_avg = obj.float().mean().item()
+    obj_max = obj.max().item()
+    print(f"| obj_value {obj_avg} < {obj_max}")
+
+    x_str = "1ENcAgeq5br$chpsVe3fOw70QQccW4GqYy308KKusnAOgtzatqJJcEscTR7Vr_FOEzI"
+    num_nodes = simulator.num_nodes
+    encoder = EncoderBase64(num_nodes=num_nodes)
+
+    x = encoder.str_to_bool(x_str)
+    xs = x[None, :]
+    obj = simulator.calculate_obj_values(xs=xs)
+    obj_avg = obj.float().mean().item()
+    obj_max = obj.max().item()
+    print(f"| obj_value {obj_avg} < {obj_max}")
+
+    """
+    | obj_value 801.5 < 810  # 随机生成的4个随机二进制的解的平均值是 801， 最大值是 810
+    | obj_value 1180.0 < 1180  # RL求解结果是 1180
+    """
+
+
 if __name__ == '__main__':
     check_evaluator()
     check_solution_x()
+    check_solution_x_via_load_graph_info_from_data_dir()
