@@ -44,19 +44,23 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
             new_solution[index2] = tmp
             new_score = obj_graph_partitioning(new_solution, graph)
         elif PROBLEM == Problem.minimum_vertex_cover:
-            print(f"SA is not suitable for {Problem.minimum_vertex_cover}")
-            suitable = False
-            if not suitable:
-                raise ValueError("")
+            assert num_steps < graph.number_of_nodes()
+            iter = 0
+            max_iter = graph.number_of_nodes()
             while True:
-                index = random.randint(0, num_nodes - 1)
-                if new_solution[index] == 0:
-                    continue
+                iter += 1
+                if iter >= max_iter:
+                    break
+                indices_eq_1 = []
+                for i in range(len(new_solution)):
+                    if new_solution[i] == 1:
+                        indices_eq_1.append(i)
+                index = random.randint(0, len(indices_eq_1) - 1)
                 new_solution2 = copy.deepcopy(new_solution)
-                new_solution2[index] = 0
+                new_solution2[indices_eq_1[index]] = 0
                 if cover_all_edges(new_solution2, graph):
                     break
-            new_solution[index] = 0
+            new_solution[indices_eq_1[index]] = 0
             new_score = obj_minimum_vertex_cover(new_solution, graph, False)
         scores.append(new_score)
         delta_e = curr_score - new_score
@@ -84,10 +88,11 @@ if __name__ == '__main__':
     if PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
         init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
     if PROBLEM == Problem.minimum_vertex_cover:
-        init_solution = [1] * int(graph.number_of_nodes())
+        from greedy import greedy_strong_minimum_vertex_cover
+        _, init_solution, _ = greedy_strong_minimum_vertex_cover([1] * int(graph.number_of_nodes()), graph)
 
     init_temperature = 4
-    num_steps = 8000 * 3
+    num_steps = 20
     sa_score, sa_solution, sa_scores = simulated_annealing(init_solution, init_temperature, num_steps, graph)
 
     # write result
