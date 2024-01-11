@@ -90,8 +90,8 @@ if __name__ == '__main__':
     if PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
         init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
     if PROBLEM == Problem.minimum_vertex_cover:
-        from greedy import greedy_strong_minimum_vertex_cover
-        _, init_solution, _ = greedy_strong_minimum_vertex_cover([0] * int(graph.number_of_nodes()), graph)
+        from greedy import greedy_minimum_vertex_cover
+        _, init_solution, _ = greedy_minimum_vertex_cover([0] * int(graph.number_of_nodes()), graph)
 
     init_temperature = 4
     num_steps = 2000
