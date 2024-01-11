@@ -137,8 +137,8 @@ def greedy_strong_minimum_vertex_cover(init_solution: Union[List[int], np.array]
         cover_all = cover_all_edges(curr_solution, graph)
         if cover_all:
             break
-        if sum(visited) == num_nodes:
-            break
+        # if sum(visited) == num_nodes:
+        #     break
         max_degree = 0
         best_node = -INF
         for i in range(num_nodes):

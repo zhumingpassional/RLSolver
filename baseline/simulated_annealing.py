@@ -29,24 +29,24 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
         temperature = init_temperature * (1 - (k + 1) / num_steps)
         new_solution = copy.deepcopy(curr_solution)
         if PROBLEM == Problem.maxcut:
-            index = random.randint(0, num_nodes - 1)
-            new_solution[index] = (new_solution[index] + 1) % 2
+            idx = np.random.randint(0, num_nodes)
+            new_solution[idx] = (new_solution[idx] + 1) % 2
             new_score = obj_maxcut(new_solution, graph)
         elif PROBLEM == Problem.graph_partitioning:
             while True:
-                index = random.randint(0, num_nodes - 1)
-                index2 = random.randint(0, num_nodes - 1)
-                if new_solution[index] != new_solution[index2]:
+                idx = np.random.randint(0, num_nodes)
+                index2 = np.random.randint(0, num_nodes)
+                if new_solution[idx] != new_solution[index2]:
                     break
-            print(f"new_solution[index]: {new_solution[index]}, new_solution[index2]: {new_solution[index2]}")
-            tmp = new_solution[index]
-            new_solution[index] = new_solution[index2]
+            print(f"new_solution[index]: {new_solution[idx]}, new_solution[index2]: {new_solution[index2]}")
+            tmp = new_solution[idx]
+            new_solution[idx] = new_solution[index2]
             new_solution[index2] = tmp
             new_score = obj_graph_partitioning(new_solution, graph)
         elif PROBLEM == Problem.minimum_vertex_cover:
-            assert num_steps < graph.number_of_nodes()
             iter = 0
-            max_iter = graph.number_of_nodes()
+            max_iter = 3 * graph.number_of_nodes()
+            index = None
             while True:
                 iter += 1
                 if iter >= max_iter:
@@ -55,12 +55,14 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
                 for i in range(len(new_solution)):
                     if new_solution[i] == 1:
                         indices_eq_1.append(i)
-                index = random.randint(0, len(indices_eq_1) - 1)
+                idx = np.random.randint(0, len(indices_eq_1))
                 new_solution2 = copy.deepcopy(new_solution)
-                new_solution2[indices_eq_1[index]] = 0
+                new_solution2[indices_eq_1[idx]] = 0
                 if cover_all_edges(new_solution2, graph):
+                    index = indices_eq_1[idx]
                     break
-            new_solution[indices_eq_1[index]] = 0
+            if index is not None:
+                new_solution[index] = 0
             new_score = obj_minimum_vertex_cover(new_solution, graph, False)
         scores.append(new_score)
         delta_e = curr_score - new_score
@@ -89,10 +91,10 @@ if __name__ == '__main__':
         init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
     if PROBLEM == Problem.minimum_vertex_cover:
         from greedy import greedy_strong_minimum_vertex_cover
-        _, init_solution, _ = greedy_strong_minimum_vertex_cover([1] * int(graph.number_of_nodes()), graph)
+        _, init_solution, _ = greedy_strong_minimum_vertex_cover([0] * int(graph.number_of_nodes()), graph)
 
     init_temperature = 4
-    num_steps = 20
+    num_steps = 2000
     sa_score, sa_solution, sa_scores = simulated_annealing(init_solution, init_temperature, num_steps, graph)
 
     # write result
