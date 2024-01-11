@@ -19,7 +19,8 @@ def draw_graph(G, colors, pos):
 
 
 # approx ratio 0.87
-def goemans_williamson(graph: nx.Graph):
+# goemans_williamson alg
+def sdp(graph: nx.Graph):
     n = graph.number_of_nodes() # num of nodes
     edges = graph.edges
 
@@ -78,4 +79,4 @@ if __name__ == '__main__':
 
     # graph = read_nxgraph('../data/syn/syn_50_176.txt')
     graph = read_nxgraph('../data/gset/gset_14.txt')
-    goemans_williamson(graph)
+    sdp(graph)
