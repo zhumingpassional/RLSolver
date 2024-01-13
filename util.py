@@ -4,6 +4,7 @@ import copy
 from torch.autograd import Variable
 import os
 import functools
+import time
 import torch.nn as nn
 import numpy as np
 from typing import List, Union, Tuple
@@ -415,9 +416,10 @@ def calc_files_with_prefix_suffix(directory: str, prefix: str, suffix: str, exte
             res.append(directory + '/' + file)
     return res
 
-# if the file name is 'data/syn_10_27.txt', the return is 'result/syn_10_27.txt'
+# if the file name is '../data/syn_10_27.txt', the return is '../result/syn_10_27.txt'
+# if the file name is '../result/syn_10_27.txt', the return is '../result/syn_10_27.txt'
 # if the file name is '../data/syn/syn_10_27.txt', the return is '../result/syn_10_27.txt'
-def calc_result_file_name(file: str):
+def calc_result_file_name(file: str, add_tail: str= ''):
     new_file = copy.deepcopy(file)
     if 'data' in new_file:
         new_file = new_file.replace('data', 'result')
@@ -428,6 +430,8 @@ def calc_result_file_name(file: str):
     #     new_file = new_file.split('.')[0]
     #     new_file = new_file.split('/')[0] + '/' + new_file.split('/')[-1]
     new_file = new_file.split('result')[0] + 'result/' + new_file.split('/')[-1]
+    if add_tail is not None:
+        new_file = new_file.replace('.txt', '') + add_tail + '.txt'
     return new_file
 
 # For example, syn_10_21_3600.txt, the prefix is 'syn_10_', time_limit is 3600 (seconds).
@@ -772,90 +776,32 @@ def convert_matrix_to_vector(matrix):
     vector = [row[i + 1:] for i, row in enumerate(matrix)]
     return th.hstack(vector)
 
-
-def check_adjacency_matrix_vector():
-    num_nodes = 32
-    graph_types = GRAPH_DISTRI_TYPES
-
-    for g_type in graph_types:
-        print(f"g_type {g_type}")
-        for i in range(8):
-            graph, num_nodes, num_edges = generate_graph(num_nodes=num_nodes, g_type=g_type)
-            print(i, num_nodes, num_edges, graph)
-
-            adjacency_matrix = build_adjacency_matrix(graph, num_nodes)  # 邻接矩阵
-            adjacency_vector = convert_matrix_to_vector(adjacency_matrix)  # 邻接矩阵的上三角拍平为矢量，传入神经网络
-            print(adjacency_vector)
+def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
+    add_tail = '_' + str(int(running_duration)) if 'data' in filename else None
+    new_filename = calc_result_file_name(filename, add_tail)
+    with open(new_filename, 'w', encoding="UTF-8") as new_file:
+        prefix = '// '
+        new_file.write(f"{prefix}obj: {obj}\n")
+        new_file.write(f"{prefix}running_duration: {running_duration}\n")
+        new_file.write(f"// num_nodes: {num_nodes}\n")
+        new_file.write(f"{prefix}alg_name: {alg_name}\n")
 
 
-
-
-def draw_adjacency_matrix():
-    from simulator import MaxcutSimulator
-    graph_name = 'powerlaw_48'
-    env = MaxcutSimulator(graph_name=graph_name)
-    ary = (env.adjacency_matrix != -1).to(th.int).data.cpu().numpy()
-
-    d0 = d1 = ary.shape[0]
-    if plt:
-        plt.imshow(1 - ary[:, ::-1], cmap='hot', interpolation='nearest', extent=[0, d1, 0, d0])
-        plt.gca().set_xticks(np.arange(0, d1, 1))
-        plt.gca().set_yticks(np.arange(0, d0, 1))
-        plt.grid(True, color='grey', linewidth=1)
-        plt.title('black denotes connect')
-        plt.show()
-
-
-def check_simulator_encoder():
-    th.manual_seed(0)
-    num_envs = 6
-    graph_name = 'powerlaw_64'
-    from simulator import MaxcutSimulator
-    sim = MaxcutSimulator(graph_name=graph_name)
-    enc = EncoderBase64(num_nodes=sim.num_nodes)
-
-    probs = sim.get_rand_probs(num_envs=num_envs)
-    print(sim.get_objectives(probs))
-
-    best_score = -th.inf
-    best_str_x = ''
-    for _ in range(8):
-        probs = sim.get_rand_probs(num_envs=num_envs)
-        sln_xs = sim.prob_to_bool(probs)
-        scores = sim.get_scores(sln_xs)
-
-        max_score, max_id = th.max(scores, dim=0)
-        if max_score > best_score:
-            best_score = max_score
-            best_sln_x = sln_xs[max_id]
-            best_str_x = enc.bool_to_str(best_sln_x)
-            print(f"best_score {best_score}  best_sln_x {best_str_x}")
-
-    best_sln_x = enc.str_to_bool(best_str_x)
-    best_score = sim.get_scores(best_sln_x.unsqueeze(0)).squeeze(0)
-    print(f"NumNodes {sim.num_nodes}  NumEdges {sim.num_edges}")
-    print(f"score {best_score}  sln_x \n{enc.bool_to_str(best_sln_x)}")
-
-
-def check_convert_sln_x():
-    gpu_id = 0
-    num_envs = 1
-    graph_name = 'powerlaw_64'
-    from simulator import MaxcutSimulator
-    sim = MaxcutSimulator(graph_name=graph_name, gpu_id=gpu_id)
-    enc = EncoderBase64(num_nodes=sim.num_nodes)
-
-    x_prob = sim.get_rand_probs(num_envs=num_envs)[0]
-    x_bool = sim.prob_to_bool(x_prob)
-
-    x_str = enc.bool_to_str(x_bool)
-    print(x_str)
-    x_bool = enc.str_to_bool(x_str)
-
-    assert all(x_bool == sim.prob_to_bool(x_prob))
-
-
-
+def run_alg_over_multiple_files(alg, alg_name, num_steps, directory_data: str, prefixes: List[str]):
+    for prefix in prefixes:
+        files = calc_txt_files_with_prefix(directory_data, prefix)
+        files.sort()
+        for i in range(len(files)):
+            start_time = time.time()
+            filename = files[i]
+            print(f'The {i}-th file: {filename}')
+            graph = read_nxgraph(filename)
+            init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
+            score, solution, scores = alg(init_solution, num_steps, graph)
+            print(f"score, scores: {scores}, {scores}")
+            running_duration = time.time() - start_time
+            num_nodes = int(graph.number_of_nodes())
+            write_result2(score, running_duration, num_nodes, alg_name, filename)
 
 def transfer_result_txt_to_csv():
     def time_limit_str(input_string):
