@@ -128,18 +128,14 @@ def write_statistics_in_mycallback(model, new_file, add_slash = False):
     # time_limit2 = model.params['TimeLimit']
     new_file.write(f"{prefix}time_limit: {time_limit}\n")
 
-# running_duration (seconds) is included.
+# if filename = '../result/barabasi_albert_100_ID0.txt', running_duration = 100,
+#
 def write_result_gurobi(model, filename: str = './result/result', running_duration: int = None):
-    if 'data' in filename:
-        filename = calc_result_file_name(filename)
     directory = filename.split('/')[0]
     if not os.path.exists(directory):
         os.mkdir(directory)
-    if running_duration is None:
-        new_filename = filename
-    else:
-        filename = filename.replace('.txt', '')
-        new_filename = filename + '_' + str(int(running_duration))
+    add_tail = '_' + str(int(running_duration)) if running_duration is not None else None
+    new_filename = calc_result_file_name(filename, add_tail)
 
     vars = model.getVars()
     nodes: List[int] = []
@@ -156,7 +152,7 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
             value = transfer_float_to_binary(var.x)
         nodes.append(node)
         values.append(value)
-    with open(f"{new_filename}.txt", 'w', encoding="UTF-8") as new_file:
+    with open(new_filename, 'w', encoding="UTF-8") as new_file:
         write_statistics(model, new_file, True)
         new_file.write(f"// num_nodes: {len(nodes)}\n")
         for i in range(len(nodes)):
@@ -352,7 +348,7 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['barabasi_albert_1000_']
+            prefixes = ['barabasi_albert_100_']
             directory_data = '../data/syn_BA'
 
         directory_result = '../result'

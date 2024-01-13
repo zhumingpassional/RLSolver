@@ -11,17 +11,19 @@ import networkx as nx
 import itertools
 from util import read_nxgraph
 from util import obj_maxcut, obj_graph_partitioning, obj_minimum_vertex_cover
-from util import write_result
 from util import plot_fig
 from util import transfer_nxgraph_to_weightmatrix
 from util import cover_all_edges
+from util import run_alg_over_multiple_files
 from config import *
 
-def greedy_maxcut(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+# init_solution is useless
+def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
-    num_nodes = len(init_solution)
+    num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
+    init_solution = [0] * num_nodes
     curr_solution = copy.deepcopy(init_solution)
     curr_score: int = obj_maxcut(curr_solution, graph)
     init_score = curr_score
@@ -29,11 +31,14 @@ def greedy_maxcut(init_solution: Union[List[int], np.array], num_steps: int, gra
     for iteration in range(num_nodes):
         if iteration >= num_steps:
             break
-        print("iteration in greedy: ", iteration)
+        score = obj_maxcut(curr_solution, graph)
+        print(f"iteration: {iteration}, score: {score}")
         traversal_scores = []
         traversal_solutions = []
         # calc the new solution when moving to a new node. Then store the scores and solutions.
         for node in nodes:
+            if curr_solution[node] == 1:
+                continue
             new_solution = copy.deepcopy(curr_solution)
             # search a new solution and calc obj
             new_solution[node] = (new_solution[node] + 1) % 2
@@ -57,7 +62,7 @@ def greedy_maxcut(init_solution: Union[List[int], np.array], num_steps: int, gra
 def greedy_graph_partitioning(init_solution: Union[List[int], np.array], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
-    num_nodes = len(init_solution)
+    num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
     curr_solution = copy.deepcopy(init_solution)
     curr_score: int = obj_graph_partitioning(curr_solution, graph)
@@ -96,7 +101,7 @@ def greedy_graph_partitioning(init_solution: Union[List[int], np.array], graph: 
 def greedy_minimum_vertex_cover(init_solution: Union[List[int], np.array], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
-    num_nodes = len(init_solution)
+    num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
     curr_solution = copy.deepcopy(init_solution)
     curr_score: int = obj_minimum_vertex_cover(curr_solution, graph)
@@ -131,16 +136,18 @@ if __name__ == '__main__':
     graph = read_nxgraph('../data/syn/syn_50_176.txt')
     weightmatrix = transfer_nxgraph_to_weightmatrix(graph)
     # run alg
-    init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
     num_steps = 30
     alg_name = 'GR'
 
     # maxcut
     if PROBLEM == Problem.maxcut:
+        # init_solution = None
+        init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
         gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph)
 
     # graph_partitioning
     if PROBLEM == Problem.graph_partitioning:
+        init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
         gr_score, gr_solution, gr_scores = greedy_graph_partitioning(init_solution, graph)
 
     if PROBLEM == Problem.minimum_vertex_cover:
@@ -149,9 +156,12 @@ if __name__ == '__main__':
         obj = obj_minimum_vertex_cover(gr_solution, graph)
         print('obj: ', obj)
 
-    # write result
-    write_result(gr_solution, '../result/result.txt')
-
+    alg = greedy_maxcut
+    alg_name = "greedy"
+    num_steps = 20
+    prefixes = ['barabasi_albert_1000_']
+    directory_data = '../data/syn_BA'
+    run_alg_over_multiple_files(alg, alg_name, num_steps, directory_data, prefixes)
     
     # plot fig
     plot_fig(gr_scores, alg_name)
