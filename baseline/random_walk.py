@@ -1,4 +1,4 @@
-# comparison methods for maxcut: random walk, greedy, epsilon greedy, simulated annealing
+# compared methods for maxcut: random walk, greedy, epsilon greedy, simulated annealing
 import copy
 import time
 import networkx as nx
@@ -10,7 +10,8 @@ from util import obj_maxcut
 from util import write_result
 from util import plot_fig
 
-
+import sys
+sys.path.append('../')
 def random_walk(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('random_walk')
     start_time = time.time()

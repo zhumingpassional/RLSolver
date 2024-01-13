@@ -1,4 +1,5 @@
-import numpy as np
+import sys
+sys.path.append('../')
 from pyscipopt import Model, quicksum, multidict
 import os
 import time
