@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 import cvxpy as cp
 import networkx as nx
 import matplotlib.pyplot as plt

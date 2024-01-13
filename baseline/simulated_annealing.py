@@ -1,8 +1,9 @@
+import sys
+sys.path.append('../')
 import copy
 import time
 from typing import List, Union
 import numpy as np
-from typing import List
 import random
 import networkx as nx
 from util import read_nxgraph

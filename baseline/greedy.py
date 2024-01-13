@@ -1,4 +1,7 @@
-# comparison methods for maxcut: random walk, greedy, epsilon greedy, simulated annealing
+import sys
+sys.path.append('../')
+
+# compared methods for maxcut: random walk, greedy, epsilon greedy, simulated annealing
 import copy
 import time
 from typing import List, Union

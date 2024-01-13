@@ -1,4 +1,5 @@
-import numpy as np
+import sys
+sys.path.append('../')
 from gurobipy import *
 import os
 import copy
@@ -195,9 +196,14 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         y_lb = adjacency_matrix.min()
         y_ub = adjacency_matrix.max()
         x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
-        y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
-        model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
-                        GRB.MAXIMIZE)
+        if GUROBI_MILP_QUBO == 0:
+            y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
+            model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
+                            GRB.MAXIMIZE)
+        else:
+            model.setObjective(
+                -quicksum(quicksum(adjacency_matrix[(i, j)] * 4 * (x[i] - 0.5) * (x[j] - 0.5) for i in range(0, j)) for j in nodes),
+                GRB.MAXIMIZE)
     elif PROBLEM == Problem.graph_partitioning:
         y_lb = adjacency_matrix.min()
         y_ub = adjacency_matrix.max()
@@ -211,7 +217,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
                            GRB.MINIMIZE)
 
     # constrs
-    if PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
+    if GUROBI_MILP_QUBO == 0 and PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
         # y_{i, j} = x_i XOR x_j
         for j in nodes:
             for i in range(0, j):
@@ -220,10 +226,10 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
                 model.addConstr(y[(i, j)] >= x[i] - x[j], name='C0c_' + str(i) + '_' + str(j))
                 model.addConstr(y[(i, j)] >= -x[i] + x[j], name='C0d_' + str(i) + '_' + str(j))
 
-    if PROBLEM == Problem.graph_partitioning:
+    if GUROBI_MILP_QUBO == 0 and PROBLEM == Problem.graph_partitioning:
         model.addConstr(quicksum(x[j] for j in nodes) == num_nodes / 2, name='C1')
 
-    if PROBLEM == Problem.minimum_vertex_cover:
+    if GUROBI_MILP_QUBO == 0 and PROBLEM == Problem.minimum_vertex_cover:
         for i in range(len(edges)):
             node1, node2 = edges[i]
             model.addConstr(x[node1] + x[node2] >= 1, name=f'C0_{node1}_{node2}')
@@ -319,6 +325,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], directory_data: str = 'data', directory_result: str = 'result'):
     for prefix in prefixes:
         files = calc_txt_files_with_prefix(directory_data, prefix)
+        files.sort()
         for i in range(len(files)):
             print(f'The {i}-th file: {files[i]}')
             for j in range(len(time_limits)):
@@ -345,7 +352,7 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['barabasi_albert_100_']
+            prefixes = ['barabasi_albert_1000_']
             directory_data = '../data/syn_BA'
 
         directory_result = '../result'
