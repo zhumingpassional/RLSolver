@@ -18,15 +18,12 @@ from util import run_alg_over_multiple_files
 from config import *
 
 # init_solution is useless
-def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph, set_init_0: bool=False) -> (int, Union[List[int], np.array], List[int]):
+def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
-    if set_init_0:
-        init_solution = [0] * num_nodes
-    else:
-        assert sum(init_solution) != 0
+    assert sum(init_solution) == 0
     curr_solution = copy.deepcopy(init_solution)
     curr_score: int = obj_maxcut(curr_solution, graph)
     init_score = curr_score
@@ -39,8 +36,7 @@ def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph, set_init_0: bo
         traversal_scores = []
         traversal_solutions = []
         # calc the new solution when moving to a new node. Then store the scores and solutions.
-        search_nodes = copy.deepcopy(nodes)
-        for node in search_nodes:
+        for node in nodes:
             new_solution = copy.deepcopy(curr_solution)
             # search a new solution and calc obj
             new_solution[node] = (new_solution[node] + 1) % 2
@@ -54,8 +50,6 @@ def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph, set_init_0: bo
             scores.append(best_score)
             curr_score = best_score
             curr_solution = best_solution
-            if set_init_0:
-                search_nodes.remove(search_nodes[index])
         else:
             break
     print("score, init_score of greedy", curr_score, init_score)
@@ -148,7 +142,7 @@ if __name__ == '__main__':
     # maxcut
     if PROBLEM == Problem.maxcut:
         # init_solution = None
-        init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
+        init_solution = [0] * graph.number_of_nodes()
         gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph, True)
 
     # graph_partitioning
@@ -167,8 +161,7 @@ if __name__ == '__main__':
     num_steps = 100
     prefixes = ['barabasi_albert_200_ID0']
     directory_data = '../data/syn_BA'
-    set_init_0 = True
-    scoress = run_alg_over_multiple_files(alg, alg_name, init_solution, num_steps, set_init_0, directory_data, prefixes)
+    scoress = run_alg_over_multiple_files(alg, alg_name, init_solution, num_steps, directory_data, prefixes)
     
     # plot fig
     for scores in scoress:
