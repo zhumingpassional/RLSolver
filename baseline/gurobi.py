@@ -348,7 +348,7 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['barabasi_albert_100_']
+            prefixes = ['barabasi_albert_1000_ID12']
             directory_data = '../data/syn_BA'
 
         directory_result = '../result'
