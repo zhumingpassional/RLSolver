@@ -143,7 +143,7 @@ if __name__ == '__main__':
     if PROBLEM == Problem.maxcut:
         # init_solution = None
         init_solution = [0] * graph.number_of_nodes()
-        gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph, True)
+        gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph)
 
     # graph_partitioning
     if PROBLEM == Problem.graph_partitioning:
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     num_steps = 100
     prefixes = ['barabasi_albert_200_ID0']
     directory_data = '../data/syn_BA'
-    scoress = run_alg_over_multiple_files(alg, alg_name, init_solution, num_steps, directory_data, prefixes)
+    scoress = run_alg_over_multiple_files(alg, alg_name, num_steps, True, directory_data, prefixes)
     
     # plot fig
     for scores in scoress:

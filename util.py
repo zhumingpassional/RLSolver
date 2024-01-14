@@ -787,7 +787,7 @@ def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
         new_file.write(f"{prefix}alg_name: {alg_name}\n")
 
 
-def run_alg_over_multiple_files(alg, alg_name, init_solution, num_steps, set_init_0: bool, directory_data: str, prefixes: List[str])\
+def run_alg_over_multiple_files(alg, alg_name, num_steps, set_init_0: bool, directory_data: str, prefixes: List[str])\
         -> List[List[float]]:
     scoress = []
     for prefix in prefixes:
@@ -802,7 +802,7 @@ def run_alg_over_multiple_files(alg, alg_name, init_solution, num_steps, set_ini
                 init_solution = [0] * graph.number_of_nodes()
             else:
                 init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
-            score, solution, scores = alg(init_solution, num_steps, graph, set_init_0)
+            score, solution, scores = alg(init_solution, num_steps, graph)
             scoress.append(scores)
             print(f"score, scores: {score}, {scores}")
             running_duration = time.time() - start_time
