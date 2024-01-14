@@ -787,7 +787,9 @@ def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
         new_file.write(f"{prefix}alg_name: {alg_name}\n")
 
 
-def run_alg_over_multiple_files(alg, alg_name, num_steps, directory_data: str, prefixes: List[str]):
+def run_alg_over_multiple_files(alg, alg_name, init_solution, num_steps, set_init_0: bool, directory_data: str, prefixes: List[str])\
+        -> List[List[float]]:
+    scoress = []
     for prefix in prefixes:
         files = calc_txt_files_with_prefix(directory_data, prefix)
         files.sort()
@@ -796,12 +798,17 @@ def run_alg_over_multiple_files(alg, alg_name, num_steps, directory_data: str, p
             filename = files[i]
             print(f'The {i}-th file: {filename}')
             graph = read_nxgraph(filename)
-            init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
-            score, solution, scores = alg(init_solution, num_steps, graph)
-            print(f"score, scores: {scores}, {scores}")
+            if set_init_0:
+                init_solution = [0] * graph.number_of_nodes()
+            else:
+                init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
+            score, solution, scores = alg(init_solution, num_steps, graph, set_init_0)
+            scoress.append(scores)
+            print(f"score, scores: {score}, {scores}")
             running_duration = time.time() - start_time
             num_nodes = int(graph.number_of_nodes())
             write_result2(score, running_duration, num_nodes, alg_name, filename)
+    return scoress
 
 def transfer_result_txt_to_csv():
     def time_limit_str(input_string):
