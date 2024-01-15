@@ -1,2 +1,0 @@
-Within the VCA directory, each subdirectory contains a VCA class file and a *_run.py file. Simply run the *_run.py.
-For experimentation, certain VCA and RNN hyperparameters can be changed from the *_run.py itself, while other hyperparameters can be changed from within the 'vca' class in the class files.

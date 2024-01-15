@@ -1,9 +1,0 @@
-#!/bin/bash
-
-for((i=10; i<=100; i=i+1)) do
-{
-./numvc frb59-26-1.mis 1475 $i 2000 >> 59-26-1.result;
-}
-done
-
-
