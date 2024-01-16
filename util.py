@@ -129,6 +129,8 @@ def obj_graph_partitioning(solution: Union[Tensor, List[int], np.array], graph: 
     return obj
 
 def cover_all_edges(solution: List[int], graph: nx.Graph):
+    if graph.number_of_nodes() == 0:
+        return False
     cover_all = True
     for node1, node2 in graph.edges:
         if solution[node1] == 0 and solution[node2] == 0:
@@ -146,6 +148,7 @@ def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph
         if not cover_all_edges(solution, graph):
                 return -INF
     return obj
+
 
 # write a tensor/list/np.array (dim: 1) to a txt file.
 # The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
@@ -787,8 +790,7 @@ def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
         new_file.write(f"{prefix}alg_name: {alg_name}\n")
 
 
-def run_alg_over_multiple_files(alg, alg_name, num_steps, set_init_0: bool, directory_data: str, prefixes: List[str])\
-        -> List[List[float]]:
+def run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0: bool, directory_data: str, prefixes: List[str])-> List[List[float]]:
     scoress = []
     for prefix in prefixes:
         files = calc_txt_files_with_prefix(directory_data, prefix)
@@ -809,6 +811,42 @@ def run_alg_over_multiple_files(alg, alg_name, num_steps, set_init_0: bool, dire
             num_nodes = int(graph.number_of_nodes())
             write_result2(score, running_duration, num_nodes, alg_name, filename)
     return scoress
+
+def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: List[str])-> List[List[float]]:
+    scores = []
+    for prefix in prefixes:
+        files = calc_txt_files_with_prefix(directory_data, prefix)
+        files.sort()
+        for i in range(len(files)):
+            start_time = time.time()
+            filename = files[i]
+            print(f'The {i}-th file: {filename}')
+            score, solution = alg(filename)
+            print(f"score: {score}")
+            running_duration = time.time() - start_time
+            graph = read_nxgraph(filename)
+            num_nodes = int(graph.number_of_nodes())
+            write_result2(score, running_duration, num_nodes, alg_name, filename)
+    return scores
+
+def run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature, num_steps, directory_data: str, prefixes: List[str])-> List[List[float]]:
+    scoress = []
+    for prefix in prefixes:
+        files = calc_txt_files_with_prefix(directory_data, prefix)
+        files.sort()
+        for i in range(len(files)):
+            start_time = time.time()
+            filename = files[i]
+            print(f'The {i}-th file: {filename}')
+            graph = read_nxgraph(filename)
+            score, solution, scores = alg(init_temperature, num_steps, graph)
+            scoress.append(scores)
+            print(f"score, scores: {score}, {scores}")
+            running_duration = time.time() - start_time
+            num_nodes = int(graph.number_of_nodes())
+            write_result2(score, running_duration, num_nodes, alg_name, filename)
+    return scoress
+
 
 def transfer_result_txt_to_csv():
     def time_limit_str(input_string):
