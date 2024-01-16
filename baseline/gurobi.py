@@ -201,16 +201,30 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
                 -quicksum(quicksum(adjacency_matrix[(i, j)] * 4 * (x[i] - 0.5) * (x[j] - 0.5) for i in range(0, j)) for j in nodes),
                 GRB.MAXIMIZE)
     elif PROBLEM == Problem.graph_partitioning:
-        y_lb = adjacency_matrix.min()
-        y_ub = adjacency_matrix.max()
-        x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
-        y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
-        model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
-                           GRB.MINIMIZE)
+        if GUROBI_MILP_QUBO == 0:
+            y_lb = adjacency_matrix.min()
+            y_ub = adjacency_matrix.max()
+            x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+            y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
+            model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
+                               GRB.MINIMIZE)
+        else:
+            x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+            coef_A = len(edges) + 10
+            model.setObjective(coef_A * quicksum(2 * (x[k] - 0.5) for k in nodes) * quicksum(2 * (x[k] - 0.5) for k in nodes)
+                +quicksum(quicksum(adjacency_matrix[(i, j)] * (0.5 - 2 * (x[i] - 0.5) * (x[j] - 0.5)) for i in range(0, j)) for j in nodes),
+                GRB.MINIMIZE)
     elif PROBLEM == Problem.minimum_vertex_cover:
-        x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
-        model.setObjective(quicksum(x[j] for j in nodes),
-                           GRB.MINIMIZE)
+        if GUROBI_MILP_QUBO == 0:
+            x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+            model.setObjective(quicksum(x[j] for j in nodes),
+                               GRB.MINIMIZE)
+        else:
+            x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+            coef_A = len(nodes) + 10
+            model.setObjective(coef_A * quicksum(quicksum(adjacency_matrix[(i, j)] * (1 - x[i]) * (1 - x[j]) for i in range(0, j)) for j in nodes)
+                               + quicksum(x[j] for j in nodes),
+                               GRB.MINIMIZE)
 
     # constrs
     if GUROBI_MILP_QUBO == 0 and PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
@@ -348,8 +362,10 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['barabasi_albert_1000_ID12']
-            directory_data = '../data/syn_BA'
+            # prefixes = ['barabasi_albert_100']
+            # directory_data = '../data/syn_BA'
+            prefixes = ['syn_100_']
+            directory_data = '../data/syn'
 
         directory_result = '../result'
         run_gurobi_over_multiple_files(prefixes, GUROBI_TIME_LIMITS, directory_data, directory_result)
