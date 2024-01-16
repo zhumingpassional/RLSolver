@@ -14,7 +14,7 @@ from util import obj_maxcut, obj_graph_partitioning, obj_minimum_vertex_cover
 from util import plot_fig
 from util import transfer_nxgraph_to_weightmatrix
 from util import cover_all_edges
-from util import run_alg_over_multiple_files
+from util import run_greedy_over_multiple_files
 from config import *
 
 # init_solution is useless
@@ -59,7 +59,7 @@ def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph) -> (int, Union
     print('running_duration: ', running_duration)
     return curr_score, curr_solution, scores
 
-def greedy_graph_partitioning(init_solution: Union[List[int], np.array], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def greedy_graph_partitioning(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
     num_nodes = int(graph.number_of_nodes())
@@ -69,11 +69,15 @@ def greedy_graph_partitioning(init_solution: Union[List[int], np.array], graph: 
     init_score = curr_score
     scores = []
     for i in range(num_nodes):
+        if i > num_steps:
+            break
         node1 = nodes[i]
         traversal_scores = []
         traversal_solutions = []
         for j in range(i + 1, num_nodes):
             node2 = nodes[j]
+            if curr_solution[node1] == curr_solution[node2]:
+                continue
             new_solution = copy.deepcopy(curr_solution)
             tmp = new_solution[node1]
             new_solution[node1] = new_solution[node2]
@@ -91,41 +95,44 @@ def greedy_graph_partitioning(init_solution: Union[List[int], np.array], graph: 
             curr_score = best_score
             curr_solution = best_solution
     print("score, init_score of greedy", curr_score, init_score)
-    print("scores: ", traversal_scores)
+    print("scores: ", scores)
     print("solution: ", curr_solution)
     running_duration = time.time() - start_time
     print('running_duration: ', running_duration)
     return curr_score, curr_solution, scores
 
 
-def greedy_minimum_vertex_cover(init_solution: Union[List[int], np.array], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def greedy_minimum_vertex_cover(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
+    assert sum(init_solution) == 0
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
     curr_solution = copy.deepcopy(init_solution)
     curr_score: int = obj_minimum_vertex_cover(curr_solution, graph)
     init_score = curr_score
     scores = []
-    visited = [0] * num_nodes
+    iter = 0
+    unselected_nodes = list(graph.nodes())
     while True:
         cover_all = cover_all_edges(curr_solution, graph)
         if cover_all:
             break
         max_degree = 0
         best_node = -INF
-        for i in range(num_nodes):
-            node = nodes[i]
+        for node in unselected_nodes:
             degree = graph.degree(node)
-            if visited[node] == 0 and degree > max_degree:
+            if degree > max_degree:
                 max_degree = degree
                 best_node = node
         if max_degree > 0:
             curr_solution[best_node] = 1
-            visited[best_node] = 1
-    if not cover_all_edges(curr_solution, graph):
-        curr_score = -INF
-    print("score, init_score of greedy", curr_score, init_score)
+            unselected_nodes.remove(best_node)
+        iter += 1
+        if iter > num_steps:
+            break
+    curr_score = obj_minimum_vertex_cover(curr_solution, graph)
+    print("score, init_score", curr_score, init_score)
     print("solution: ", curr_solution)
     running_duration = time.time() - start_time
     print('running_duration: ', running_duration)
@@ -139,29 +146,39 @@ if __name__ == '__main__':
     num_steps = 30
     alg_name = 'GR'
 
-    # maxcut
+    if_run_one_case = False
+    if if_run_one_case:
+        # maxcut
+        if PROBLEM == Problem.maxcut:
+            # init_solution = None
+            init_solution = [0] * graph.number_of_nodes()
+            gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph)
+
+        # graph_partitioning
+        if PROBLEM == Problem.graph_partitioning:
+            init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
+            num_steps = 100
+            gr_score, gr_solution, gr_scores = greedy_graph_partitioning(init_solution, graph)
+
+        if PROBLEM == Problem.minimum_vertex_cover:
+            init_solution = [0] * graph.number_of_nodes()
+            gr_score, gr_solution, gr_scores = greedy_minimum_vertex_cover(init_solution, graph)
+            obj = obj_minimum_vertex_cover(gr_solution, graph)
+            print('obj: ', obj)
+
     if PROBLEM == Problem.maxcut:
-        # init_solution = None
-        init_solution = [0] * graph.number_of_nodes()
-        gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph)
+        alg = greedy_maxcut
+    elif PROBLEM == Problem.graph_partitioning:
+        alg = greedy_graph_partitioning
+    elif PROBLEM == Problem.minimum_vertex_cover:
+        alg = greedy_minimum_vertex_cover
 
-    # graph_partitioning
-    if PROBLEM == Problem.graph_partitioning:
-        init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
-        gr_score, gr_solution, gr_scores = greedy_graph_partitioning(init_solution, graph)
-
-    if PROBLEM == Problem.minimum_vertex_cover:
-        init_solution = [0] * graph.number_of_nodes()
-        gr_score, gr_solution, gr_scores = greedy_minimum_vertex_cover(init_solution, graph)
-        obj = obj_minimum_vertex_cover(gr_solution, graph)
-        print('obj: ', obj)
-
-    alg = greedy_maxcut
     alg_name = "greedy"
     num_steps = 100
-    prefixes = ['barabasi_albert_200_ID0']
+    prefixes = ['barabasi_albert_100_ID0']
     directory_data = '../data/syn_BA'
-    scoress = run_alg_over_multiple_files(alg, alg_name, num_steps, True, directory_data, prefixes)
+    set_init_0 = True
+    scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0, directory_data, prefixes)
     
     # plot fig
     for scores in scoress:
