@@ -22,7 +22,8 @@ def draw_graph(G, colors, pos):
 
 # approx ratio 0.87
 # goemans_williamson alg
-def sdp(graph: nx.Graph):
+def sdp_maxcut(filename: str):
+    graph = read_nxgraph(filename)
     n = graph.number_of_nodes() # num of nodes
     edges = graph.edges
 
@@ -56,9 +57,9 @@ def sdp(graph: nx.Graph):
 
     pos = nx.spring_layout(graph)
     # draw_graph(graph, colors, pos)
-    obj = obj_maxcut(solution, graph)
-    print("obj: ", obj, ",solution = " + str(solution))
-    return solution
+    score = obj_maxcut(solution, graph)
+    print("obj: ", score, ",solution = " + str(solution))
+    return score, solution
 
 if __name__ == '__main__':
     # n = 5
@@ -69,16 +70,8 @@ if __name__ == '__main__':
     # # edges = [(0,1),(1,2),(2,3),(3,4)]#[(1,2),(2,3),(3,4),(4,5)]
     # graph.add_edges_from(edges)
 
-    # colors = ["g" for node in G.nodes()]
-    # pos = nx.spring_layout(graph)
-    # draw_graph(G, colors, pos)
-    # w = np.zeros([n, n])
-    # for i in range(n):
-    #     for j in range(n):
-    #         temp = graph.get_edge_data(i, j, default=0)
-    #         if temp != 0:
-    #             w[i, j] = 1
 
     # graph = read_nxgraph('../data/syn/syn_50_176.txt')
-    graph = read_nxgraph('../data/gset/gset_14.txt')
-    sdp(graph)
+    # filename = '../data/gset/gset_14.txt'
+    filename = '../data/syn/syn_50_176.txt'
+    sdp_maxcut(filename)

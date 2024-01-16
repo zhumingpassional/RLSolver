@@ -10,9 +10,16 @@ from util import read_nxgraph
 from util import obj_maxcut, obj_graph_partitioning, obj_minimum_vertex_cover, cover_all_edges
 from util import write_result
 from util import plot_fig
+from util import run_simulated_annealing_over_multiple_files
 from config import *
-def simulated_annealing(init_solution: Union[List[int], np.array], init_temperature: int, num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def simulated_annealing(init_temperature: int, num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('simulated_annealing')
+    if PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
+        init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
+    if PROBLEM == Problem.minimum_vertex_cover:
+        from greedy import greedy_minimum_vertex_cover
+        _, init_solution, _ = greedy_minimum_vertex_cover([0] * int(graph.number_of_nodes()), int(graph.number_of_nodes()), graph)
+        assert cover_all_edges(init_solution, graph)
     start_time = time.time()
     curr_solution = copy.deepcopy(init_solution)
     if PROBLEM == Problem.maxcut:
@@ -21,7 +28,6 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
         curr_score = obj_graph_partitioning(curr_solution, graph)
     elif PROBLEM == Problem.minimum_vertex_cover:
         curr_score = obj_minimum_vertex_cover(curr_solution, graph)
-        edges = list(graph.edges)
     init_score = curr_score
     num_nodes = len(init_solution)
     scores = []
@@ -83,27 +89,34 @@ def simulated_annealing(init_solution: Union[List[int], np.array], init_temperat
     return curr_score, curr_solution, scores
 
 if __name__ == '__main__':
-    # read data
-    graph = read_nxgraph('../data/syn/syn_50_176.txt')
+
 
     # run alg
     # init_solution = list(np.random.randint(0, 2, graph.number_of_nodes()))
-    if PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
-        init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
-    if PROBLEM == Problem.minimum_vertex_cover:
-        from greedy import greedy_minimum_vertex_cover
-        _, init_solution, _ = greedy_minimum_vertex_cover([0] * int(graph.number_of_nodes()), graph)
 
+    if_run_one_case = False
+    if if_run_one_case:
+        # read data
+        graph = read_nxgraph('../data/syn/syn_50_176.txt')
+        init_temperature = 4
+        num_steps = 2000
+        sa_score, sa_solution, sa_scores = simulated_annealing(init_temperature, num_steps, graph)
+        # write result
+        write_result(sa_solution, '../result/result.txt')
+        # plot fig
+        alg_name = 'SA'
+        plot_fig(sa_scores, alg_name)
+
+
+    alg = simulated_annealing
+    alg_name = 'simulated_annealing'
     init_temperature = 4
-    num_steps = 2000
-    sa_score, sa_solution, sa_scores = simulated_annealing(init_solution, init_temperature, num_steps, graph)
+    num_steps = 30
+    prefixes = ['barabasi_albert_100_ID0']
+    directory_data = '../data/syn_BA'
+    run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature, num_steps, directory_data, prefixes)
 
-    # write result
-    write_result(sa_solution, '../result/result.txt')
 
-    # plot fig
-    alg_name = 'SA'
-    plot_fig(sa_scores, alg_name)
 
 
 
