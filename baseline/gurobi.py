@@ -198,7 +198,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
                             GRB.MAXIMIZE)
         else:
             model.setObjective(
-                -quicksum(quicksum(adjacency_matrix[(i, j)] * 4 * (x[i] - 0.5) * (x[j] - 0.5) for i in range(0, j)) for j in nodes),
+                quicksum(quicksum(adjacency_matrix[(i, j)] * (0.5 - 2 * (x[i] - 0.5) * (x[j] - 0.5)) for i in range(0, j)) for j in nodes),
                 GRB.MAXIMIZE)
     elif PROBLEM == Problem.graph_partitioning:
         if GUROBI_MILP_QUBO == 0:
