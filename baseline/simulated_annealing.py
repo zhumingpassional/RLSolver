@@ -112,8 +112,8 @@ if __name__ == '__main__':
     alg_name = 'simulated_annealing'
     init_temperature = 4
     num_steps = 30
-    prefixes = ['barabasi_albert_100_ID0']
     directory_data = '../data/syn_BA'
+    prefixes = ['barabasi_albert_100_ID0']
     run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature, num_steps, directory_data, prefixes)
 
 

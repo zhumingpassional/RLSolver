@@ -50,7 +50,7 @@ def sdp_maxcut(filename: str):
     #gives value -1 if on one side of plane and 1 if on other
     #returned as a array
     sqrtProb = np.sign( sqrtProb @ hyperplane)
-    print(sqrtProb)
+    # print(sqrtProb)
 
     colors = ["r" if sqrtProb[i] == -1 else "c" for i in range(n)]
     solution = [0 if sqrtProb[i] == -1 else 1 for i in range(n)]
@@ -75,3 +75,12 @@ if __name__ == '__main__':
     # filename = '../data/gset/gset_14.txt'
     filename = '../data/syn/syn_50_176.txt'
     sdp_maxcut(filename)
+
+    from util import run_sdp_over_multiple_files
+    alg = sdp_maxcut
+    alg_name = 'sdp'
+    directory_data = '../data/syn_BA'
+    prefixes = ['barabasi_albert_300']
+    scores = run_sdp_over_multiple_files(alg, alg_name, directory_data, prefixes)
+    print(f"scores: {scores}")
+

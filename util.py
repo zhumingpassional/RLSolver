@@ -822,6 +822,7 @@ def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: Li
             filename = files[i]
             print(f'The {i}-th file: {filename}')
             score, solution = alg(filename)
+            scores.append(score)
             print(f"score: {score}")
             running_duration = time.time() - start_time
             graph = read_nxgraph(filename)

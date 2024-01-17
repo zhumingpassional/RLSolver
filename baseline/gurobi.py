@@ -357,13 +357,13 @@ if __name__ == '__main__':
         # time_limits = [10 * 60, 20 * 60, 30 * 60, 40 * 60, 50 * 60, 60 * 60]
         if if_use_syn:
             # prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
-            prefixes = ['syn_1000_']
             directory_data = '../data/syn'
+            prefixes = ['syn_1000_']
 
         if_use_syndistri = True
         if if_use_syndistri:
-            prefixes = ['barabasi_albert_100_']
             directory_data = '../data/syn_BA'
+            prefixes = ['barabasi_albert_100_']
             # prefixes = ['syn_100_']
             # directory_data = '../data/syn'
 
