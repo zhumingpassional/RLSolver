@@ -362,10 +362,10 @@ if __name__ == '__main__':
 
         if_use_syndistri = True
         if if_use_syndistri:
-            # prefixes = ['barabasi_albert_100']
-            # directory_data = '../data/syn_BA'
-            prefixes = ['syn_100_']
-            directory_data = '../data/syn'
+            prefixes = ['barabasi_albert_100_']
+            directory_data = '../data/syn_BA'
+            # prefixes = ['syn_100_']
+            # directory_data = '../data/syn'
 
         directory_result = '../result'
         run_gurobi_over_multiple_files(prefixes, GUROBI_TIME_LIMITS, directory_data, directory_result)
