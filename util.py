@@ -33,11 +33,6 @@ IndexList = List[List[int]]
 from config import GSET_DIR
 DataDir = GSET_DIR
 
-class MyGraph:
-    def __init__(self):
-        num_nodes = 0
-        num_edges = 0
-        graph = List[Tuple[int, int, int]]
 
 def plot_nxgraph(g: nx.Graph()):
     import matplotlib.pyplot as plt
@@ -297,8 +292,6 @@ def write_nxgraph(g: nx.Graph(), filename: str):
                 if weight != 0:
                     file.write(f'{i + 1} {j + 1} {weight}\n')
 
-
-
 def calc_file_name(front: str, id2: int, val: int, end: str):
     return front + "_" + str(id2) + "_" + str(val) + end + "pkl"
 
@@ -519,55 +512,6 @@ def obtain_first_number(s: str):
     value = int(float(res))
     return value
 
-# transfer result file,
-# e.g.,
-# x[0]: 1.0
-# x[1]: 0.0
-# x[2]: 1.0
-# to
-# 1 2
-# 2 1
-# 3 2
-def transfer_write_solver_result(filename: str, new_filename: str):
-    # assert '.txt' in filename
-    nodes = []
-    values = []
-    with open(filename, 'r') as file:
-        find_x = False
-        while True:
-            line = file.readline()
-            if 'x[' in line:
-                find_x = True
-                node = int(line.split('x[')[1].split(']')[0])
-                value = float(line.split(':')[1].split('\n')[0])
-                value = transfer_float_to_binary(value)
-                nodes.append(node)
-                values.append(value)
-            if find_x and 'x[' not in line:
-                break
-    with open(new_filename, 'w', encoding="UTF-8") as file:
-        for i in range(len(nodes)):
-            file.write(f'{nodes[i] + 1} {values[i] + 1}\n')
-
-# For example, syn_10_21_3600.sov, the prefix is 'syn_10_', time_limit is 3600 (seconds).
-# extension is '.txt' or '.sta'
-def transfer_write_solver_results(directory: str, prefixes: List[str], time_limits: List[int], from_extension: str, to_extension: str):
-    for i in range(len(prefixes)):
-        for k in range(len(time_limits)):
-            suffix = str(int(time_limits[k]))
-            files = calc_files_with_prefix_suffix(directory, prefixes[i], suffix, from_extension)
-            for filename in files:
-                new_filename = filename.split('.')[0] + to_extension
-                transfer_write_solver_result(filename, new_filename)
-
-# e.g., rename 'txt' files in directory to 'sta'
-def rename_files(directory: str, orig: str, dest: str):
-    files = os.listdir(directory)
-    for file in files:
-        filename = directory + '/' + file
-        if orig in filename:
-            new_filename = filename.replace(orig, dest)
-            os.rename(filename, new_filename)
 
 def load_graph_from_txt(txt_path: str = './data/gset_14.txt'):
     with open(txt_path, 'r') as file:
@@ -601,7 +545,6 @@ def load_graph(graph_name: str):
 def load_graph_auto(graph_name: str):
     import random
     graph_types = GRAPH_DISTRI_TYPES
-
     if os.path.exists(f"{DataDir}/{graph_name}.txt"):
         txt_path = f"{DataDir}/{graph_name}.txt"
         graph = load_graph_from_txt(txt_path=txt_path)
@@ -677,15 +620,6 @@ def generate_graph_for_validation():
             graph, num_nodes, num_edges = load_graph_from_txt(txt_path)
             adjacency_matrix = build_adjacency_matrix(graph, num_nodes)
             print(adjacency_matrix.shape)
-
-
-
-
-
-
-
-
-'''simulator'''
 
 
 def build_adjacency_matrix(graph, num_nodes):
@@ -822,6 +756,7 @@ def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: Li
             filename = files[i]
             print(f'The {i}-th file: {filename}')
             score, solution = alg(filename)
+            scores.append(score)
             print(f"score: {score}")
             running_duration = time.time() - start_time
             graph = read_nxgraph(filename)
@@ -847,62 +782,6 @@ def run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature,
             write_result2(score, running_duration, num_nodes, alg_name, filename)
     return scoress
 
-
-def transfer_result_txt_to_csv():
-    def time_limit_str(input_string):
-        # 使用正则表达式提取浮点数
-        matches = re.findall(r'[-+]?\d*\.\d+|\d+', input_string)
-        return matches[0]
-    def extract_info_from_filename(file_name):
-        parts = file_name.split('_')
-        info_dict = {
-            'graph_type': parts[0],
-            'num_nodes': int(parts[1]),
-            'random_seed_id': int(parts[2][2:]),  # 从 'ID' 后的部分提取
-            'exec_time': int(parts[3][:-4])  # 从文件扩展名前的部分提取
-        }
-        return info_dict
-    def read_key_value_file(directory, filename):
-        file_path = f"{directory}/{filename}"
-        result_dict = {}
-        solution_sequence = ''
-        with open(file_path, 'r') as file:
-            for line in file:
-                if not line.startswith('//'):
-                    break
-                key, value = map(str.strip, line[2:].split(':', 1))
-                result_dict[key] = value
-        result_dict['time_limit'] = time_limit_str(result_dict['time_limit'])
-        result_dict = {key: float(value) for key, value in result_dict.items()}
-        result_dict.update(extract_info_from_filename(filename))
-        # enc = EncoderBase64(num_nodes=result_dict['num_nodes'])
-        # x_bool = np.equal(np.array(list(map(int, solution_sequence))), 1)
-        # result_dict['solution'] = enc.bool_to_str(x_bool=x_bool)
-        # print(result_dict)
-        return result_dict
-    def read_all_files_in_directory(directory):
-        data_dict_list = []
-        file_names = sorted(os.listdir(directory))
-        for file_name in tqdm.tqdm(file_names):
-            if file_name.endswith(".txt"):
-                data_dict = read_key_value_file(directory, file_name)
-                data_dict_list.append(data_dict)
-        return data_dict_list
-    # 例子
-    data_dir = './data/syn_PL_solution'
-    data_dicts = read_all_files_in_directory(data_dir)
-    df = pd.DataFrame(data_dicts)
-
-    desired_order = ['graph_type', 'num_nodes', 'random_seed_id', 'exec_time', 'obj', 'time_limit',
-                     'running_duration', 'gap', 'obj_bound', ]  # 'solution']
-    df = df[desired_order]  # 重新指定 DataFrame 的列顺序
-
-    # 制定排序的列名优先级
-    priority_columns = ['graph_type', 'num_nodes', 'random_seed_id', 'exec_time']
-    # 使用 sort_values 方法进行排序
-    df = df.sort_values(by=priority_columns)
-    print(df[['graph_type', 'num_nodes', 'random_seed_id', 'obj', 'exec_time', ]])  # 'solution']])
-    df.to_csv('syn_PL_solution.csv', index=False)
 
 if __name__ == '__main__':
     s = "// time_limit: ('TIME_LIMIT', <class 'float'>, 36.0, 0.0, inf, inf)"

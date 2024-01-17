@@ -175,8 +175,8 @@ if __name__ == '__main__':
 
     alg_name = "greedy"
     num_steps = 100
-    prefixes = ['barabasi_albert_100_ID0']
     directory_data = '../data/syn_BA'
+    prefixes = ['barabasi_albert_100_ID0']
     set_init_0 = True
     scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0, directory_data, prefixes)
     
