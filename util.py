@@ -341,7 +341,7 @@ def plot_fig_over_durations(objs: List[int], durations: List[int], label: str):
     plt.savefig('./result/' + label + '.png')
     plt.show()
 
-# return: num_nodes, ID, running_duration, obj, solution
+# return: num_nodes, ID, running_duration:, obj,
 def read_result_comments(filename: str):
     num_nodes, ID, running_duration, obj = None, None, None, None
     ID = int(filename.split('ID')[1].split('_')[0])
@@ -908,7 +908,7 @@ if __name__ == '__main__':
     s = "// time_limit: ('TIME_LIMIT', <class 'float'>, 36.0, 0.0, inf, inf)"
     val = obtain_first_number(s)
 
-    read_txt = False
+    read_txt = True
     if read_txt:
         graph1 = read_nxgraph('data/gset/gset_14.txt')
         graph2 = read_nxgraph('data/syn_5_5.txt')
@@ -962,7 +962,7 @@ if __name__ == '__main__':
     # to_extension = '.txt'
     # transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
 
-    if_plot = False
+    if_plot = True
     if(if_plot):
         dir = 'result/syn_PL_gurobi'
         prefixes = 'powerlaw_1400_'
@@ -979,11 +979,6 @@ if __name__ == '__main__':
         graph_type = GraphDistriType.barabasi_albert
         dir = 'data/syn_BA'
         generate_write_distribution(num_nodess, num_graphs, graph_type, dir)
-
-    graph = read_nxgraph('data/syn_BA/barabasi_albert_100_ID0.txt')
-
-    num_nodes1, ID1, running_duration1, obj_QUBO = res_QUBO = read_result_comments('result/QUBO_barabasi_albert_100_ID0_3600.txt')
-    num_nodes2, ID2, running_duration2, obj_MILP = res_QUBO = read_result_comments('result/MILP_barabasi_albert_100_ID0_3600.txt')
 
 
     print()
