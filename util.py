@@ -33,7 +33,12 @@ IndexList = List[List[int]]
 from config import GSET_DIR
 DataDir = GSET_DIR
 
-
+class MyGraph:
+    def __init__(self):
+        num_nodes = 0
+        num_edges = 0
+        graph = List[Tuple[int, int, int]]
+        
 def plot_nxgraph(g: nx.Graph()):
     import matplotlib.pyplot as plt
     nx.draw_networkx(g)
