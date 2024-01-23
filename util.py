@@ -38,7 +38,7 @@ class MyGraph:
         num_nodes = 0
         num_edges = 0
         graph = List[Tuple[int, int, int]]
-        
+
 def plot_nxgraph(g: nx.Graph()):
     import matplotlib.pyplot as plt
     nx.draw_networkx(g)
@@ -730,6 +730,10 @@ def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
 
 
 def run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0: bool, directory_data: str, prefixes: List[str])-> List[List[float]]:
+    if PROBLEM == Problem.graph_partitioning:
+        assert set_init_0 is False
+    if PROBLEM in [Problem.maxcut, Problem.minimum_vertex_cover]:
+        assert set_init_0 is True
     scoress = []
     for prefix in prefixes:
         files = calc_txt_files_with_prefix(directory_data, prefix)
