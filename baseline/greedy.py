@@ -175,7 +175,7 @@ if __name__ == '__main__':
         alg = greedy_minimum_vertex_cover
 
     alg_name = "greedy"
-    num_steps = 200
+    num_steps = None
     directory_data = '../data/syn_BA'
     prefixes = ['barabasi_albert_200_']
     set_init_0 = True
