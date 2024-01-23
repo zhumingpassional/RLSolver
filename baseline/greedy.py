@@ -60,6 +60,7 @@ def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph) -> (int, Union
 
 def greedy_graph_partitioning(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
+    assert num_steps is None
     start_time = time.time()
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
@@ -68,8 +69,6 @@ def greedy_graph_partitioning(init_solution: Union[List[int], np.array], num_ste
     init_score = curr_score
     scores = []
     for i in range(num_nodes):
-        if i > num_steps:
-            break
         node1 = nodes[i]
         traversal_scores = []
         traversal_solutions = []
@@ -105,6 +104,7 @@ def greedy_graph_partitioning(init_solution: Union[List[int], np.array], num_ste
 
 def greedy_minimum_vertex_cover(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
+    assert num_steps is None
     start_time = time.time()
     assert sum(init_solution) == 0
     num_nodes = int(graph.number_of_nodes())
@@ -130,7 +130,7 @@ def greedy_minimum_vertex_cover(init_solution: Union[List[int], np.array], num_s
             curr_solution[best_node] = 1
             unselected_nodes.remove(best_node)
         iter += 1
-        if iter > num_steps:
+        if iter > num_nodes:
             break
     curr_score = obj_minimum_vertex_cover(curr_solution, graph)
     print("score, init_score", curr_score, init_score)
