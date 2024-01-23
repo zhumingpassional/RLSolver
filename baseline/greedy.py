@@ -1,14 +1,11 @@
 import sys
 sys.path.append('../')
 
-# compared methods for maxcut: random walk, greedy, epsilon greedy, simulated annealing
 import copy
 import time
 from typing import List, Union
 import numpy as np
-from typing import List
 import networkx as nx
-import itertools
 from util import read_nxgraph
 from util import obj_maxcut, obj_graph_partitioning, obj_minimum_vertex_cover
 from util import plot_fig
@@ -46,7 +43,7 @@ def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph) -> (int, Union
         best_score = max(traversal_scores)
         index = traversal_scores.index(best_score)
         best_solution = traversal_solutions[index]
-        if best_score >= curr_score:
+        if best_score > curr_score:
             scores.append(best_score)
             curr_score = best_score
             curr_solution = best_solution
@@ -90,10 +87,12 @@ def greedy_graph_partitioning(init_solution: Union[List[int], np.array], num_ste
         best_score = max(traversal_scores)
         index = traversal_scores.index(best_score)
         best_solution = traversal_solutions[index]
-        if best_score >= curr_score:
+        if best_score > curr_score:
             scores.append(best_score)
             curr_score = best_score
             curr_solution = best_solution
+        else:
+            break
     print("score, init_score of greedy", curr_score, init_score)
     print("scores: ", scores)
     print("solution: ", curr_solution)
@@ -174,15 +173,18 @@ if __name__ == '__main__':
         alg = greedy_minimum_vertex_cover
 
     alg_name = "greedy"
-    num_steps = 100
+    num_steps = 200
     directory_data = '../data/syn_BA'
-    prefixes = ['barabasi_albert_100_ID0']
+    prefixes = ['barabasi_albert_200_']
     set_init_0 = True
     scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0, directory_data, prefixes)
-    
+    print(f"scoress: {scoress}")
+
     # plot fig
-    for scores in scoress:
-        plot_fig(scores, alg_name)
+    plot_fig_ = False
+    if plot_fig_:
+        for scores in scoress:
+            plot_fig(scores, alg_name)
 
 
 
