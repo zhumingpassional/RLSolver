@@ -21,6 +21,8 @@ def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph) -> (int, Union
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
     assert sum(init_solution) == 0
+    assert num_steps is None
+    num_steps = num_nodes
     curr_solution = copy.deepcopy(init_solution)
     curr_score: int = obj_maxcut(curr_solution, graph)
     init_score = curr_score
