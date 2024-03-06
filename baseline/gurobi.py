@@ -180,7 +180,10 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     graph = read_nxgraph(filename)
     edges = list(graph.edges)
-    nx.draw_networkx(graph)
+    subax1 = plt.subplot(111)
+    nx.draw_networkx(graph, with_labels=True)
+    plt.show()
+    # nx.draw_networkx(graph)
     if plot_fig_:
         plt.show()
 
@@ -225,24 +228,47 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
             model.setObjective(coef_A * quicksum(quicksum(adjacency_matrix[(i, j)] * (1 - x[i]) * (1 - x[j]) for i in range(0, j)) for j in nodes)
                                + quicksum(x[j] for j in nodes),
                                GRB.MINIMIZE)
+    elif PROBLEM == Problem.maximum_independent_set:
+        if GUROBI_MILP_QUBO == 0:
+            x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+            model.setObjective(quicksum(x[j] for j in nodes),
+                               GRB.MAXIMIZE)
+        else:
+            coef_B1 = -1
+            coef_B2 = 3
+            x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+            model.setObjective(-quicksum(x[j] for j in nodes) + coef_B1 * quicksum((2 - x[i] - x[j]) * (2 - x[i] - x[j]) for (i, j) in edges)
+                               + coef_B2 * quicksum((1 - x[i] - x[j]) * (1 - x[i] - x[j]) for (i, j) in edges),
+                               GRB.MINIMIZE)
 
     # constrs
-    if GUROBI_MILP_QUBO == 0 and PROBLEM in [Problem.maxcut, Problem.graph_partitioning]:
-        # y_{i, j} = x_i XOR x_j
-        for j in nodes:
-            for i in range(0, j):
-                model.addConstr(y[(i, j)] <= x[i] + x[j], name='C0b_' + str(i) + '_' + str(j))
-                model.addConstr(y[(i, j)] <= 2 - x[i] - x[j], name='C0a_' + str(i) + '_' + str(j))
-                model.addConstr(y[(i, j)] >= x[i] - x[j], name='C0c_' + str(i) + '_' + str(j))
-                model.addConstr(y[(i, j)] >= -x[i] + x[j], name='C0d_' + str(i) + '_' + str(j))
+    if GUROBI_MILP_QUBO == 0:
+        if PROBLEM == Problem.maxcut:
+            # y_{i, j} = x_i XOR x_j
+            for j in nodes:
+                for i in range(0, j):
+                    model.addConstr(y[(i, j)] <= x[i] + x[j], name='C0b_' + str(i) + '_' + str(j))
+                    model.addConstr(y[(i, j)] <= 2 - x[i] - x[j], name='C0a_' + str(i) + '_' + str(j))
+                    model.addConstr(y[(i, j)] >= x[i] - x[j], name='C0c_' + str(i) + '_' + str(j))
+                    model.addConstr(y[(i, j)] >= -x[i] + x[j], name='C0d_' + str(i) + '_' + str(j))
+        elif PROBLEM == Problem.graph_partitioning:
+            # y_{i, j} = x_i XOR x_j
+            for j in nodes:
+                for i in range(0, j):
+                    model.addConstr(y[(i, j)] <= x[i] + x[j], name='C0b_' + str(i) + '_' + str(j))
+                    model.addConstr(y[(i, j)] <= 2 - x[i] - x[j], name='C0a_' + str(i) + '_' + str(j))
+                    model.addConstr(y[(i, j)] >= x[i] - x[j], name='C0c_' + str(i) + '_' + str(j))
+                    model.addConstr(y[(i, j)] >= -x[i] + x[j], name='C0d_' + str(i) + '_' + str(j))
+            model.addConstr(quicksum(x[j] for j in nodes) == num_nodes / 2, name='C1')
+        elif PROBLEM == Problem.minimum_vertex_cover:
+            for i in range(len(edges)):
+                node1, node2 = edges[i]
+                model.addConstr(x[node1] + x[node2] >= 1, name=f'C0_{node1}_{node2}')
+        elif PROBLEM == Problem.maximum_independent_set:
+            for i in range(len(edges)):
+                node1, node2 = edges[i]
+                model.addConstr(x[node1] + x[node2] <= 1, name=f'C0_{node1}_{node2}')
 
-    if GUROBI_MILP_QUBO == 0 and PROBLEM == Problem.graph_partitioning:
-        model.addConstr(quicksum(x[j] for j in nodes) == num_nodes / 2, name='C1')
-
-    if GUROBI_MILP_QUBO == 0 and PROBLEM == Problem.minimum_vertex_cover:
-        for i in range(len(edges)):
-            node1, node2 = edges[i]
-            model.addConstr(x[node1] + x[node2] >= 1, name=f'C0_{node1}_{node2}')
 
     if time_limit is not None:
         model.setParam('TimeLimit', time_limit)
@@ -310,8 +336,6 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     print('obj:', model.getObjective().getValue())
     vars = model.getVars()
 
-
-
     if model.getAttr('SolCount') == 0:  # model.getAttr(GRB.Attr.SolCount)
         print("No solution.")
     print("SolCount: ", model.getAttr('SolCount'))
@@ -352,15 +376,15 @@ if __name__ == '__main__':
         prefixes = ['syn_10_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     else:
-        if_use_syn = False
+        if_use_syn = True
         # time_limits = GUROBI_TIME_LIMITS
         # time_limits = [10 * 60, 20 * 60, 30 * 60, 40 * 60, 50 * 60, 60 * 60]
         if if_use_syn:
             # prefixes = ['syn_10_', 'syn_50_', 'syn_100_', 'syn_300_', 'syn_500_', 'syn_700_', 'syn_900_', 'syn_1000_', 'syn_3000_', 'syn_5000_', 'syn_7000_', 'syn_9000_', 'syn_10000_']
             directory_data = '../data/syn'
-            prefixes = ['syn_1000_']
+            prefixes = ['syn_10_']
 
-        if_use_syndistri = True
+        if_use_syndistri = False
         if if_use_syndistri:
             directory_data = '../data/syn_BA'
             prefixes = ['barabasi_albert_100_']
