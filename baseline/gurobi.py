@@ -182,8 +182,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     edges = list(graph.edges)
     subax1 = plt.subplot(111)
     nx.draw_networkx(graph, with_labels=True)
-    plt.show()
-    # nx.draw_networkx(graph)
+    # plt.show() # if show the fig, remove this comment
     if plot_fig_:
         plt.show()
 

@@ -149,6 +149,20 @@ def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph
                 return -INF
     return obj
 
+def obj_maximum_independent_set(solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
+    sol = set(solution)
+    assert len(sol) == 2
+    max_elem = max(sol)
+    min_elem = min(sol)
+    obj = 0
+    edges = list(graph.edges)
+    for i, j in edges:
+        if solution[i] == max_elem and solution[j] == max_elem:
+            obj = -INF
+            break
+        else:
+            obj += 1
+    return obj
 
 # write a tensor/list/np.array (dim: 1) to a txt file.
 # The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
