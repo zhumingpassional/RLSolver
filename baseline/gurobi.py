@@ -84,7 +84,14 @@ def mycallback(model, where):
 # the file has been open
 def write_statistics(model, new_file, add_slash = False):
     prefix = '// ' if add_slash else ''
-    new_file.write(f"{prefix}obj: {model.objVal}\n")
+    if PROBLEM == Problem.maximum_independent_set:
+        from util import obj_maximum_independent_set
+        solution = model._attribute['solution']
+        graph = model._attribute['graph']
+        obj = obj_maximum_independent_set(solution, graph)
+        new_file.write(f"{prefix}obj: {obj}\n")
+    else:
+        new_file.write(f"{prefix}obj: {model.objVal}\n")
     new_file.write(f"{prefix}running_duration: {model.Runtime}\n")
     if not GUROBI_VAR_CONTINUOUS:
         new_file.write(f"{prefix}gap: {model.MIPGap}\n")
@@ -153,6 +160,7 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         nodes.append(node)
         values.append(value)
     with open(new_filename, 'w', encoding="UTF-8") as new_file:
+        model._attribute['solution'] = values
         write_statistics(model, new_file, True)
         new_file.write(f"// num_nodes: {len(nodes)}\n")
         for i in range(len(nodes)):
@@ -240,7 +248,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
                                + coef_B2 * quicksum((1 - x[i] - x[j]) * (1 - x[i] - x[j]) for (i, j) in edges),
                                GRB.MINIMIZE)
 
-    # constrs
+    # constrs if using MILP
     if GUROBI_MILP_QUBO == 0:
         if PROBLEM == Problem.maxcut:
             # y_{i, j} = x_i XOR x_j
@@ -327,6 +335,7 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     elif model.getAttr('SolCount') >= 1:  # get the SolCount:
         # result_filename = '../result/result'
+        model._attribute['graph'] = graph
         write_result_gurobi(model, result_filename, time_limit)
 
     num_vars = model.getAttr(GRB.Attr.NumVars)
