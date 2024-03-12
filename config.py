@@ -7,6 +7,7 @@ class Problem(Enum):
     maxcut = 'maxcut'
     graph_partitioning = 'graph_partitioning'
     minimum_vertex_cover = 'minimum_vertex_cover'
+    maximum_independent_set = 'maximum_independent_set'
 
 @unique
 class GraphDistriType(Enum):
@@ -26,7 +27,7 @@ GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphD
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 NUM_IDS = 30  # ID0, ..., ID29
 
-PROBLEM = Problem.maxcut
+PROBLEM = Problem.maximum_independent_set
 
 INF = 1e6
 

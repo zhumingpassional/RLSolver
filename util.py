@@ -149,6 +149,25 @@ def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph
                 return -INF
     return obj
 
+# make sure solution[i] = 0 or 1
+def obj_maximum_independent_set(solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
+    sol = set(solution)
+    # if len(solution) > 0:
+    #     assert len(sol) == 2
+    max_elem = max(sol)
+    min_elem = min(sol)
+    if max_elem == min_elem:
+        max_elem += 1
+    obj = 0
+    edges = list(graph.edges)
+    num_nodes = int(graph.number_of_nodes())
+    for i, j in edges:
+        if solution[i] == max_elem and solution[j] == max_elem:
+            return -INF
+    for i in range(num_nodes):
+        if solution[i] == max_elem:
+            obj += 1
+    return obj
 
 # write a tensor/list/np.array (dim: 1) to a txt file.
 # The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
@@ -732,7 +751,7 @@ def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
 def run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0: bool, directory_data: str, prefixes: List[str])-> List[List[float]]:
     if PROBLEM == Problem.graph_partitioning:
         assert set_init_0 is False
-    if PROBLEM in [Problem.maxcut, Problem.minimum_vertex_cover]:
+    if PROBLEM in [Problem.maxcut, Problem.minimum_vertex_cover, Problem.maximum_independent_set]:
         assert set_init_0 is True
     scoress = []
     for prefix in prefixes:
