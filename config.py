@@ -7,7 +7,17 @@ class Problem(Enum):
     maxcut = 'maxcut'
     graph_partitioning = 'graph_partitioning'
     minimum_vertex_cover = 'minimum_vertex_cover'
+    number_partitioning = 'number_partitioning'
+    bilp = 'bilp'
     maximum_independent_set = 'maximum_independent_set'
+    knapsack = 'knapsack'
+    set_cover = 'set_cover'
+    graph_coloring = 'graph_coloring'
+    tsp = 'tsp'
+
+
+
+    tsp = 'tsp'
 
 @unique
 class GraphDistriType(Enum):
