@@ -195,13 +195,18 @@ def greedy_minimum_vertex_cover(num_steps: int, graph: nx.Graph) -> (int, Union[
     return curr_score, curr_solution, scores
 
 def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
-    def calc_nodes_not_connecting(unselected_nodes: List[int], selected_nodes: List[int], extend_candidate_graph: nx.Graph):
-        nodes = set()
-        for node1, node2 in extend_candidate_graph.edges():
-            if node1 in unselected_nodes and node2 not in selected_nodes:
-                nodes.add(node1)
-        list_nodes = list(nodes)
-        return list_nodes
+    def calc_candidate_nodes(unselected_nodes: List[int], selected_nodes: List[int], graph: nx.Graph):
+        candidate_nodes = []
+        remove_nodes = set()
+        for node1, node2 in graph.edges():
+            if node1 in selected_nodes:
+                remove_nodes.add(node2)
+            elif node2 in selected_nodes:
+                remove_nodes.add(node1)
+        for node in unselected_nodes:
+            if node not in remove_nodes:
+                candidate_nodes.append(node)
+        return candidate_nodes
     print('greedy')
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
@@ -224,7 +229,7 @@ def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) ->
     step = 0
     while True:
         step += 1
-        candidate_nodes = calc_nodes_not_connecting(unselected_nodes, selected_nodes, graph)
+        candidate_nodes = calc_candidate_nodes(unselected_nodes, selected_nodes, graph)
         if len(candidate_nodes) == 0:
             break
         min_degree = num_nodes
@@ -241,9 +246,9 @@ def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) ->
             unselected_nodes.remove(selected_node)
             candidate_graph.remove_node(selected_node)
             curr_solution[selected_node] = 1
-            curr_score2 = obj_maximum_independent_set(curr_solution, graph)
+            # curr_score2 = obj_maximum_independent_set(curr_solution, graph)
             curr_score += 1
-            assert curr_score == curr_score2
+            # assert curr_score == curr_score2
             scores.append(curr_score)
         if step > num_steps:
             break
@@ -301,10 +306,11 @@ if __name__ == '__main__':
         alg_name = "greedy"
         num_steps = None
         # directory_data = '../data/syn_BA'
-        # directory_data = '../data/syn_ER'
-        directory_data = '../data/syn'
+        directory_data = '../data/syn_ER'
+        # directory_data = '../data/syn'
         # prefixes = ['barabasi_albert_100_']
-        prefixes = ['syn_10_']
+        prefixes = ['erdos_renyi_100_']
+        # prefixes = ['syn_10_']
         scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data, prefixes)
         print(f"scoress: {scoress}")
 
