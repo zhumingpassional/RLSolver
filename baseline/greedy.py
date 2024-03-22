@@ -195,6 +195,13 @@ def greedy_minimum_vertex_cover(num_steps: int, graph: nx.Graph) -> (int, Union[
     return curr_score, curr_solution, scores
 
 def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+    def calc_nodes_not_connecting(unselected_nodes: List[int], selected_nodes: List[int], extend_candidate_graph: nx.Graph):
+        nodes = set()
+        for node1, node2 in extend_candidate_graph.edges():
+            if node1 in unselected_nodes and node2 not in selected_nodes:
+                nodes.add(node1)
+        list_nodes = list(nodes)
+        return list_nodes
     print('greedy')
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
@@ -206,28 +213,43 @@ def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) ->
     curr_score: int = obj_maximum_independent_set(curr_solution, graph)
     init_score = curr_score
     scores = []
-    for i in range(num_steps):
-        traversal_scores = []
-        traversal_solutions = []
-        for node in range(num_nodes):
-            if curr_solution[node] == 1:
-                continue
-            new_solution = copy.deepcopy(curr_solution)
-            new_solution[node] = (new_solution[node] + 1) % 2
-            new_score = obj_maximum_independent_set(new_solution, graph)
-            traversal_scores.append(new_score)
-            traversal_solutions.append(new_solution)
-        if len(traversal_scores) == 0:
-            continue
-        best_score = max(traversal_scores)
-        index = traversal_scores.index(best_score)
-        best_solution = traversal_solutions[index]
-        if best_score > curr_score:
-            scores.append(best_score)
-            curr_score = best_score
-            curr_solution = best_solution
-        else:
+    selected_nodes = []
+    unselected_nodes = copy.deepcopy(nodes)
+
+    candidate_nodes = nodes
+    bridege_nodes = []
+
+    candidate_graph = copy.deepcopy(graph)
+    # extend_candidate_graph = copy.deepcopy(graph)
+    step = 0
+    while True:
+        step += 1
+        candidate_nodes = calc_nodes_not_connecting(unselected_nodes, selected_nodes, graph)
+        if len(candidate_nodes) == 0:
             break
+        min_degree = num_nodes
+        selected_node = None
+        for node in candidate_nodes:
+            degree = candidate_graph.degree(node)
+            if degree < min_degree:
+                min_degree = degree
+                selected_node = node
+        if selected_node is None:
+            break
+        else:
+            selected_nodes.append(selected_node)
+            unselected_nodes.remove(selected_node)
+            candidate_graph.remove_node(selected_node)
+            curr_solution[selected_node] = 1
+            curr_score2 = obj_maximum_independent_set(curr_solution, graph)
+            curr_score += 1
+            assert curr_score == curr_score2
+            scores.append(curr_score)
+        if step > num_steps:
+            break
+    curr_score2 = obj_maximum_independent_set(curr_solution, graph)
+    assert curr_score == curr_score2
+
     print("score, init_score of greedy", curr_score, init_score)
     print("scores: ", scores)
     print("solution: ", curr_solution)
@@ -278,9 +300,11 @@ if __name__ == '__main__':
 
         alg_name = "greedy"
         num_steps = None
-        directory_data = '../data/syn_ER'
+        # directory_data = '../data/syn_BA'
+        # directory_data = '../data/syn_ER'
+        directory_data = '../data/syn'
         # prefixes = ['barabasi_albert_100_']
-        prefixes = ['erdos_renyi_100_']
+        prefixes = ['syn_10_']
         scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data, prefixes)
         print(f"scoress: {scoress}")
 

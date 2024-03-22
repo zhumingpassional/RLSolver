@@ -768,7 +768,6 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str
                 init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
             score, solution, scores = alg(num_steps, graph)
             scoress.append(scores)
-            print(f"score, scores: {score}, {scores}")
             running_duration = time.time() - start_time
             num_nodes = int(graph.number_of_nodes())
             write_result2(score, running_duration, num_nodes, alg_name, filename)
@@ -804,7 +803,6 @@ def run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature,
             graph = read_nxgraph(filename)
             score, solution, scores = alg(init_temperature, num_steps, graph)
             scoress.append(scores)
-            print(f"score, scores: {score}, {scores}")
             running_duration = time.time() - start_time
             num_nodes = int(graph.number_of_nodes())
             write_result2(score, running_duration, num_nodes, alg_name, filename)

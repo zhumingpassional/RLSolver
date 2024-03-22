@@ -22,23 +22,19 @@ def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: 
     print('simulated_annealing')
     num_nodes = int(graph.number_of_nodes())
     if PROBLEM == Problem.maxcut:
-        init_solution = [0] * graph.number_of_nodes()
         if num_steps is None:
             num_steps = num_nodes
-        gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph)
+        gr_score, gr_solution, gr_scores = greedy_maxcut(num_steps, graph)
     elif PROBLEM == Problem.graph_partitioning:
-        init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
-        num_steps = None
-        gr_score, gr_solution, gr_scores = greedy_graph_partitioning(init_solution, num_steps, graph)
+        num_steps = num_nodes
+        gr_score, gr_solution, gr_scores = greedy_graph_partitioning(num_steps, graph)
     elif PROBLEM == Problem.minimum_vertex_cover:
-        num_steps = None
-        gr_score, gr_solution, gr_scores = greedy_minimum_vertex_cover([0] * int(graph.number_of_nodes()), int(graph.number_of_nodes()), graph)
+        num_steps = num_nodes
+        gr_score, gr_solution, gr_scores = greedy_minimum_vertex_cover(None, graph)
         assert cover_all_edges(gr_solution, graph)
     elif PROBLEM == Problem.maximum_independent_set:
-        init_solution = None
-        num_steps = None
-        gr_score, gr_solution, gr_scores = greedy_maximum_independent_set(init_solution, num_steps, graph)
-
+        num_steps = num_nodes
+        gr_score, gr_solution, gr_scores = greedy_maximum_independent_set(num_steps, graph)
 
     start_time = time.time()
     init_score = gr_score
@@ -58,21 +54,20 @@ def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: 
         elif PROBLEM == Problem.graph_partitioning:
             while True:
                 idx = np.random.randint(0, num_nodes)
-                index2 = np.random.randint(0, num_nodes)
-                if new_solution[idx] != new_solution[index2]:
+                node2 = np.random.randint(0, num_nodes)
+                if new_solution[idx] != new_solution[node2]:
                     break
-            print(f"new_solution[index]: {new_solution[idx]}, new_solution[index2]: {new_solution[index2]}")
+            print(f"new_solution[index]: {new_solution[idx]}, new_solution[index2]: {new_solution[node2]}")
             tmp = new_solution[idx]
-            new_solution[idx] = new_solution[index2]
-            new_solution[index2] = tmp
+            new_solution[idx] = new_solution[node2]
+            new_solution[node2] = tmp
             new_score = obj_graph_partitioning(new_solution, graph)
         elif PROBLEM == Problem.minimum_vertex_cover:
             iter = 0
-            max_iter = 3 * graph.number_of_nodes()
             index = None
             while True:
                 iter += 1
-                if iter >= max_iter:
+                if iter >= num_steps:
                     break
                 indices_eq_1 = []
                 for i in range(len(new_solution)):
@@ -87,6 +82,31 @@ def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: 
             if index is not None:
                 new_solution[index] = 0
             new_score = obj_minimum_vertex_cover(new_solution, graph, False)
+        elif PROBLEM == Problem.maximum_independent_set:
+            selected_nodes = []
+            unselected_nodes = []
+            for i in range(len(curr_solution)):
+                if curr_solution[i] == 1:
+                    selected_nodes.append(i)
+                else:
+                    unselected_nodes.append(i)
+            iter = 0
+            for i in range(num_steps):
+                node1 = np.random.randint(0, len(selected_nodes))
+                node2 = np.random.randint(0, len(unselected_nodes))
+                new_solution = copy.deepcopy(curr_solution)
+                new_solution[node1] = 0
+                new_solution[node2] = 1
+                selected_nodes.remove(node1)
+                unselected_nodes.append(node2)
+
+
+
+
+
+
+
+
         scores.append(new_score)
         delta_e = curr_score - new_score
         if delta_e < 0:
@@ -128,8 +148,8 @@ if __name__ == '__main__':
     alg_name = 'simulated_annealing'
     init_temperature = 4
     num_steps = None
-    directory_data = '../data/syn_BA'
-    prefixes = ['barabasi_albert_100_ID']
+    directory_data = '../data/syn_ER'
+    prefixes = ['erdos_renyi_100_']
     run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature, num_steps, directory_data, prefixes)
 
 
