@@ -15,9 +15,7 @@ class Problem(Enum):
     graph_coloring = 'graph_coloring'
     tsp = 'tsp'
 
-
-
-    tsp = 'tsp'
+PROBLEM = Problem.maximum_independent_set
 
 @unique
 class GraphDistriType(Enum):
@@ -37,7 +35,7 @@ GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphD
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']
 NUM_IDS = 30  # ID0, ..., ID29
 
-PROBLEM = Problem.maximum_independent_set
+
 
 INF = 1e6
 
