@@ -3,7 +3,7 @@ sys.path.append('../')
 
 import copy
 import time
-from typing import List, Union
+from typing import List, Union, Optional
 import numpy as np
 import multiprocessing as mp
 import networkx as nx
@@ -51,11 +51,12 @@ def traverse_in_greedy_maxcut(curr_solution, selected_nodes, graph):
 
 
 # init_solution is useless
-def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def greedy_maxcut(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
+    init_solution = [0] * graph.number_of_nodes()
     assert sum(init_solution) == 0
     if num_steps is None:
         num_steps = num_nodes
@@ -109,21 +110,23 @@ def greedy_maxcut(init_solution, num_steps: int, graph: nx.Graph) -> (int, Union
     print('running_duration: ', running_duration)
     return curr_score, curr_solution, scores
 
-def greedy_graph_partitioning(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def greedy_graph_partitioning(num_steps:Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
-    assert num_steps is None
-    start_time = time.time()
+    init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
     num_nodes = int(graph.number_of_nodes())
+    if num_steps is None:
+        num_steps = num_nodes
+    start_time = time.time()
     nodes = list(range(num_nodes))
     curr_solution = copy.deepcopy(init_solution)
     curr_score: int = obj_graph_partitioning(curr_solution, graph)
     init_score = curr_score
     scores = []
-    for i in range(num_nodes):
+    for i in range(num_steps):
         node1 = nodes[i]
         traversal_scores = []
         traversal_solutions = []
-        for j in range(i + 1, num_nodes):
+        for j in range(i + 1, num_steps):
             node2 = nodes[j]
             if curr_solution[node1] == curr_solution[node2]:
                 continue
@@ -153,11 +156,12 @@ def greedy_graph_partitioning(init_solution: Union[List[int], np.array], num_ste
     return curr_score, curr_solution, scores
 
 
-def greedy_minimum_vertex_cover(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def greedy_minimum_vertex_cover(num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
+    init_solution = [0] * graph.number_of_nodes()
+    assert sum(init_solution) == 0
     assert num_steps is None
     start_time = time.time()
-    assert sum(init_solution) == 0
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
     curr_solution = copy.deepcopy(init_solution)
@@ -190,14 +194,13 @@ def greedy_minimum_vertex_cover(init_solution: Union[List[int], np.array], num_s
     print('running_duration: ', running_duration)
     return curr_score, curr_solution, scores
 
-def greedy_maximum_independent_set(init_solution: Union[List[int], np.array], num_steps: int, graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
+    init_solution = [0] * num_nodes
     if num_steps is None:
         num_steps = num_nodes
-    if init_solution is None:
-        init_solution = [0] * num_nodes
     start_time = time.time()
     curr_solution = copy.deepcopy(init_solution)
     curr_score: int = obj_maximum_independent_set(curr_solution, graph)
@@ -234,6 +237,7 @@ def greedy_maximum_independent_set(init_solution: Union[List[int], np.array], nu
 
 if __name__ == '__main__':
     # read data
+    print(f'problem: {PROBLEM}')
     graph = read_nxgraph('../data/syn/syn_10_21.txt')
     weightmatrix = transfer_nxgraph_to_weightmatrix(graph)
     # run alg
@@ -244,26 +248,21 @@ if __name__ == '__main__':
     if if_run_one_case:
         # maxcut
         if PROBLEM == Problem.maxcut:
-            # init_solution = None
-            init_solution = [0] * graph.number_of_nodes()
-            gr_score, gr_solution, gr_scores = greedy_maxcut(init_solution, num_steps, graph)
+            gr_score, gr_solution, gr_scores = greedy_maxcut(num_steps, graph)
 
         # graph_partitioning
-        if PROBLEM == Problem.graph_partitioning:
-            init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
-            num_steps = 100
-            gr_score, gr_solution, gr_scores = greedy_graph_partitioning(init_solution, num_steps, graph)
+        elif PROBLEM == Problem.graph_partitioning:
+            num_steps = None
+            gr_score, gr_solution, gr_scores = greedy_graph_partitioning(num_steps, graph)
 
-        if PROBLEM == Problem.minimum_vertex_cover:
-            init_solution = [0] * graph.number_of_nodes()
-            gr_score, gr_solution, gr_scores = greedy_minimum_vertex_cover(init_solution, num_steps, graph)
+        elif PROBLEM == Problem.minimum_vertex_cover:
+            gr_score, gr_solution, gr_scores = greedy_minimum_vertex_cover(num_steps, graph)
             obj = obj_minimum_vertex_cover(gr_solution, graph)
             print('obj: ', obj)
 
-        if PROBLEM == Problem.maximum_independent_set:
-            init_solution = None
+        elif PROBLEM == Problem.maximum_independent_set:
             num_steps = None
-            gr_score, gr_solution, gr_scores = greedy_maximum_independent_set(init_solution, num_steps, graph)
+            gr_score, gr_solution, gr_scores = greedy_maximum_independent_set(num_steps, graph)
             obj = obj_maximum_independent_set(gr_solution, graph)
             print('obj: ', obj)
 
@@ -279,10 +278,10 @@ if __name__ == '__main__':
 
         alg_name = "greedy"
         num_steps = None
-        directory_data = '../data/syn_BA'
-        prefixes = ['barabasi_albert_100_']
-        set_init_0 = True
-        scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0, directory_data, prefixes)
+        directory_data = '../data/syn_ER'
+        # prefixes = ['barabasi_albert_100_']
+        prefixes = ['erdos_renyi_100_']
+        scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data, prefixes)
         print(f"scoress: {scoress}")
 
         # plot fig

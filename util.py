@@ -7,7 +7,7 @@ import functools
 import time
 import torch.nn as nn
 import numpy as np
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 import networkx as nx
 import pandas as pd
 import torch as th
@@ -121,8 +121,8 @@ def obj_graph_partitioning(solution: Union[Tensor, List[int], np.array], graph: 
     for i in range(num_nodes):
         if solution[i] == 0:
             sum1 += 1
-        for j in range(num_nodes):
-            if i != j and solution[i] != solution[j]:
+        for j in range(i + 1, num_nodes):
+            if solution[i] != solution[j]:
                 obj -= adj_matrix[(i, j)]
     if sum1 != num_nodes / 2:
         return -INF
@@ -747,12 +747,12 @@ def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
         new_file.write(f"// num_nodes: {num_nodes}\n")
         new_file.write(f"{prefix}alg_name: {alg_name}\n")
 
-
-def run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0: bool, directory_data: str, prefixes: List[str])-> List[List[float]]:
+# def run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0: Optional[bool], directory_data: str, prefixes: List[str])-> List[List[float]]:
+def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str, prefixes: List[str])-> List[List[float]]:
     if PROBLEM == Problem.graph_partitioning:
-        assert set_init_0 is False
+        set_init_0 = False
     if PROBLEM in [Problem.maxcut, Problem.minimum_vertex_cover, Problem.maximum_independent_set]:
-        assert set_init_0 is True
+        set_init_0 = True
     scoress = []
     for prefix in prefixes:
         files = calc_txt_files_with_prefix(directory_data, prefix)
@@ -766,7 +766,7 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0: bool, d
                 init_solution = [0] * graph.number_of_nodes()
             else:
                 init_solution = [0] * int(graph.number_of_nodes() / 2) + [1] * int(graph.number_of_nodes() / 2)
-            score, solution, scores = alg(init_solution, num_steps, graph)
+            score, solution, scores = alg(num_steps, graph)
             scoress.append(scores)
             print(f"score, scores: {score}, {scores}")
             running_duration = time.time() - start_time

@@ -16,9 +16,6 @@ class Problem(Enum):
     tsp = 'tsp'
 
 
-
-    tsp = 'tsp'
-
 @unique
 class GraphDistriType(Enum):
     erdos_renyi: str = 'erdos_renyi'
