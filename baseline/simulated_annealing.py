@@ -9,7 +9,10 @@ import networkx as nx
 from util import read_nxgraph, cover_all_edges
 from util import (obj_maxcut,
                   obj_graph_partitioning,
-                  obj_minimum_vertex_cover, )
+                  obj_minimum_vertex_cover,
+                  obj_maximum_independent_set,
+                  obj_maximum_independent_set_SA,
+                  )
 from greedy import (greedy_maxcut,
     greedy_graph_partitioning,
     greedy_minimum_vertex_cover,
@@ -33,15 +36,17 @@ def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: 
         gr_score, gr_solution, gr_scores = greedy_minimum_vertex_cover(None, graph)
         assert cover_all_edges(gr_solution, graph)
     elif PROBLEM == Problem.maximum_independent_set:
-        num_steps = num_nodes
+        num_steps = 100 * num_nodes
         gr_score, gr_solution, gr_scores = greedy_maximum_independent_set(num_steps, graph)
 
     start_time = time.time()
     init_score = gr_score
     curr_solution = copy.deepcopy(gr_solution)
     curr_score = gr_score
-
+    # if PROBLEM == Problem.maximum_independent_set:
+    #     curr_score = gr_score / graph.number_of_edges()
     scores = []
+    scores.append(init_score)
 
     for k in range(num_steps):
         # The temperature decreases
@@ -83,41 +88,54 @@ def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: 
                 new_solution[index] = 0
             new_score = obj_minimum_vertex_cover(new_solution, graph, False)
         elif PROBLEM == Problem.maximum_independent_set:
-            selected_nodes = []
-            unselected_nodes = []
-            for i in range(len(curr_solution)):
-                if curr_solution[i] == 1:
-                    selected_nodes.append(i)
+            selected_indices = []
+            unselected_indices = []
+            for i in range(len(new_solution)):
+                if new_solution[i] == 1:
+                    selected_indices.append(i)
                 else:
-                    unselected_nodes.append(i)
-            iter = 0
-            for i in range(num_steps):
-                node1 = np.random.randint(0, len(selected_nodes))
-                node2 = np.random.randint(0, len(unselected_nodes))
-                new_solution = copy.deepcopy(curr_solution)
-                new_solution[node1] = 0
-                new_solution[node2] = 1
-                selected_nodes.remove(node1)
-                unselected_nodes.append(node2)
-
-
-
-
-
-
-
-
-        scores.append(new_score)
+                    unselected_indices.append(i)
+            idx_out = np.random.randint(0, len(selected_indices))
+            node_out = selected_indices[idx_out]
+            new_solution[node_out] = (new_solution[node_out] + 1) % 2
+            # if prob < prob_thresh, change one node; if prob > prob_thresh, change two nodes
+            prob_thresh = 0.05
+            prob = random.random()
+            if prob < prob_thresh:
+                idx_in = np.random.randint(0, len(unselected_indices))
+                node_in = unselected_indices[idx_in]
+                new_solution[node_in] = (new_solution[node_in] + 1) % 2
+            else:
+                while True:
+                    idx_in1, idx_in2 = np.random.randint(0, len(unselected_indices), 2)
+                    if idx_in1 != idx_in2:
+                        break
+                node_in1 = unselected_indices[idx_in1]
+                node_in2 = unselected_indices[idx_in2]
+                new_solution[node_in1] = (new_solution[node_in1] + 1) % 2
+                new_solution[node_in2] = (new_solution[node_in2] + 1) % 2
+            new_score = obj_maximum_independent_set(new_solution, graph)
+        store = False
         delta_e = curr_score - new_score
         if delta_e < 0:
             curr_solution = new_solution
             curr_score = new_score
+            store = True
         else:
-            prob = np.exp(- delta_e / (temperature + 1e-6))
+            prob = np.exp(-delta_e / (temperature + 1e-6))
             if prob > random.random():
                 curr_solution = new_solution
                 curr_score = new_score
-    print("score, init_score of simulated_annealing", curr_score, init_score)
+                store = True
+        if store:
+            scores.append(new_score)
+            # if PROBLEM == Problem.maximum_independent_set:
+            #     tmp_new_score = obj_maximum_independent_set(new_solution, graph)
+            #     print(f"init_score: {init_score}, tmp_new_score: {tmp_new_score}")
+            #     scores.append(tmp_new_score)
+            # else:
+            #     scores.append(new_score)
+    print("init_score, final score of simulated_annealing", init_score, curr_score)
     print("scores: ", scores)
     print("solution: ", curr_solution)
     running_duration = time.time() - start_time

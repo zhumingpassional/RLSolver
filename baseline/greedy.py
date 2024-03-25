@@ -103,7 +103,7 @@ def greedy_maxcut(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List
             curr_solution = best_solution
         else:
             break
-    print("score, init_score of greedy", curr_score, init_score)
+    print("init_score, final score of greedy", init_score, curr_score, )
     print("scores: ", traversal_scores)
     print("solution: ", curr_solution)
     running_duration = time.time() - start_time
@@ -148,7 +148,7 @@ def greedy_graph_partitioning(num_steps:Optional[int], graph: nx.Graph) -> (int,
             curr_solution = best_solution
         else:
             break
-    print("score, init_score of greedy", curr_score, init_score)
+    print("init_score, final score of greedy", init_score, curr_score, )
     print("scores: ", scores)
     print("solution: ", curr_solution)
     running_duration = time.time() - start_time
@@ -255,8 +255,67 @@ def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) ->
     curr_score2 = obj_maximum_independent_set(curr_solution, graph)
     assert curr_score == curr_score2
 
-    print("score, init_score of greedy", curr_score, init_score)
+    print("init_score, final score of greedy", init_score, curr_score, )
     print("scores: ", scores)
+    print("solution: ", curr_solution)
+    running_duration = time.time() - start_time
+    print('running_duration: ', running_duration)
+    return curr_score, curr_solution, scores
+
+def greedy_set_cover(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+    print('greedy')
+    start_time = time.time()
+    num_nodes = int(graph.number_of_nodes())
+    nodes = list(range(num_nodes))
+    init_solution = [0] * graph.number_of_nodes()
+    assert sum(init_solution) == 0
+    if num_steps is None:
+        num_steps = num_nodes
+    curr_solution = copy.deepcopy(init_solution)
+    curr_score: int = obj_maxcut(curr_solution, graph)
+    init_score = curr_score
+    scores = []
+    for iteration in range(num_nodes):
+        if iteration >= num_steps:
+            break
+        score = obj_maxcut(curr_solution, graph)
+        print(f"iteration: {iteration}, score: {score}")
+        traversal_scores = []
+        traversal_solutions = []
+        # calc the new solution when moving to a new node. Then store the scores and solutions.
+        use_multiprocessing = False
+        if use_multiprocessing:
+            pass
+            split_nodess = split_list_equally_by_cpus(nodes)
+            pool = mp.Pool(len(split_nodess))
+            # print(f'len split_nodess: {len(split_nodess)}')
+            results = []
+            for split_nodes in split_nodess:
+                results.append(pool.apply_async(traverse_in_greedy_maxcut, (curr_solution, split_nodes, graph)))
+            for result in results:
+                tmp_traversal_scores, tmp_traversal_solutions = result.get()
+                # print(f'tmp_traversal_scores: {tmp_traversal_scores}, tmp_traversal_solutions: {tmp_traversal_solutions}')
+                traversal_scores.extend(tmp_traversal_scores)
+                traversal_solutions.extend(tmp_traversal_solutions)
+        else:
+            for node in nodes:
+                new_solution = copy.deepcopy(curr_solution)
+                # search a new solution and calc obj
+                new_solution[node] = (new_solution[node] + 1) % 2
+                new_score = obj_maxcut(new_solution, graph)
+                traversal_scores.append(new_score)
+                traversal_solutions.append(new_solution)
+        best_score = max(traversal_scores)
+        index = traversal_scores.index(best_score)
+        best_solution = traversal_solutions[index]
+        if best_score > curr_score:
+            scores.append(best_score)
+            curr_score = best_score
+            curr_solution = best_solution
+        else:
+            break
+    print("init_score, final score of greedy", init_score, curr_score, )
+    print("scores: ", traversal_scores)
     print("solution: ", curr_solution)
     running_duration = time.time() - start_time
     print('running_duration: ', running_duration)

@@ -169,6 +169,53 @@ def obj_maximum_independent_set(solution: Union[Tensor, List[int], np.array], gr
             obj += 1
     return obj
 
+# the returned score, the higher, the better
+def obj_maximum_independent_set_SA(node: int, solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
+    def adjacent_to_selected_nodes(node: int, solution: Union[Tensor, List[int], np.array]):
+        for i in range(len(solution)):
+            if solution[i] == 1:
+                min_node = min(node, i)
+                max_node = max(node, i)
+                if (min_node, max_node) in graph.edges():
+                    return True
+        return False
+    num_edges = graph.number_of_edges()
+    if solution[node] == 0:  # 0 -> 1
+        if adjacent_to_selected_nodes(node, solution):
+            score = -INF
+        else:
+            score = 1 - graph.degree(node) / num_edges
+    else:  # 1 -> 0
+        score = 1 + graph.degree(node) / num_edges
+    return score
+
+def obj_maximum_independent_set_SA2(node1: int, node2: int, solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
+    def adjacent_to_selected_nodes(node: int, solution: Union[Tensor, List[int], np.array]):
+        for i in range(len(solution)):
+            if solution[i] == 1:
+                min_node = min(node, i)
+                max_node = max(node, i)
+                if (min_node, max_node) in graph.edges():
+                    return True
+        return False
+    num_edges = graph.number_of_edges()
+    if solution[node1] == 0:  # 0 -> 1
+        if adjacent_to_selected_nodes(node1, solution):
+            score = -INF
+        else:
+            score = 1 - graph.degree(node1) / num_edges
+    else:  # 1 -> 0
+        score = 1 + graph.degree(node1) / num_edges
+    return score
+
+def obj_set_cover(result: Union[Tensor, List[int], np.array]):
+    num_sets = len(result)
+    obj = 0
+    for i in range(num_sets):
+        if result[i] == 1:
+            obj += 1
+    return obj
+
 # write a tensor/list/np.array (dim: 1) to a txt file.
 # The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
 def write_result(result: Union[Tensor, List, np.array],
