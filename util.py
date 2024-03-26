@@ -18,6 +18,7 @@ import math
 from enum import Enum
 import tqdm
 import re
+from baseline.simulated_annealing import simulated_annealing_set_cover
 from config import *
 try:
     import matplotlib as mpl
@@ -244,7 +245,7 @@ def obj_set_cover_ratio(solution: Union[Tensor, List[int], np.array], num_items:
     obj = float(num_covered) / float(num_items)
     return obj
 
-# the ratio of items that covered. 1.0 is the max returned value.
+# return negative value. the smaller abs of obj, the better.
 def obj_set_cover(solution: Union[Tensor, List[int], np.array], num_items: int, item_matrix: List[List[int]]):
     num_sets = len(solution)
     covered_items = set()
@@ -520,7 +521,7 @@ def calc_txt_files_with_prefix(directory: str, prefix: str):
     res = []
     files = os.listdir(directory)
     for file in files:
-        if prefix in file and '.txt' in file:
+        if prefix in file and ('.txt' in file or '.msc' in file):
             res.append(directory + '/' + file)
     return res
 
@@ -844,7 +845,7 @@ def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
         new_file.write(f"// num_nodes: {num_nodes}\n")
         new_file.write(f"{prefix}alg_name: {alg_name}\n")
 
-def write_result_set_cover(obj, running_duration, num_sets: int, num_items: int, alg_name, filename: str):
+def write_result_set_cover(obj, running_duration, num_items: int, num_sets: int, alg_name, filename: str):
     add_tail = '_' + str(int(running_duration)) if 'data' in filename else None
     new_filename = calc_result_file_name(filename, add_tail)
     with open(new_filename, 'w', encoding="UTF-8") as new_file:
@@ -867,7 +868,13 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str
             filename = files[i]
             print(f'The {i}-th file: {filename}')
             if PROBLEM == Problem.set_cover:
-                pass
+                from baseline.greedy import greedy_set_cover
+                num_items, num_sets, item_matrix = read_set_cover(filename)
+                score, solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
+                scoress.append(scores)
+                running_duration = time.time() - start_time
+                alg_name = 'greedy'
+                write_result_set_cover(score, running_duration, num_items, num_sets, alg_name, filename)
             else:
                 graph = read_nxgraph(filename)
                 score, solution, scores = alg(num_steps, graph)
@@ -904,12 +911,23 @@ def run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature,
             start_time = time.time()
             filename = files[i]
             print(f'The {i}-th file: {filename}')
-            graph = read_nxgraph(filename)
-            score, solution, scores = alg(init_temperature, num_steps, graph)
-            scoress.append(scores)
-            running_duration = time.time() - start_time
-            num_nodes = int(graph.number_of_nodes())
-            write_result2(score, running_duration, num_nodes, alg_name, filename)
+            if PROBLEM == Problem.set_cover:
+                num_items, num_sets, item_matrix = read_set_cover(filename)
+                init_temperature = 4
+                num_steps = int(100 * num_sets)
+                score, solution, scores = simulated_annealing_set_cover(init_temperature, num_steps,
+                                                                                  num_items, num_sets, item_matrix)
+                scoress.append(scores)
+                running_duration = time.time() - start_time
+                alg_name = 'greedy'
+                write_result_set_cover(score, running_duration, num_items, num_sets, alg_name, filename)
+            else:
+                graph = read_nxgraph(filename)
+                score, solution, scores = alg(init_temperature, num_steps, graph)
+                scoress.append(scores)
+                running_duration = time.time() - start_time
+                num_nodes = int(graph.number_of_nodes())
+                write_result2(score, running_duration, num_nodes, alg_name, filename)
     return scoress
 
 

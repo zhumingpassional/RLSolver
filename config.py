@@ -15,7 +15,7 @@ class Problem(Enum):
     graph_coloring = 'graph_coloring'
     tsp = 'tsp'
 
-PROBLEM = Problem.maximum_independent_set
+PROBLEM = Problem.graph_coloring
 
 @unique
 class GraphDistriType(Enum):

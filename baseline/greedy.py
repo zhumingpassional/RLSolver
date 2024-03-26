@@ -13,7 +13,9 @@ from util import (obj_maxcut,
                   obj_minimum_vertex_cover,
                   obj_maximum_independent_set,
                   obj_set_cover_ratio,
+                  obj_set_cover,
                   )
+from util import read_set_cover
 from util import plot_fig
 from util import transfer_nxgraph_to_weightmatrix
 from util import cover_all_edges
@@ -262,7 +264,7 @@ def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) ->
     print('running_duration: ', running_duration)
     return curr_score, curr_solution, scores
 
-def greedy_set_cover(num_sets: int, num_items: int, item_matrix: List[List[int]]) -> (int, Union[List[int], np.array], List[int]):
+def greedy_set_cover(num_items: int, num_sets: int, item_matrix: List[List[int]]) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
     curr_solution = [0] * num_sets
@@ -277,7 +279,7 @@ def greedy_set_cover(num_sets: int, num_items: int, item_matrix: List[List[int]]
         selected_set = None
         for i in unselected_sets:
             intersection_num = 0
-            for j in item_matrix[i]:
+            for j in item_matrix[i - 1]:
                 if j in unselected_items:
                     intersection_num += 1
             if intersection_num > max_intersection_num:
@@ -286,18 +288,21 @@ def greedy_set_cover(num_sets: int, num_items: int, item_matrix: List[List[int]]
         if selected_set is not None:
             selected_sets.append(selected_set)
             unselected_sets.remove(selected_set)
-            for j in item_matrix[selected_set]:
+            for j in item_matrix[selected_set - 1]:
                 if j in unselected_items:
                     unselected_items.remove(j)
             curr_score += max_intersection_num / num_items
             scores.append(curr_score)
             curr_solution[selected_set - 1] = 1
-    print("init_score, final score of greedy", init_score, curr_score, )
+    real_score = obj_set_cover(curr_solution, num_items, item_matrix)
+    print("real score of greedy:", real_score)
+    print(f'num_sets: {num_sets}, num_items: {num_items}')
+    print("init_score, final score of greedy", init_score, curr_score)
     print("scores: ", scores)
     print("solution: ", curr_solution)
     running_duration = time.time() - start_time
     print('running_duration: ', running_duration)
-    return curr_score, curr_solution, scores
+    return real_score, curr_solution, scores
 
 if __name__ == '__main__':
     # read data
@@ -330,6 +335,16 @@ if __name__ == '__main__':
             obj = obj_maximum_independent_set(gr_solution, graph)
             print('obj: ', obj)
 
+        elif PROBLEM == Problem.set_cover:
+            filename = '../data/set_cover/frb30-15-1.msc'
+            num_items, num_sets, item_matrix = read_set_cover(filename)
+            print(f'num_items: {num_items}, num_sets: {num_sets}, item_matrix: {item_matrix}')
+            solution1 = [1] * num_sets
+            obj1_ratio = obj_set_cover_ratio(solution1, num_items, item_matrix)
+            print(f'obj1_ratio: {obj1_ratio}')
+            curr_score, curr_solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
+            print(f'curr_score: {curr_score}, curr_solution:{curr_solution}, scores:{scores}')
+
     else:
         if PROBLEM == Problem.maxcut:
             alg = greedy_maxcut
@@ -353,8 +368,8 @@ if __name__ == '__main__':
 
         if_run_set_cover = True
         if if_run_set_cover:
-            directory_data = 'data/set_cover/frb45-21-5.msc'
-            prefixes = ['frb45-21-5.msc']
+            directory_data = '../data/set_cover'
+            prefixes = ['frb30-15-1']
         scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data, prefixes)
         print(f"scoress: {scoress}")
 
