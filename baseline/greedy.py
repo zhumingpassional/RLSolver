@@ -8,7 +8,15 @@ import numpy as np
 import multiprocessing as mp
 import networkx as nx
 from util import read_nxgraph
-from util import obj_maxcut, obj_graph_partitioning, obj_minimum_vertex_cover, obj_maximum_independent_set
+from util import (obj_maxcut,
+                  obj_graph_partitioning,
+                  obj_minimum_vertex_cover,
+                  obj_maximum_independent_set,
+                  obj_set_cover_ratio,
+                  obj_set_cover,
+                  obj_graph_coloring,
+                  )
+from util import read_set_cover
 from util import plot_fig
 from util import transfer_nxgraph_to_weightmatrix
 from util import cover_all_edges
@@ -220,10 +228,6 @@ def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) ->
     scores = []
     selected_nodes = []
     unselected_nodes = copy.deepcopy(nodes)
-
-    candidate_nodes = nodes
-    bridege_nodes = []
-
     candidate_graph = copy.deepcopy(graph)
     # extend_candidate_graph = copy.deepcopy(graph)
     step = 0
@@ -254,7 +258,6 @@ def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) ->
             break
     curr_score2 = obj_maximum_independent_set(curr_solution, graph)
     assert curr_score == curr_score2
-
     print("init_score, final score of greedy", init_score, curr_score, )
     print("scores: ", scores)
     print("solution: ", curr_solution)
@@ -262,63 +265,94 @@ def greedy_maximum_independent_set(num_steps: Optional[int], graph: nx.Graph) ->
     print('running_duration: ', running_duration)
     return curr_score, curr_solution, scores
 
-def greedy_set_cover(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def greedy_set_cover(num_items: int, num_sets: int, item_matrix: List[List[int]]) -> (int, Union[List[int], np.array], List[int]):
+    print('greedy')
+    start_time = time.time()
+    curr_solution = [0] * num_sets
+    init_score = 0.0
+    curr_score = 0.0
+    scores = []
+    selected_sets = []
+    unselected_sets = set(np.array(range(num_sets)) + 1)
+    unselected_items = set(np.array(range(num_items)) + 1)
+    while len(unselected_items) > 0:
+        max_intersection_num = 0
+        selected_set = None
+        for i in unselected_sets:
+            intersection_num = 0
+            for j in item_matrix[i - 1]:
+                if j in unselected_items:
+                    intersection_num += 1
+            if intersection_num > max_intersection_num:
+                max_intersection_num = intersection_num
+                selected_set = i
+        if selected_set is not None:
+            selected_sets.append(selected_set)
+            unselected_sets.remove(selected_set)
+            for j in item_matrix[selected_set - 1]:
+                if j in unselected_items:
+                    unselected_items.remove(j)
+            curr_score += max_intersection_num / num_items
+            scores.append(curr_score)
+            curr_solution[selected_set - 1] = 1
+    real_score = obj_set_cover(curr_solution, num_items, item_matrix)
+    print("real score of greedy:", real_score)
+    print(f'num_sets: {num_sets}, num_items: {num_items}')
+    print("init_score, final score of greedy", init_score, curr_score)
+    print("scores: ", scores)
+    print("solution: ", curr_solution)
+    running_duration = time.time() - start_time
+    print('running_duration: ', running_duration)
+    return real_score, curr_solution, scores
+
+def greedy_graph_coloring(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
     num_nodes = int(graph.number_of_nodes())
     nodes = list(range(num_nodes))
-    init_solution = [0] * graph.number_of_nodes()
-    assert sum(init_solution) == 0
-    if num_steps is None:
-        num_steps = num_nodes
-    curr_solution = copy.deepcopy(init_solution)
-    curr_score: int = obj_maxcut(curr_solution, graph)
-    init_score = curr_score
-    scores = []
-    for iteration in range(num_nodes):
-        if iteration >= num_steps:
-            break
-        score = obj_maxcut(curr_solution, graph)
-        print(f"iteration: {iteration}, score: {score}")
-        traversal_scores = []
-        traversal_solutions = []
-        # calc the new solution when moving to a new node. Then store the scores and solutions.
-        use_multiprocessing = False
-        if use_multiprocessing:
-            pass
-            split_nodess = split_list_equally_by_cpus(nodes)
-            pool = mp.Pool(len(split_nodess))
-            # print(f'len split_nodess: {len(split_nodess)}')
-            results = []
-            for split_nodes in split_nodess:
-                results.append(pool.apply_async(traverse_in_greedy_maxcut, (curr_solution, split_nodes, graph)))
-            for result in results:
-                tmp_traversal_scores, tmp_traversal_solutions = result.get()
-                # print(f'tmp_traversal_scores: {tmp_traversal_scores}, tmp_traversal_solutions: {tmp_traversal_solutions}')
-                traversal_scores.extend(tmp_traversal_scores)
-                traversal_solutions.extend(tmp_traversal_solutions)
+    solution = [None] * graph.number_of_nodes()
+    num_used_colors = 0
+    assert num_steps is None
+    # color ID: start from 1, not 0
+    for node in nodes:
+        if node == 0:
+            solution[node] = num_used_colors + 1
+            num_used_colors += 1
         else:
-            for node in nodes:
-                new_solution = copy.deepcopy(curr_solution)
-                # search a new solution and calc obj
-                new_solution[node] = (new_solution[node] + 1) % 2
-                new_score = obj_maxcut(new_solution, graph)
-                traversal_scores.append(new_score)
-                traversal_solutions.append(new_solution)
-        best_score = max(traversal_scores)
-        index = traversal_scores.index(best_score)
-        best_solution = traversal_solutions[index]
-        if best_score > curr_score:
-            scores.append(best_score)
-            curr_score = best_score
-            curr_solution = best_solution
-        else:
-            break
-    print("init_score, final score of greedy", init_score, curr_score, )
-    print("scores: ", traversal_scores)
-    print("solution: ", curr_solution)
+            if node == 10:
+                aaa = 1
+            neighbor_colors = set()
+            for i in graph.neighbors(node):
+                if solution[i] is not None:
+                    neighbor_colors.add(solution[i])
+            if len(neighbor_colors) == num_used_colors:
+                solution[node] = num_used_colors + 1
+                num_used_colors += 1
+            else:
+                used_colors = list(range(1, num_used_colors + 1))
+                dic = {}  # key: color ID, value: used times
+                for i in range(node):
+                    color = solution[i]
+                    if i not in graph.neighbors(node) and color not in neighbor_colors:
+                        if color in dic:
+                            dic[color] += 1
+                        else:
+                            dic[color] = 1
+                min_used_times = num_nodes
+                color_id = None
+                for key, value in dic.items():
+                    if value < min_used_times:
+                        min_used_times = value
+                        color_id = int(key)
+
+                solution[node] = color_id
+
+    print("solution: ", solution)
     running_duration = time.time() - start_time
     print('running_duration: ', running_duration)
+    curr_score = obj_graph_coloring(solution, graph)
+    curr_solution = solution
+    scores = [curr_score]
     return curr_score, curr_solution, scores
 
 if __name__ == '__main__':
@@ -327,13 +361,13 @@ if __name__ == '__main__':
     graph = read_nxgraph('../data/syn/syn_10_21.txt')
     weightmatrix = transfer_nxgraph_to_weightmatrix(graph)
     # run alg
-    num_steps = 30
     alg_name = 'GR'
 
     if_run_one_case = False
     if if_run_one_case:
         # maxcut
         if PROBLEM == Problem.maxcut:
+            num_steps = None
             gr_score, gr_solution, gr_scores = greedy_maxcut(num_steps, graph)
 
         # graph_partitioning
@@ -342,6 +376,7 @@ if __name__ == '__main__':
             gr_score, gr_solution, gr_scores = greedy_graph_partitioning(num_steps, graph)
 
         elif PROBLEM == Problem.minimum_vertex_cover:
+            num_steps = None
             gr_score, gr_solution, gr_scores = greedy_minimum_vertex_cover(num_steps, graph)
             obj = obj_minimum_vertex_cover(gr_solution, graph)
             print('obj: ', obj)
@@ -352,6 +387,23 @@ if __name__ == '__main__':
             obj = obj_maximum_independent_set(gr_solution, graph)
             print('obj: ', obj)
 
+        elif PROBLEM == Problem.set_cover:
+            filename = '../data/set_cover/frb30-15-1.msc'
+            num_items, num_sets, item_matrix = read_set_cover(filename)
+            print(f'num_items: {num_items}, num_sets: {num_sets}, item_matrix: {item_matrix}')
+            solution1 = [1] * num_sets
+            obj1_ratio = obj_set_cover_ratio(solution1, num_items, item_matrix)
+            print(f'obj1_ratio: {obj1_ratio}')
+            curr_score, curr_solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
+            print(f'curr_score: {curr_score}, curr_solution:{curr_solution}, scores:{scores}')
+
+        elif PROBLEM == Problem.graph_coloring:
+            num_steps = None
+            gr_score, gr_solution, gr_scores = greedy_graph_coloring(num_steps, graph)
+            from util import plot_nxgraph
+            fig_filename = '../result/fig.png'
+            plot_nxgraph(graph, fig_filename)
+
     else:
         if PROBLEM == Problem.maxcut:
             alg = greedy_maxcut
@@ -361,6 +413,10 @@ if __name__ == '__main__':
             alg = greedy_minimum_vertex_cover
         elif PROBLEM == Problem.maximum_independent_set:
             alg = greedy_maximum_independent_set
+        elif PROBLEM == Problem.set_cover:
+            alg = greedy_set_cover
+        elif PROBLEM == Problem.graph_coloring:
+            alg = greedy_graph_coloring
 
         alg_name = "greedy"
         num_steps = None
@@ -370,6 +426,12 @@ if __name__ == '__main__':
         # prefixes = ['barabasi_albert_100_']
         prefixes = ['erdos_renyi_100_']
         # prefixes = ['syn_10_']
+
+        if_run_set_cover = False
+        if if_run_set_cover:
+            directory_data = '../data/set_cover'
+            prefixes = ['frb30-15-1']
+
         scoress = run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data, prefixes)
         print(f"scoress: {scoress}")
 
