@@ -19,6 +19,7 @@ from util import (transfer_float_to_binary,
                   transfer_nxgraph_to_adjacencymatrix,
                   obtain_first_number)
 from config import *
+from itertools import combinations
 
 # 定义回调函数，每隔一段时间将当前找到的最佳可行解输出到当前目录下以 solution 开头
 # 的文件中。同时，将当前进展输出到 report.txt 报告中。
@@ -61,13 +62,33 @@ def mycallback(model, where):
             #     new_file.write(f"{nodes[i] + 1} {values[i] + 1}\n")
             varlist = [v for v in model.getVars() if 'x' in v.VarName]
             soln = model.cbGetSolution(varlist)
-            for i in range(len(varlist)):
-                value = int(round(soln[i]) + 1) if not GUROBI_VAR_CONTINUOUS else soln[i]
-                new_file.write(f"{i + 1}  {value}\n")
+
+            if PROBLEM == Problem.tsp:
+                edges = tuplelist((i,j) for i,j in varlist if soln[i,j]>0.5)
+                tour = find_subtour(edges,model._num_nodes)
+                if len(tour) < model._num_nodes:
+                    model.cbLazy(quicksum(model._vars[i,j] for i,j in combinations(tour,2)) <= len(tour) - 1)
+
             # for var, soln in zip(varlist, soln):
             #     solutionfile.write('%s %d\n' % (var.VarName, soln))
+            for i in range(len(varlist)):
+                value = int(round(soln[i]) + 1) if not GUROBI_VAR_CONTINUOUS else soln[i]
+                new_file.write(f"{i + 1} {value}\n")
 
-
+def find_subtour(edges,n):
+    unvisited = list(range(n))
+    cycle = range(n + 1)
+    while unvisited:
+        thiscycle = []
+        neighbors = unvisited
+        while neighbors:
+            current = neighbors[0]
+            thiscycle.append(current)
+            unvisited.remove(current)
+            neighbors = [j for i,j in edges.select(current,'*') if j in unvisited]
+        if len(cycle) > len(thiscycle):
+            cycle = thiscycle
+    return cycle
         # varlist = model.getVars()
         # soln = model.cbGetSolution(varlist)
         # solutionfile.write('Objective %e\n' % obj)
@@ -183,6 +204,17 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
         model.write(f"{new_filename}.mps")
         model.write(f"{new_filename}.sol")
 
+
+def read_weights_and_W_from_file(filename: str):
+    weights = []
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+        W = int(lines[0].strip().split()[1])
+        for line in lines[1:]:
+            weight = int(line.strip().split()[0])
+            weights.append(weight)
+    return weights, W
+
 def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = False):
     model = Model("maxcut")
 
@@ -197,6 +229,9 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     adjacency_matrix = transfer_nxgraph_to_adjacencymatrix(graph)
     num_nodes = nx.number_of_nodes(graph)
     nodes = list(range(num_nodes))
+    num_subsets = len(adjacency_matrix[0])
+    weights, W = read_weights_and_W_from_file(filename)
+
 
     if PROBLEM == Problem.maxcut:
         y_lb = adjacency_matrix.min()
@@ -247,6 +282,53 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
             model.setObjective(-quicksum(x[j] for j in nodes) + coef_B1 * quicksum((2 - x[i] - x[j]) * (2 - x[i] - x[j]) for (i, j) in edges)
                                + coef_B2 * quicksum((1 - x[i] - x[j]) * (1 - x[i] - x[j]) for (i, j) in edges),
                                GRB.MINIMIZE)
+    elif PROBLEM == Problem.tsp:
+        if GUROBI_MILP_QUBO == 0:
+            x = model.addVars(edges,vtype=GRB.BINARY,name='x')
+            model.setObjective(quicksum(adjacency_matrix[i,j] * x[i,j] for i,j in edges),GRB.MINIMIZE)
+        else:
+            coef_A = 1
+            x = model.addVars(num_nodes,num_nodes,vtype=GRB.BINARY,name='x')
+            HA = quicksum((1 - quicksum(x[i, j] for j in range(num_nodes))) ** 2 for i in range(num_nodes))
+            HB = coef_A * quicksum(
+                quicksum(adjacency_matrix[u, v] * x[u, j] * x[v, (j + 1) % num_nodes] for j in range(num_nodes))
+                for u in range(num_nodes) for v in range(num_nodes) if
+                u != v and (u, v) not in edges and (v, u) not in edges
+            )
+            model.setObjective(HA+HB,GRB.MINIMIZE)
+    elif PROBLEM == Problem.knapsack:
+        if GUROBI_MILP_QUBO == 0:
+            x = model.addVars(len(weights), vtype=GRB.BINARY, name="x")
+            model.addConstr(quicksum(weights[i] * x[i] for i in range(len(weights))) <= W, name='knapsack')
+            model.setObjective(quicksum(x[i] for i in range(len(weights))), GRB.MINIMIZE)
+        else:
+            values = [0] * len(weights)
+            x = model.addVars(len(weights), vtype=GRB.BINARY, name="x")
+            y = model.addVars(W + 1, vtype=GRB.BINARY, name="y")
+            mu = [v / w for v, w in zip(values, weights)]
+            coef_A = min(1 / max(mu), 1)
+            model.setObjective(
+                (quicksum(y[n] for n in range(1, W + 1))) ** 2 +
+                (quicksum(n * y[n] for n in range(1, W + 1)) - quicksum(
+                    weights[i] * x[i] for i in range(len(weights)))) ** 2 -
+                coef_A * quicksum(mu[i] * x[i] for i in range(len(weights))),
+                GRB.MINIMIZE)
+    elif PROBLEM == Problem.set_cover:
+        if GUROBI_MILP_QUBO == 0:
+            x = model.addVars(num_nodes,vtype=GRB.BINARY,name='x')
+            model.setObjective(quicksum(x[i] for i in nodes),GRB.MINIMIZE)
+        else:
+            x = model.addVars(num_subsets, vtype=GRB.BINARY, name="x")
+            coef_A = 1
+            model.setObjective(
+                quicksum(x[i] for i in range(num_subsets))
+                + coef_A * (
+                        quicksum((1 - quicksum(adjacency_matrix[u][i] * x[i] for i in range(num_subsets))) ** 2 for u in
+                                 range(num_nodes))
+                        + quicksum((quicksum(adjacency_matrix[u][i] * x[i] for i in range(num_subsets)) - quicksum(
+                    x[i] for i in adjacency_matrix[u])) ** 2 for u in range(num_nodes))
+                ), GRB.MINIMIZE)
+
 
     # constrs if using MILP
     if GUROBI_MILP_QUBO == 0:
@@ -275,6 +357,37 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
             for i in range(len(edges)):
                 node1, node2 = edges[i]
                 model.addConstr(x[node1] + x[node2] <= 1, name=f'C0_{node1}_{node2}')
+        elif PROBLEM == Problem.tsp:
+            for i in nodes:
+                model.addConstr(quicksum(x[i,j] for j in nodes if j!=i) == 1, name=f'C0_{i}')
+            for j in nodes:
+                model.addConstr(quicksum(x[i, j] for i in nodes if i != j) == 1, name=f'C1_{j}')
+            u = model.addVars(num_nodes,vtype=GRB.CONTINUOUS,lb=0.0,ub=num_nodes, name='u_tsp')
+            for i in range(1,num_nodes):
+                for j in range(1,num_nodes):
+                    if i != j:
+                        model.addConstr(u[i] - u[j] + num_nodes * x[i,j] <= num_nodes-1,name=f'subtour_{i}_{j}')
+        elif PROBLEM == Problem.knapsack:
+                model.addConstr(quicksum(weights[i] * x[i] for i in range(len(weights))) <= W, name='knapsack')
+        elif PROBLEM == Problem.set_cover:
+            for i in range(num_subsets):
+                for j in range(num_nodes):
+                    model.addConstr(y[(i, j)] >= x[i], name=f'C1_{i}_{j}')
+
+    else:
+        if PROBLEM == Problem.tsp:
+            for u in range(num_nodes):
+                for v in range(num_nodes):
+                    if u != v and (u, v) not in edges and (v, u) not in edges:
+                        for j in range(num_nodes - 1):
+                            model.addConstr(x[u, j] + x[v, j + 1] <= 1,
+                                            name='NotEdge_{0}_{1}_pos_{2}'.format(u, v, j))
+                        model.addConstr(x[u, num_nodes - 1] + x[v, 0] <= 1,
+                                        name='NotEdge_{0}_{1}_wraparound'.format(u, v))
+        elif PROBLEM == Problem.set_cover:
+            for j in range(num_subsets):
+                model.addConstr(quicksum(x[i] for i in range(num_nodes) if adjacency_matrix[i][j]) >= 1,name=f'cover_subset_{j+1}')
+
 
 
     if time_limit is not None:
