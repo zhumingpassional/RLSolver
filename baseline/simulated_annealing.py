@@ -6,23 +6,30 @@ from typing import List, Union, Optional
 import numpy as np
 import random
 import networkx as nx
-from util import read_nxgraph, cover_all_edges, read_set_cover
+from util import read_nxgraph
+from util import cover_all_edges
+from util import read_set_cover
 from util import (obj_maxcut,
                   obj_graph_partitioning,
                   obj_minimum_vertex_cover,
                   obj_maximum_independent_set,
                   obj_maximum_independent_set_SA,
                   obj_set_cover,
+                  obj_graph_coloring,
                   )
 from greedy import (greedy_maxcut,
                     greedy_graph_partitioning,
                     greedy_minimum_vertex_cover,
                     greedy_maximum_independent_set,
                     greedy_set_cover,
+                    greedy_graph_coloring,
                     )
-from util import write_result
+from util import (write_result,
+                  calc_txt_files_with_prefix,
+                  write_result2,
+                  write_result_set_cover)
 from util import plot_fig
-from util import run_simulated_annealing_over_multiple_files
+# from util import run_simulated_annealing_over_multiple_files
 from config import *
 
 
@@ -111,6 +118,10 @@ int, Union[List[int], np.array], List[int]):
     elif PROBLEM == Problem.maximum_independent_set:
         num_steps = 100 * num_nodes
         gr_score, gr_solution, gr_scores = greedy_maximum_independent_set(num_steps, graph)
+    elif PROBLEM == Problem.graph_coloring:
+        num_steps = None
+        gr_score, gr_solution, gr_scores = greedy_graph_coloring(num_steps, graph)
+        num_steps = 10 * num_nodes
 
     start_time = time.time()
     init_score = gr_score
@@ -180,16 +191,23 @@ int, Union[List[int], np.array], List[int]):
                 new_solution[node_in] = (new_solution[node_in] + 1) % 2
             else:
                 while True:
-                    idx_in1, idx_in2 = np.random.randint(0, len(unselected_indices), 2)
-                    if idx_in1 != idx_in2:
+                    node1, node2 = np.random.randint(0, len(unselected_indices), 2)
+                    if node1 != node2:
                         break
-                node_in1 = unselected_indices[idx_in1]
-                node_in2 = unselected_indices[idx_in2]
+                node_in1 = unselected_indices[node1]
+                node_in2 = unselected_indices[node2]
                 new_solution[node_in1] = (new_solution[node_in1] + 1) % 2
                 new_solution[node_in2] = (new_solution[node_in2] + 1) % 2
             new_score = obj_maximum_independent_set(new_solution, graph)
-
-
+        elif PROBLEM == Problem.graph_coloring:
+            while True:
+                node1, node2 = np.random.randint(0, num_nodes, 2)
+                if node1 != node2:
+                    break
+            tmp_color = new_solution[node1]
+            new_solution[node1] = new_solution[node2]
+            new_solution[node2] = tmp_color
+            new_score = obj_graph_coloring(new_solution, graph)
         store = False
         delta_e = curr_score - new_score
         if delta_e < 0:
@@ -217,6 +235,34 @@ int, Union[List[int], np.array], List[int]):
     print('running_duration: ', running_duration)
     return curr_score, curr_solution, scores
 
+def run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature, num_steps, directory_data: str, prefixes: List[str])-> List[List[float]]:
+    scoress = []
+    for prefix in prefixes:
+        files = calc_txt_files_with_prefix(directory_data, prefix)
+        files.sort()
+        for i in range(len(files)):
+            start_time = time.time()
+            filename = files[i]
+            print(f'The {i}-th file: {filename}')
+            if PROBLEM == Problem.set_cover:
+                num_items, num_sets, item_matrix = read_set_cover(filename)
+                init_temperature = 4
+                num_steps = int(50 * num_sets)
+                score, solution, scores = simulated_annealing_set_cover(init_temperature, num_steps,
+                                                                        num_items, num_sets, item_matrix)
+                scoress.append(scores)
+                running_duration = time.time() - start_time
+                alg_name = 'greedy'
+                write_result_set_cover(score, running_duration, num_items, num_sets, alg_name, filename)
+            else:
+                graph = read_nxgraph(filename)
+                score, solution, scores = alg(init_temperature, num_steps, graph)
+                scoress.append(scores)
+                running_duration = time.time() - start_time
+                num_nodes = int(graph.number_of_nodes())
+                write_result2(score, running_duration, num_nodes, alg_name, filename)
+    return scoress
+
 
 if __name__ == '__main__':
     print(f'problem: {PROBLEM}')
@@ -224,7 +270,7 @@ if __name__ == '__main__':
     # run alg
     # init_solution = list(np.random.randint(0, 2, graph.number_of_nodes()))
 
-    if_run_one_case = True
+    if_run_one_case = False
     if if_run_one_case:
         if_run_graph_based_problems = False
         if if_run_graph_based_problems:
@@ -239,7 +285,7 @@ if __name__ == '__main__':
             alg_name = 'SA'
             plot_fig(sa_scores, alg_name)
 
-        if_run_set_cover = True
+        if_run_set_cover = False
         if if_run_set_cover:
             filename = '../data/set_cover/frb30-15-1.msc'
             num_items, num_sets, item_matrix = read_set_cover(filename)
@@ -249,10 +295,18 @@ if __name__ == '__main__':
             curr_score, curr_solution, scores = simulated_annealing_set_cover(init_temperature, num_steps, num_items, num_sets, item_matrix)
 
     else:
+        pass
         alg = simulated_annealing
         alg_name = 'simulated_annealing'
-        init_temperature = 4
-        num_steps = None
-        directory_data = '../data/syn_ER'
-        prefixes = ['erdos_renyi_100_']
+        if_run_graph_based_problems = True
+        if if_run_graph_based_problems:
+            init_temperature = 4
+            num_steps = None
+            directory_data = '../data/syn_ER'
+            prefixes = ['erdos_renyi_100_']
+        else:
+            init_temperature = 4
+            num_steps = None
+            directory_data = '../data/set_cover'
+            prefixes = ['frb30-15-1.msc']
         run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature, num_steps, directory_data, prefixes)

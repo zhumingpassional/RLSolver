@@ -18,7 +18,7 @@ import math
 from enum import Enum
 import tqdm
 import re
-from baseline.simulated_annealing import simulated_annealing_set_cover
+# from baseline.simulated_annealing import simulated_annealing_set_cover, simulated_annealing
 from config import *
 try:
     import matplotlib as mpl
@@ -40,10 +40,9 @@ class MyGraph:
         num_edges = 0
         graph = List[Tuple[int, int, int]]
 
-def plot_nxgraph(g: nx.Graph()):
+def plot_nxgraph(g: nx.Graph(), fig_filename='.result/fig.png'):
     import matplotlib.pyplot as plt
     nx.draw_networkx(g)
-    fig_filename = '.result/fig.png'
     plt.savefig(fig_filename)
     plt.show()
 
@@ -74,7 +73,6 @@ def read_set_cover(filename: str):
     with open(filename, 'r') as file:
         # lines = []
         line = file.readline()
-        is_first_line = True
         item_matrix = []
         while line is not None and line != '':
             if 'p set' in line:
@@ -209,25 +207,6 @@ def obj_maximum_independent_set_SA(node: int, solution: Union[Tensor, List[int],
         score = 1 + graph.degree(node) / num_edges
     return score
 
-def obj_maximum_independent_set_SA2(node1: int, node2: int, solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
-    def adjacent_to_selected_nodes(node: int, solution: Union[Tensor, List[int], np.array]):
-        for i in range(len(solution)):
-            if solution[i] == 1:
-                min_node = min(node, i)
-                max_node = max(node, i)
-                if (min_node, max_node) in graph.edges():
-                    return True
-        return False
-    num_edges = graph.number_of_edges()
-    if solution[node1] == 0:  # 0 -> 1
-        if adjacent_to_selected_nodes(node1, solution):
-            score = -INF
-        else:
-            score = 1 - graph.degree(node1) / num_edges
-    else:  # 1 -> 0
-        score = 1 + graph.degree(node1) / num_edges
-    return score
-
 # the ratio of items that covered. 1.0 is the max returned value.
 def obj_set_cover_ratio(solution: Union[Tensor, List[int], np.array], num_items: int, item_matrix: List[List[int]]):
     num_sets = len(solution)
@@ -266,6 +245,19 @@ def obj_set_cover(solution: Union[Tensor, List[int], np.array], num_items: int, 
     else:
         obj = -INF
     return obj
+
+def obj_graph_coloring(solution: Union[Tensor, List[int], np.array], graph: nx.Graph) -> int:
+    assert None not in solution
+    assert len(solution) == graph.number_of_nodes()
+    for node1, node2 in graph.edges:
+        if solution[node1] == solution[node2]:
+            return -INF
+    colors = set()
+    for node in range(len(solution)):
+        color = solution[node]
+        colors.add(color)
+    num_colors = len(colors)
+    return -num_colors
 
 # write a tensor/list/np.array (dim: 1) to a txt file.
 # The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
@@ -902,33 +894,6 @@ def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: Li
             write_result2(score, running_duration, num_nodes, alg_name, filename)
     return scores
 
-def run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature, num_steps, directory_data: str, prefixes: List[str])-> List[List[float]]:
-    scoress = []
-    for prefix in prefixes:
-        files = calc_txt_files_with_prefix(directory_data, prefix)
-        files.sort()
-        for i in range(len(files)):
-            start_time = time.time()
-            filename = files[i]
-            print(f'The {i}-th file: {filename}')
-            if PROBLEM == Problem.set_cover:
-                num_items, num_sets, item_matrix = read_set_cover(filename)
-                init_temperature = 4
-                num_steps = int(100 * num_sets)
-                score, solution, scores = simulated_annealing_set_cover(init_temperature, num_steps,
-                                                                                  num_items, num_sets, item_matrix)
-                scoress.append(scores)
-                running_duration = time.time() - start_time
-                alg_name = 'greedy'
-                write_result_set_cover(score, running_duration, num_items, num_sets, alg_name, filename)
-            else:
-                graph = read_nxgraph(filename)
-                score, solution, scores = alg(init_temperature, num_steps, graph)
-                scoress.append(scores)
-                running_duration = time.time() - start_time
-                num_nodes = int(graph.number_of_nodes())
-                write_result2(score, running_duration, num_nodes, alg_name, filename)
-    return scoress
 
 
 if __name__ == '__main__':
@@ -1022,6 +987,7 @@ if __name__ == '__main__':
         solution3 = [0] * num_sets
         obj3 = obj_set_cover_ratio(solution3, num_items, item_matrix)
         print(f'obj3: {obj3}')
+
 
 
     print()
