@@ -19,6 +19,7 @@ from enum import Enum
 import tqdm
 import re
 from config import *
+
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -69,7 +70,26 @@ def read_nxgraph(filename: str) -> nx.Graph():
             line = file.readline()
     return graph
 
-#
+# read tsp file,latitude and longitude, horizontal and vertical coordinates
+def read_tsp(filename:str) -> nx.Graph():
+
+    graph = nx.Graph()
+
+    with open(filename,'r') as file:
+        num_nodes = int(file.readline().strip())
+        positions = np.array([list(map(float,line.split(" "))) for line in file if line.strip()])
+
+    for node_id,pos in enumerate(positions):
+        graph.add_node(node_id,pos=tuple(pos))
+
+    for i in range(num_nodes):
+        dists = np.sqrt(np.sum((positions[i] - positions[i+1:num_nodes]) ** 2,axis=1))
+        for j,dist in enumerate(dists,start=i + 1):
+            graph.add_edge(i,j,weight = dist)
+
+    return graph
+
+
 def transfer_nxgraph_to_adjacencymatrix(graph: nx.Graph):
     return nx.to_numpy_array(graph)
 
@@ -521,6 +541,14 @@ def fetch_node(line: str):
     else:
         node = None
     return node
+
+def fetch_indices(var_name):
+    try:
+        indices = var_name.split('[')[1].split(']')[0].split(',')
+        i, j = int(indices[0]), int(indices[1])
+        return (i, j)
+    except ValueError:
+        return None
 
 # e.g., s = "// time_limit: ('TIME_LIMIT', <class 'float'>, 36.0, 0.0, inf, inf)",
 # then returns 36
