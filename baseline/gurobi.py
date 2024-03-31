@@ -56,7 +56,7 @@ def mycallback(model, where):
         #     values.append(value)
 
         if GUROBI_INTERVAL is not None and running_duation < GUROBI_INTERVAL:
-            retur8n
+            return
         with open(filename, 'w', encoding="UTF-8") as new_file:
             write_statistics_in_mycallback(model, new_file, add_slash=True)
             new_file.write(f"// num_nodes: {model._attribute['num_nodes']}\n")
