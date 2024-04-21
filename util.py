@@ -89,6 +89,48 @@ def read_tsp(filename:str) -> nx.Graph():
 
     return graph
 
+# def read_weights_and_W_from_file(filename: str):
+#     weights = []
+#     with open(filename, 'r') as file:
+#         lines = file.readlines()
+#         W = int(lines[0].strip().split()[1])
+#         for line in lines[1:]:
+#             weight = int(line.strip().split()[0])
+#             weights.append(weight)
+#     return weights, W
+
+
+def read_knapsack_data(filename):
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+        N, W = map(int, lines[0].split())
+        items = []
+        for line in lines[1:]:
+            weight, value = map(int, line.split())
+            items.append((weight, value))
+    return N, W, items
+
+
+def read_set_cover_data(filename: str) -> nx.Graph:
+    graph = nx.Graph()
+    with open(filename, 'r') as file:
+        first_line = file.readline().strip()
+        num_universe, num_subsets = map(int, first_line.split())
+
+        # Add nodes for the universe and subsets
+        universe_nodes = list(range(num_universe))
+        subset_nodes = list(range(num_universe, num_universe + num_subsets))
+        graph.add_nodes_from(universe_nodes, bipartite=0)
+        graph.add_nodes_from(subset_nodes, bipartite=1)
+
+        # Add edges between subsets and universe elements
+        for subset_index, line in enumerate(file, start=num_universe):
+            elements = map(int, line.strip().split())
+            for element in elements:
+                graph.add_edge(subset_index, element)
+
+    return graph
+
 
 def transfer_nxgraph_to_adjacencymatrix(graph: nx.Graph):
     return nx.to_numpy_array(graph)

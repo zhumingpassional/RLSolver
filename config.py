@@ -16,9 +16,9 @@ class Problem(Enum):
     tsp = 'tsp'
 
 # PROBLEM = Problem.maximum_independent_set
-PROBLEM = Problem.tsp
+# PROBLEM = Problem.tsp
 # PROBLEM = Problem.knapsack
-# PROBLEM = Problem.set_cover
+PROBLEM = Problem.set_cover
 
 @unique
 class GraphDistriType(Enum):
@@ -48,10 +48,10 @@ RUNNING_DURATIONS = [300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000, 33
 # None: write results when finished.
 # others: write results in mycallback. seconds, the interval of writing results to txt files
 GUROBI_INTERVAL = None  # None: not using interval, i.e., not using mycallback function, write results when finished. If not None such as 100, write result every 100s
-GUROBI_TIME_LIMITS = [1 * 3600]  # seconds
+GUROBI_TIME_LIMITS = [1 * 60]  # seconds
 # GUROBI_TIME_LIMITS = [600, 1200, 1800, 2400, 3000, 3600]  # seconds
 # GUROBI_TIME_LIMITS2 = list(range(10 * 60, 1 * 3600 + 1, 10 * 60))  # seconds
 GUROBI_VAR_CONTINUOUS = False  # True: relax it to LP, and return x values. False: sovle the primal MILP problem
-GUROBI_MILP_QUBO = 0  # 0: MILP, 1: QUBO
+GUROBI_MILP_QUBO = 1  # 0: MILP, 1: QUBO
 assert GUROBI_MILP_QUBO in [0, 1]
 
