@@ -1,5 +1,5 @@
 // obj: 4.95457242474124
-// running_duration: 60.06599998474121
+// running_duration: 60.04899978637695
 // gap: 0.1135413071896482
 // obj_bound: 4.392023795070335
 // time_limit: ('TIME_LIMIT', <class 'float'>, 60.0, 0.0, inf, inf)

@@ -229,13 +229,15 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     if PROBLEM == Problem.tsp:
         graph = read_tsp(filename)
-    if PROBLEM == Problem.knapsack:
+    elif PROBLEM == Problem.knapsack:
         num,weight,items = read_knapsack_data(filename)
+    elif PROBLEM ==Problem.set_cover:
+        total_elements, total_subsets, subsets = read_set_cover_data(filename)
     else:
-        if PROBLEM == Problem.set_cover:
-            graph = read_set_cover_data(filename)
-        else:
-            graph = read_nxgraph(filename)
+        graph = read_nxgraph(filename)
+
+
+    if PROBLEM not in [Problem.knapsack,Problem.set_cover]:
         edges = list(graph.edges)
         subax1 = plt.subplot(111)
         nx.draw_networkx(graph, with_labels=True)
@@ -310,14 +312,12 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
             x = model.addVars(num_nodes, num_nodes, vtype=GRB.BINARY, name='x')
             HA = quicksum((1 - quicksum(x[i, j] for j in range(num_nodes))) ** 2 for i in range(num_nodes)) + \
                  quicksum((1 - quicksum(x[i, j] for i in range(num_nodes))) ** 2 for j in range(num_nodes))
+            # edges = list(graph.edges)
+            HB = quicksum(
+                adjacency_matrix[u][v] * x[u, j] * x[v, (j + 1) % num_nodes] for u in range(num_nodes) for v in range(num_nodes) if u != v for j
+                in range(num_nodes))
 
-            edges = list(graph.edges)
-            W = {edge: weight for edge, weight in nx.get_edge_attributes(graph, 'weight').items()}
-
-            HB = quicksum(x[u, j] * x[v, (j + 1) % num_nodes] for u, v in edges for j in range(num_nodes)) + \
-                 coef_A * quicksum(
-                W[u, v] * x[u, j] * x[v, (j + 1) % num_nodes] for u, v in edges for j in range(num_nodes))
-            model.setObjective(HA+HB,GRB.MINIMIZE)
+            model.setObjective(HA+coef_A*HB,GRB.MINIMIZE)
     elif PROBLEM == Problem.knapsack:
         if GUROBI_MILP_QUBO == 0:
             x = model.addVars(num, vtype=GRB.BINARY, name="x")
@@ -335,19 +335,23 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     elif PROBLEM == Problem.set_cover:
         if GUROBI_MILP_QUBO == 0:
-            x = model.addVars(num_nodes,vtype=GRB.BINARY,name='x')
-            model.setObjective(quicksum(x[i] for i in nodes),GRB.MINIMIZE)
+            x = model.addVars(total_subsets, vtype=GRB.BINARY, name="x")
+            model.setObjective(quicksum(x[i] for i in range(total_subsets)), GRB.MINIMIZE)
         else:
-            x = model.addVars(num_subsets, vtype=GRB.BINARY, name="x")
-            coef_A = 1
-            model.setObjective(
-                quicksum(x[i] for i in range(num_subsets))
-                + coef_A * (
-                        quicksum((1 - quicksum(adjacency_matrix[u][i] * x[i] for i in range(num_subsets))) ** 2 for u in
-                                 range(num_nodes))
-                        + quicksum((quicksum(adjacency_matrix[u][i] * x[i] for i in range(num_subsets)) - quicksum(
-                    x[i] for i in adjacency_matrix[u])) ** 2 for u in range(num_nodes))
-                ), GRB.MINIMIZE)
+            x = model.addVars(total_subsets, vtype=GRB.BINARY, name="x")
+            y = {}
+            for u in range(total_elements):
+                for m in range(total_subsets):
+                    y[u, m] = model.addVar(vtype=GRB.BINARY, name=f"y_{u}_{m}")
+
+            coef_A = 1.0
+            H1 = quicksum(x[i] for i in range(total_subsets))
+            H2 = quicksum((1 - quicksum(y[u, m] for m in range(total_subsets))) ** 2 for u in range(total_elements))
+            H3 = quicksum((quicksum(m * y[u, m] for m in range(total_subsets)) - quicksum(
+                x[i] for i in range(total_subsets) if u in subsets[i])) ** 2 for u in range(total_elements))
+            model.setObjective(H1 + coef_A * (H2 + H3), GRB.MINIMIZE)
+
+
 
 
     # constrs if using MILP
@@ -389,9 +393,8 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         elif PROBLEM == Problem.knapsack:
                 model.addConstr(quicksum(items[i][0] * x[i] for i in range(num)) <= weight, "knapsack")
         elif PROBLEM == Problem.set_cover:
-            for u in range(num_nodes):
-                model.addConstr(quicksum(adjacency_matrix[u][i] * x[i] for i in range(num_subsets)) >= 1,
-                                name=f'cover_element_{u}')
+            for u in range(total_elements):
+                model.addConstr(quicksum(x[i] for i, subset in enumerate(subsets) if u in subset) >= 1, name=f"cover_{u}")
 
 
     else:
@@ -401,8 +404,11 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
             for j in range(num_nodes):
                 model.addConstr(quicksum(x[i, j] for i in range(num_nodes)) == 1)
         elif PROBLEM == Problem.set_cover:
-            for j in range(num_subsets):
-                model.addConstr(quicksum(x[i] for i in range(num_nodes) if adjacency_matrix[i][j]) >= 1,name=f'cover_subset_{j+1}')
+            for u in range(total_elements):
+                for i, subset in enumerate(subsets):
+                    if u in subset:
+                        for m in range(total_subsets):
+                            model.addConstr(y[u, m] <= x[i], name=f"cover_{u}_{i}_{m}")
 
 
 
@@ -418,6 +424,8 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
     model._interval = GUROBI_INTERVAL  # 每隔一段时间输出当前可行解，单位秒
     if PROBLEM == Problem.knapsack:
         model._attribute = {'data_filename':filename,'result_filename':result_filename}
+    elif PROBLEM == Problem.set_cover:
+        model._attribute = {'data_filename': filename, 'result_filename': result_filename}
     else:
         model._attribute = {'data_filename': filename, 'result_filename': result_filename, 'num_nodes': num_nodes}
     if GUROBI_VAR_CONTINUOUS:
@@ -466,10 +474,10 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
 
     elif model.getAttr('SolCount') >= 1:  # get the SolCount:
         # result_filename = '../result/result'
-        if PROBLEM != Problem.knapsack:
+        if PROBLEM not in [Problem.knapsack,Problem.set_cover]:
             model._attribute['graph'] = graph
         write_result_gurobi(model, result_filename, time_limit)
-    if PROBLEM in [Problem.maxcut, Problem.minimum_vertex_cover, Problem.maximum_independent_set, Problem.set_cover, Problem.graph_partitioning]:
+    if PROBLEM in [Problem.maxcut, Problem.minimum_vertex_cover, Problem.maximum_independent_set, Problem.graph_partitioning]:
         x_values = [x[i].x for i in range(num_nodes) if i in x]
     elif PROBLEM == Problem.tsp:
         x_values = [[x[i, j].x if (i, j) in x else 0 for j in range(num_nodes)] for i in range(num_nodes)]
@@ -545,7 +553,7 @@ if __name__ == '__main__':
 
         if_use_knapsack = False
         if if_use_knapsack:
-            directory_data = '../data/sbkp'
+            directory_data = '../data/knapsack'
             prefixes = ['kp_']
 
         if_use_set_cover = True
