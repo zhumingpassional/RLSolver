@@ -1,4 +1,7 @@
-# Maxcut using machine learning
+# RLCO: High-performance GPU-based Solvers for Combinatorial Optimization (CO) Problems
+
+We aim to showcase that reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for large-scale CO problems. RL with the help of GPU computing can obtain high-quality solutions within short time. 
+
 
 - **RL tricks** such as learn to optimize, and curriculum learning.
 - **Massively parallel sampling** on GPU, using thousands of CUDA cores and tensor cores.
@@ -6,7 +9,7 @@
 ## File Structure
 
 ```
-Maxcut
+RLCO
 └──baseline
     └──greedy.py
     └──gurobi.py
@@ -14,13 +17,12 @@ Maxcut
     └──random_walk.py
     └──scip.py
     └──simulated_annealing.py
-    └──variational_classical_annealing_RNN
-    └──variational_neural_annealing
+    └──S2V_DQN.PY
+    └──DIMES.py
 └──data
 └──result
 └──mcmc.py
-└──l2a.py (ours)
-└──l2a_distribution.py (ours)
+└──l2a_xx.py (ours)
 └──README.md
 └──utils.py
 
@@ -35,7 +37,7 @@ Maxcut
 </a>  
 
 ## Datasets
-链接: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw 提取码: gc8y
+Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
  
 1) [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
@@ -44,14 +46,23 @@ Maxcut
 
 ## Results
 
-链接: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw 提取码: gc8y
+Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
 
 ## Run algorithms
 
 Format:
 ```
+python baseline/greedy.py  # run greedy
+python baseline/gurobiy.py  # run gurobi
+python baseline/mcpg.py  # run mcpg
+python baseline/simulated_annealing.py  # run simulated_annealing
+python baseline/S2V_DQN.py  # run S2V_DQN
+python baseline/DIMES.py  # run DIMES
+```
+```
 python l2a.py  # our algorithm
 ```
+
 
 ## Solvers to Compare with
 
