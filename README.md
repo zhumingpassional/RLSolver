@@ -2,6 +2,12 @@
 
 We aim to showcase that reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for large-scale combinatorial optimization (CO) problems. RL with the help of GPU computing can obtain high-quality solutions within short time. 
 
+# Overview
+<a target="\_blank">
+	<div align="center">
+		<img src=fig/RLCO_framework.png width="60%"/>
+	</div>
+</a>  
 
 # Key Technologies
 - **RL/ML tricks** such as learn to optimize and curriculum learning.
