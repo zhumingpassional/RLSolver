@@ -5,7 +5,7 @@ We aim to showcase that reinforcement learning (RL) or machine learning (ML) wit
 # Overview
 <a target="\_blank">
 	<div align="center">
-		<img src=fig/RLCO_framework.png width="60%"/>
+		<img src=fig/RLCO_framework.png width="80%"/>
 	</div>
 </a>  
 
