@@ -50,7 +50,16 @@ Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
 
 ## Run algorithms
 
-Format:
+Process 1 (select problem):
+
+config.py
+```
+PROBLEM = Problem.maxcut
+```
+We can select the problems including maxcut, graph partitioning, maximum independent set, set cover, tsp, etc. 
+
+Process 2 (run algorithm):
+
 ```
 python baseline/greedy.py  # run greedy
 python baseline/gurobiy.py  # run gurobi
