@@ -14,7 +14,7 @@ We aim to showcase that reinforcement learning (RL) or machine learning (ML) wit
 - **OR tricks** such as local search and tabu search.
 - **Massively parallel sampling** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
 - **Podracer scheduling** on a GPU cloud such as DGX-2 SuperPod.
-- 
+
 # Key References
 
 - Mazyavkina, Nina, et al. "Reinforcement learning for combinatorial optimization: A survey." Computers & Operations Research 134 (2021): 105400.
@@ -67,7 +67,7 @@ RLCO
 
 ## Datasets
 Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
- 
+
 1) [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
 2) __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh for China users). 
@@ -85,7 +85,7 @@ config.py
 ```
 PROBLEM = Problem.maxcut
 ```
-We can select the problems including maxcut, graph partitioning, maximum independent set, set cover, tsp, etc. 
+We can select the problems including maxcut, graph partitioning, maximum independent set, set cover, TSP, etc. 
 
 Process 2 (run algorithm):
 
