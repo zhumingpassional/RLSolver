@@ -481,6 +481,10 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         x_values = [x[i].x for i in range(num_nodes) if i in x]
     elif PROBLEM == Problem.tsp:
         x_values = [[x[i, j].x if (i, j) in x else 0 for j in range(num_nodes)] for i in range(num_nodes)]
+    elif PROBLEM == Problem.set_cover:
+        x_values = [x[i].x for i in range(total_subsets)]
+    elif PROBLEM == Problem.knapsack:
+        x_values = [x[i].x for i in range(num)]
     else:
         x_values = []
     return x_values
@@ -551,12 +555,12 @@ if __name__ == '__main__':
             directory_data = '../data/tsp'
             prefixes = ['tsp_']
 
-        if_use_knapsack = False
+        if_use_knapsack = True
         if if_use_knapsack:
             directory_data = '../data/knapsack'
             prefixes = ['kp_']
 
-        if_use_set_cover = True
+        if_use_set_cover = False
         if if_use_set_cover:
             directory_data = '../data/set_cover'
             prefixes = ['set_cover_']
