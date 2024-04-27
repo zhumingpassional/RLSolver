@@ -1,12 +1,38 @@
-# Maxcut using machine learning
+# RLCO: High-performance RL-based Solvers for CO Problems Using Massively Parallel Simulations
 
-- **RL tricks** such as learn to optimize, and curriculum learning.
-- **Massively parallel sampling** on GPU, using thousands of CUDA cores and tensor cores.
+We aim to showcase that reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for large-scale combinatorial optimization (CO) problems. RL with the help of GPU computing can obtain high-quality solutions within short time. 
+
+# Overview
+<a target="\_blank">
+	<div align="center">
+		<img src=fig/RLCO_framework.png width="80%"/>
+	</div>
+</a>  
+
+# Key Technologies
+- **RL/ML tricks** such as learn to optimize and curriculum learning.
+- **OR tricks** such as local search and tabu search.
+- **Massively parallel sampling** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
+- **Podracer scheduling** on a GPU cloud such as DGX-2 SuperPod.
+
+# Key References
+
+- Mazyavkina, Nina, et al. "Reinforcement learning for combinatorial optimization: A survey." Computers & Operations Research 134 (2021): 105400.
+
+- Bengio, Yoshua, Andrea Lodi, and Antoine Prouvost. "Machine learning for combinatorial optimization: a methodological tour d’horizon." European Journal of Operational Research 290.2 (2021): 405-421.
+
+- Peng, Yun, Byron Choi, and Jianliang Xu. "Graph learning for combinatorial optimization: a survey of state-of-the-art." Data Science and Engineering 6, no. 2 (2021): 119-141.
+
+- Nair, Vinod, et al. "Solving mixed integer programs using neural networks." arXiv preprint arXiv:2012.13349 (2020).
+
+- Makoviychuk, Viktor, et al. "Isaac Gym: High performance GPU based physics simulation for robot learning." Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2). 2021.
+  
+
 
 ## File Structure
 
 ```
-Maxcut
+RLCO
 └──baseline
     └──greedy.py
     └──gurobi.py
@@ -14,15 +40,18 @@ Maxcut
     └──random_walk.py
     └──scip.py
     └──simulated_annealing.py
-    └──variational_classical_annealing_RNN
-    └──variational_neural_annealing
+    └──S2V_DQN.PY
+    └──DIMES.py
 └──data
 └──result
-└──mcmc.py
-└──l2a.py (ours)
-└──l2a_distribution.py (ours)
+└──config.py
+└──evaluator.py
+└──network.py
+└──util.py
+└──main.py
+└──l2a_xx.py (ours)
+└──util.py
 └──README.md
-└──utils.py
 
 
 ```
@@ -35,28 +64,94 @@ Maxcut
 </a>  
 
 ## Datasets
- 
-1) [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
+Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
+
+1) Graph
+   
+Most data is graph, such as graph maxcut, graph partitioning, TSP.
+
+- [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
-2) __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh for China users). 
+- __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh for China users).
+  
+2) Non-graph
+
+The data is not graph, such as the set cover problem, knapsack problem, BILP.
+
   
 
 ## Results
 
-链接: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw 提取码: gc8y
+Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
 
 ## Run algorithms
 
-Format:
+Process 1 (select problem):
+
+config.py
+```
+PROBLEM = Problem.maxcut
+```
+We can select the problems including maxcut, graph partitioning, maximum independent set, set cover, TSP, etc. 
+
+Process 2 (run algorithm):
+
+```
+python baseline/greedy.py  # run greedy
+python baseline/gurobiy.py  # run gurobi
+python baseline/mcpg.py  # run mcpg
+python baseline/simulated_annealing.py  # run simulated_annealing
+python baseline/S2V_DQN.py  # run S2V_DQN
+python baseline/DIMES.py  # run DIMES
+```
 ```
 python l2a.py  # our algorithm
 ```
+
 
 ## Solvers to Compare with
 
 [Gurobi](https://www.gurobi.com/)
 
 [SCIP](https://www.scipopt.org/index.php#welcome)
+
+## Benchmarks
+
+
+* Learning to branch
+  
+[code](https://github.com/cwfparsonson/retro_branching/tree/master) 2023 AAAI Reinforcement Learning for Branch-and-Bound Optimisation using Retrospective Trajectories 
+
+[code](https://github.com/ds4dm/branch-search-trees) 2021 AAAI Parameterizing Branch-and-Bound Search Trees to Learn Branching Policies
+
+* Learning to cut
+
+[code](https://github.com/Wenbo11/learntocut) 2020 ICML Reinforcement learning for integer programming: Learning to cut
+
+
+* RL/ML-based heuristic
+  
+[code](https://github.com/Hanjun-Dai/graph_comb_opt)  (greedy) 2017 NeurIPS Learning Combinatorial Optimization Algorithms over Graphs
+
+[code](https://github.com/optsuite/MCPG) (local search) 2023, A Monte Carlo Policy Gradient Method with Local Search for Binary Optimization
+
+[code](https://github.com/JHL-HUST/VSR-LKH) (LKH for TSP) 2021 AAAI Combining reinforcement learning with Lin-Kernighan-Helsgaun algorithm for the traveling salesman problem 
+
+* Variational annealing
+
+[code](https://github.com/zhumingpassional/Maxcut/tree/master/baseline/variational_classical_annealing_RNN) (VCA_RNN) 2023 Machine_Learning Supplementing recurrent neural networks with annealing to solve combinatorial optimization problems
+
+[code](https://github.com/zhumingpassional/Maxcut/tree/master/baseline/variational_neural_annealing) (VNA) 2021 Nature_Machine_Intelligence Variational neural annealing
+
+* Classical methods
+  - [Random walk](https://github.com/zhumingpassional/Maxcut/blob/master/baseline/random_walk.py)
+  - [Greedy](https://github.com/zhumingpassional/Maxcut/blob/master/baseline/greedy.py)
+  - [Simulated annealing](https://github.com/zhumingpassional/Maxcut/blob/master/baseline/simulated_annealing.py)
+  - Local search
+  - Beam search
+  - Tabu search
+  - Branch-and-bound
+  - Cutting plane
 
 ## Store Results 
 
