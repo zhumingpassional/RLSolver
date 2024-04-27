@@ -51,4 +51,3 @@ GUROBI_TIME_LIMITS = [1 * 3600]  # seconds
 GUROBI_VAR_CONTINUOUS = False  # True: relax it to LP, and return x values. False: sovle the primal MILP problem
 GUROBI_MILP_QUBO = 1  # 0: MILP, 1: QUBO
 assert GUROBI_MILP_QUBO in [0, 1]
-
