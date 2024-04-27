@@ -89,15 +89,6 @@ def read_tsp(filename:str) -> nx.Graph():
 
     return graph
 
-# def read_weights_and_W_from_file(filename: str):
-#     weights = []
-#     with open(filename, 'r') as file:
-#         lines = file.readlines()
-#         W = int(lines[0].strip().split()[1])
-#         for line in lines[1:]:
-#             weight = int(line.strip().split()[0])
-#             weights.append(weight)
-#     return weights, W
 
 
 def read_knapsack_data(filename):
