@@ -28,12 +28,6 @@ We aim to showcase that reinforcement learning (RL) or machine learning (ML) wit
 - Makoviychuk, Viktor, et al. "Isaac Gym: High performance GPU based physics simulation for robot learning." Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2). 2021.
   
 
-# Workflow
-<a target="\_blank">
-	<div align="center">
-		<img src=fig/work_flow.png width="60%"/>
-	</div>
-</a>  
 
 ## File Structure
 
@@ -50,10 +44,14 @@ RLCO
     └──DIMES.py
 └──data
 └──result
-└──mcmc.py
+└──config.py
+└──evaluator.py
+└──network.py
+└──util.py
+└──main.py
 └──l2a_xx.py (ours)
+└──util.py
 └──README.md
-└──utils.py
 
 
 ```
@@ -68,9 +66,18 @@ RLCO
 ## Datasets
 Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
 
-1) [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
+1) Graph
+   
+Most data is graph, such as graph maxcut, graph partitioning, TSP.
+
+- [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
-2) __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh for China users). 
+- __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh for China users).
+  
+2) Non-graph
+
+The data is not graph, such as the set cover problem, knapsack problem, BILP.
+
   
 
 ## Results
