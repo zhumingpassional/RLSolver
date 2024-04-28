@@ -902,7 +902,7 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str
             print(f'The {i}-th file: {filename}')
             if PROBLEM == Problem.set_cover:
                 from baseline.greedy import greedy_set_cover
-                num_items, num_sets, item_matrix = read_set_cover(filename)
+                num_items, num_sets, item_matrix = read_set_cover_data(filename)
                 score, solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
                 scoress.append(scores)
                 running_duration = time.time() - start_time
@@ -1016,7 +1016,7 @@ if __name__ == '__main__':
     if_test_read_set_cover = False
     filename = 'data/set_cover/frb45-21-5.msc'
     if if_test_read_set_cover:
-        num_items, num_sets, item_matrix = read_set_cover(filename)
+        num_items, num_sets, item_matrix = read_set_cover_data(filename)
         print(f'num_items: {num_items}, num_sets: {num_sets}, item_matrix: {item_matrix}')
         solution1 = [1] * num_sets
         obj1 = obj_set_cover_ratio(solution1, num_items, item_matrix)
