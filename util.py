@@ -69,24 +69,65 @@ def read_nxgraph(filename: str) -> nx.Graph():
             line = file.readline()
     return graph
 
-def read_set_cover(filename: str):
+# read tsp file,latitude and longitude, horizontal and vertical coordinates
+def read_tsp(filename:str) -> nx.Graph():
+
+    graph = nx.Graph()
+
+    with open(filename,'r') as file:
+        num_nodes = int(file.readline().strip())
+        positions = np.array([list(map(float,line.split(" "))) for line in file if line.strip()])
+
+    for node_id,pos in enumerate(positions):
+        graph.add_node(node_id,pos=tuple(pos))
+
+    for i in range(num_nodes):
+        dists = np.sqrt(np.sum((positions[i] - positions[i+1:num_nodes]) ** 2,axis=1))
+        for j,dist in enumerate(dists,start=i + 1):
+            graph.add_edge(i,j,weight = dist)
+
+    return graph
+
+# def read_set_cover(filename: str):
+#     with open(filename, 'r') as file:
+#         # lines = []
+#         line = file.readline()
+#         item_matrix = []
+#         while line is not None and line != '':
+#             if 'p set' in line:
+#                 strings = line.split(" ")
+#                 num_items = int(strings[-2])
+#                 num_sets = int(strings[-1])
+#             elif 's' in line:
+#                 strings = line.split(" ")
+#                 items = [int(s) for s in strings[1:]]
+#                 item_matrix.append(items)
+#             else:
+#                 raise ValueError("error in read_set_cover")
+#             line = file.readline()
+#     return num_items, num_sets, item_matrix
+
+def read_knapsack_data(filename):
     with open(filename, 'r') as file:
-        # lines = []
-        line = file.readline()
-        item_matrix = []
-        while line is not None and line != '':
-            if 'p set' in line:
-                strings = line.split(" ")
-                num_items = int(strings[-2])
-                num_sets = int(strings[-1])
-            elif 's' in line:
-                strings = line.split(" ")
-                items = [int(s) for s in strings[1:]]
-                item_matrix.append(items)
-            else:
-                raise ValueError("error in read_set_cover")
-            line = file.readline()
-    return num_items, num_sets, item_matrix
+        lines = file.readlines()
+        N, W = map(int, lines[0].split())
+        items = []
+        for line in lines[1:]:
+            weight, value = map(int, line.split())
+            items.append((weight, value))
+    return N, W, items
+
+
+def read_set_cover_data(filename):
+    with open(filename, 'r') as file:
+        first_line = file.readline()
+        total_elements, total_subsets = map(int, first_line.split())
+        subsets = []
+        for line in file:
+            subset = list(map(int, line.strip().split()))
+            subsets.append(subset)
+
+    return total_elements, total_subsets, subsets
 
 def transfer_nxgraph_to_adjacencymatrix(graph: nx.Graph):
     return nx.to_numpy_array(graph)
@@ -861,7 +902,7 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str
             print(f'The {i}-th file: {filename}')
             if PROBLEM == Problem.set_cover:
                 from baseline.greedy import greedy_set_cover
-                num_items, num_sets, item_matrix = read_set_cover(filename)
+                num_items, num_sets, item_matrix = read_set_cover_data(filename)
                 score, solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
                 scoress.append(scores)
                 running_duration = time.time() - start_time
@@ -975,7 +1016,7 @@ if __name__ == '__main__':
     if_test_read_set_cover = False
     filename = 'data/set_cover/frb45-21-5.msc'
     if if_test_read_set_cover:
-        num_items, num_sets, item_matrix = read_set_cover(filename)
+        num_items, num_sets, item_matrix = read_set_cover_data(filename)
         print(f'num_items: {num_items}, num_sets: {num_sets}, item_matrix: {item_matrix}')
         solution1 = [1] * num_sets
         obj1 = obj_set_cover_ratio(solution1, num_items, item_matrix)
