@@ -40,7 +40,7 @@ RLCO
     └──random_walk.py
     └──scip.py
     └──simulated_annealing.py
-    └──S2V_DQN.PY
+    └──S2V_DQN.py
     └──DIMES.py
 └──data
 └──result
@@ -51,6 +51,7 @@ RLCO
 └──main.py
 └──l2a_xx.py (ours)
 └──util.py
+└──util_results.py
 └──README.md
 
 
@@ -76,10 +77,9 @@ Most data is graph, such as graph maxcut, graph partitioning, TSP.
   
 2) Non-graph
 
-The data is not graph, such as the set cover problem, knapsack problem, BILP.
+The data is not graph, such as the set cover problem, knapsack problem, and BILP.
 
   
-
 ## Results
 
 Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
