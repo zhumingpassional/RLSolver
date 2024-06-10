@@ -47,7 +47,6 @@ RLCO
 └──config.py
 └──evaluator.py
 └──network.py
-└──util.py
 └──main.py
 └──l2a_xx.py (ours)
 └──util.py
