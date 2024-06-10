@@ -12,7 +12,7 @@ We aim to showcase that reinforcement learning (RL) or machine learning (ML) wit
 # Key Technologies
 - **RL/ML tricks** such as learn to optimize.
 - **OR tricks** such as local search.
-- **Massively parallel sampling** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
+- **Massively parallel environments** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
 
 # Key References
 
