@@ -185,7 +185,7 @@ In the following experiments, we use GPU during training by default.
 
 2) __Syn__ 
 
-We use the whole synthetic data with 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). For graphs with n nodes, there are 10 datasets, and we run once for each dataset, and finally calcualte the average and standard deviation for the objective values. 
+We use the whole synthetic data with 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). For graphs with n nodes, there are 10 datasets, and we run once for each dataset, and finally calcualte the average objective values. 
 
 Results on the BA distribution.
 |Nodes | Greedy | SDP  | SA       | GA     | Gurobi (1 h) | PI-GNN | iSCO   | MCPG   | Ours| 
