@@ -39,13 +39,13 @@ Take graph maxcut as an example.
 Pattern I: In left part of of the above figure, the initial state is empty, i.e., no node is selected. Then we select node 1 with the maximum Q-value and add it to the state, thus the new state is [1]. The reward is 2.
 
 Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. We introduce four important functions for a gym-style environment:  
-* reset(): Generate a random initial solution. 
-* step(): Search for better solutions based on the current solution. It has two sub-functions. 
-- sampling() is the sampling method.
-- local_search() returns a better solution by flipping some bits. It can improve the quality of the  current solution in a local domain. 
+- reset(): Generate a random initial solution. 
+- step(): Search for better solutions based on the current solution. It has two sub-functions. 
+  - sampling() is the sampling method.
+  - local_search() returns a better solution by flipping some bits. It can improve the quality of the  current solution in a local domain. 
 
-* pick\_good\_xs(): Select the good solutions in all parallel environments, where each environment returns exactly one good solution with corresponding objective value.
-* obj(): Calculate the objective value.
+- pick\_good\_xs(): Select the good solutions in all parallel environments, where each environment returns exactly one good solution with corresponding objective value.
+- obj(): Calculate the objective value.
 
 
 
