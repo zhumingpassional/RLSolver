@@ -75,7 +75,7 @@ Most data is graph, such as graph maxcut, graph partitioning, TSP.
   
 2) Non-graph
 
-The data is not graph, such as the set cover problem, knapsack problem, and BILP.
+The data is not graph, such as the set cover problem, knapsack problem, and binary integer linear programming (BILP).
 
   
 ## Results
