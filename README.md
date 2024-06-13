@@ -12,6 +12,32 @@ We aim to showcase that reinforcement learning (RL) or machine learning (ML) wit
 # Key Technologies
 - **Massively parallel environments** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
 
+# Two Patterns
+
+<a target="\_blank">
+	<div align="center">
+		<img src=fig/parallel_sims_pattern.png width="80%"/>
+	</div>
+</a>  
+
+Pattern I: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node with the maximum Q-value and add it into the solution set. 
+
+Pattern II: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function.
+
+<a target="\_blank">
+	<div align="center">
+		<img src=fig/parallel_sims_maxcut.png width="80%"/>
+	</div>
+</a> 
+
+Take graph maxcut as an example.
+
+Pattern I: In left part of of the above figure, the initial state is empty, i.e., no node is selected. Then we select node 1 with the maximum Q-value and add it to the state, thus the new state is [1]. The reward is 2.
+
+Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
+
+
+
 # Key References
 
 - Mazyavkina, Nina, et al. "Reinforcement learning for combinatorial optimization: A survey." Computers & Operations Research 134 (2021): 105400.
