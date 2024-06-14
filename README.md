@@ -123,7 +123,7 @@ Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
 
 ## Run algorithms
 
-Process 1 (select problem):
+- Process 1 (select problem):
 
 config.py
 ```
@@ -131,7 +131,15 @@ PROBLEM = Problem.maxcut
 ```
 We can select the problems including maxcut, graph partitioning, maximum independent set, set cover, TSP, etc. 
 
-Process 2 (run algorithm):
+- Process 2 (select datasets)
+
+Take baseline/greedy.py as an example:
+
+ directory_data = '../data/syn_ER' # the directory of datasets
+ 
+ prefixes = ['erdos_renyi_1000_'] # select the graphs with 1000 nodes
+  
+- Process 3 (run algorithm):
 
 ```
 python baseline/greedy.py  # run greedy
