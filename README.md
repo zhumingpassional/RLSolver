@@ -135,10 +135,11 @@ We can select the problems including maxcut, graph partitioning, maximum indepen
 
 Take baseline/greedy.py as an example:
 
+```
  directory_data = '../data/syn_ER' # the directory of datasets
- 
  prefixes = ['erdos_renyi_1000_'] # select the graphs with 1000 nodes
-  
+```
+
 - Process 3 (run algorithm):
 
 ```
