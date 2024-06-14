@@ -1,4 +1,4 @@
-# RLCO: High-performance RL-based Solvers for combinatorial optimization (CO) Problems Using Massively Parallel Simulations
+# RLSolver: High-performance RL-based Solvers for non-convex and combinatorial optimization (CO) Problems Using Massively Parallel Simulations
 
 We aim to showcase that reinforcement learning (RL) or machine learning (ML) with GPUs delivers the best benchmark performance for large-scale combinatorial optimization (CO) problems. RL with the help of GPU computing can obtain high-quality solutions within short time. 
 
