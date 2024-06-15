@@ -79,11 +79,11 @@ RLCO
     └──DIMES
     └──iSCO
     └──PI-GNN
-    └──l2a_xx.py (ours)
 └──data
 └──result
 └──config.py
 └──evaluator.py
+└──l2a_xx.py (ours)
 └──network.py
 └──main.py
 └──util.py
@@ -138,10 +138,10 @@ Take baseline/greedy.py as an example:
 ```
 python baseline/greedy.py  # run greedy
 python baseline/gurobiy.py  # run gurobi
-python baseline/mcpg.py  # run mcpg
 python baseline/simulated_annealing.py  # run simulated_annealing
-python baseline/S2V_DQN.py  # run S2V_DQN
-python baseline/DIMES.py  # run DIMES
+python baseline/mcpg.py  # run mcpg
+python baseline/iSCO/main.py  # run iSCO
+python baseline/PI-GNN/main.py  # run PI-GNN
 ```
 ```
 python baseline/l2a.py  # our algorithm
