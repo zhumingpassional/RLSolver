@@ -1,6 +1,6 @@
 # RLSolver: Massively Parallel Environments for Combinatorial Optimization (CO) Problems Using Reinforcement Learning
 
-We aim to showcase the effectiveness of massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU computing and parallel environments can significantly improve the sampling efficiency and can obtain high-quality solutions within short time. 
+We aim to showcase the effectiveness of massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU based parallel environments can significantly improve the sampling efficiency and can obtain high-quality solutions within short time. 
 
 # Overview
 <a target="\_blank">
