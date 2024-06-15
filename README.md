@@ -215,7 +215,7 @@ In the following experiments, we use GPU during training by default.
 
 [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Stanford university. 
 
-| graph | #nodes| #edges | BLS | DSDP    | KHLWG   | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         |iSCO   | MCPG     | Ours | Improvement |  
+| Graph | Nodes| Edges | BLS | DSDP    | KHLWG   | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         |iSCO   | MCPG     | Ours | Improvement |  
 |--- |------|----  |---        |-----    |-----    |--------|-------| ---           | ---        | ----  | ----     | ----| ----|
 |    |      |  |       |  |   ||Pattern I|         |         | Pattern I| Pattern II     | Pattern II| |
 |G14 | 800  | 4694 | __3064__  |         | 2922    | 3061   | 2943  |3042           | 3.61\%     |  3056 |__3064__  | __3064__ | +0\%|
