@@ -64,6 +64,9 @@ Pattern II: Take graph maxcut as an example. In right part of the above figure, 
 ```
 RLSolver
 └──envs
+    └──graph_max_cut_isco.py
+    └──graph_max_cut_mh_sampling.py
+    └──TNCO_mh_sampling.py
 └──baseline
     └──greedy.py
     └──gurobi.py
