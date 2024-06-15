@@ -112,7 +112,7 @@ Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
 
 ## Run algorithms
 
-- Process 1 (select problem):
+- Process 1: select problem
 
 config.py
 ```
@@ -120,7 +120,7 @@ PROBLEM = Problem.maxcut
 ```
 We can select the problems including maxcut, graph partitioning, maximum independent set, set cover, TSP, etc. 
 
-- Process 2 (select datasets)
+- Process 2: select datasets
 
 Take baseline/greedy.py as an example:
 
@@ -129,7 +129,7 @@ Take baseline/greedy.py as an example:
  prefixes = ['erdos_renyi_1000_'] # select the graphs with 1000 nodes
 ```
 
-- Process 3 (run algorithm):
+- Process 3: run algorithm
 
 ```
 python baseline/greedy.py  # run greedy
@@ -152,17 +152,6 @@ python baseline/l2a.py  # our algorithm
 ## Compared Methods
 
 
-* Learning to branch
-  
-[code](https://github.com/cwfparsonson/retro_branching/tree/master) 2023 AAAI Reinforcement Learning for Branch-and-Bound Optimisation using Retrospective Trajectories 
-
-[code](https://github.com/ds4dm/branch-search-trees) 2021 AAAI Parameterizing Branch-and-Bound Search Trees to Learn Branching Policies
-
-* Learning to cut
-
-[code](https://github.com/Wenbo11/learntocut) 2020 ICML Reinforcement learning for integer programming: Learning to cut
-
-
 * RL/ML-based heuristic
   
 [code](https://github.com/Hanjun-Dai/graph_comb_opt)  (greedy) 2017 NeurIPS Learning Combinatorial Optimization Algorithms over Graphs
@@ -177,10 +166,24 @@ python baseline/l2a.py  # our algorithm
 
 [code](https://github.com/zhumingpassional/Maxcut/tree/master/baseline/variational_neural_annealing) (VNA) 2021 Nature_Machine_Intelligence Variational neural annealing
 
+* Discrete sampling
+
+[code](https://github.com/zhumingpassional/RLSolver/tree/master/baseline/iSCO) 2023 (iSCO) ICML Revisiting Sampling for Combinatorial Optimization
+  
+* Learning to branch
+  
+[code](https://github.com/cwfparsonson/retro_branching/tree/master) 2023 AAAI Reinforcement Learning for Branch-and-Bound Optimisation using Retrospective Trajectories 
+
+[code](https://github.com/ds4dm/branch-search-trees) 2021 AAAI Parameterizing Branch-and-Bound Search Trees to Learn Branching Policies
+
+* Learning to cut
+
+[code](https://github.com/Wenbo11/learntocut) 2020 ICML Reinforcement learning for integer programming: Learning to cut
+
 * Classical methods
-  - [Random walk](https://github.com/zhumingpassional/Maxcut/blob/master/baseline/random_walk.py)
-  - [Greedy](https://github.com/zhumingpassional/Maxcut/blob/master/baseline/greedy.py)
-  - [Simulated annealing](https://github.com/zhumingpassional/Maxcut/blob/master/baseline/simulated_annealing.py)
+  - [Random walk]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/random_walk.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/random_walk.py))
+  - [Greedy]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/greedy.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/greedy.py))
+  - [Simulated annealing]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/simulated_annealing.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/simulated_annealing.py))
   - Local search
   - Beam search
   - Tabu search
