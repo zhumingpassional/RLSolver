@@ -22,7 +22,7 @@ We aim to showcase the effectiveness of massively parallel environments for comb
 
 
 
-Pattern I: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node with the maximum Q-value and add it into the solution set. There are three important functions for a gym-style environment:  
+Pattern I: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into the solution set. There are three important functions for a gym-style environment:  
 - reset(): Set the selected nodes as an empty set. 
 - step(): Select the node with maximum Q-value and then add it to the set.  
 - reward(): Calculate the objective values over all simulation environments.
@@ -47,8 +47,6 @@ We introduce four important functions for a gym-style environment:
 
 Pattern II: Take graph maxcut as an example. In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
 
-
-
 # Key References
 
 - Mazyavkina, Nina, et al. "Reinforcement learning for combinatorial optimization: A survey." Computers & Operations Research 134 (2021): 105400.
@@ -61,12 +59,10 @@ Pattern II: Take graph maxcut as an example. In right part of the above figure, 
 
 - Makoviychuk, Viktor, et al. "Isaac Gym: High performance GPU based physics simulation for robot learning." Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2). 2021.
   
-
-
 ## File Structure
 
 ```
-RLCO
+RLSolver
 └──envs
 └──baseline
     └──greedy.py
