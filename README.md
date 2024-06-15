@@ -1,6 +1,6 @@
 # RLSolver: Massively Parallel Environments for combinatorial optimization (CO) Problems Using Reinforcement Learning
 
-We aim to showcase massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU computing and parallel environments can obtain high-quality solutions within short time. 
+We aim to showcase the effectiveness of massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU computing and parallel environments can obtain high-quality solutions within short time. 
 
 # Overview
 <a target="\_blank">
@@ -20,13 +20,12 @@ We aim to showcase massively parallel environments for combinatorial optimizatio
 	</div>
 </a>  
 
+
+
 Pattern I: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node with the maximum Q-value and add it into the solution set. There are three important functions for a gym-style environment:  
 - reset(): Set the selected nodes as an empty set. 
 - step(): Select the node with maximum Q-value and then add it to the set.  
 - reward(): Calculate the objective values over all simulation environments.
-
-
-Pattern II: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function.
 
 <a target="\_blank">
 	<div align="center">
@@ -34,20 +33,19 @@ Pattern II: policy-based methods first formulate the CO problem as a QUBO proble
 	</div>
 </a> 
 
-Take graph maxcut as an example.
-
 Pattern I: In left part of of the above figure, the initial state is empty, i.e., no node is selected. Then we select node 1 with the maximum Q-value and add it to the state, thus the new state is [1]. The reward is 2.
 
-Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. We introduce four important functions for a gym-style environment:  
+Pattern II: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function.
+
+We introduce four important functions for a gym-style environment:  
 - reset(): Generate a random initial solution. 
 - step(): Search for better solutions based on the current solution. It has two sub-functions. 
   - sampling() is the sampling method.
   - local_search() returns a better solution by flipping some bits. It can improve the quality of the  current solution in a local domain. 
-
 - pick\_good\_xs(): Select the good solutions in all parallel environments, where each environment returns exactly one good solution with corresponding objective value.
 - obj(): Calculate the objective value.
 
-
+Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
 
 
 
@@ -69,6 +67,7 @@ Pattern II: In right part of the above figure, the current state is [2, 3], i.e.
 
 ```
 RLCO
+└──envs
 └──baseline
     └──greedy.py
     └──gurobi.py
@@ -80,13 +79,13 @@ RLCO
     └──DIMES
     └──iSCO
     └──PI-GNN
+    └──l2a_xx.py (ours)
 └──data
 └──result
 └──config.py
 └──evaluator.py
 └──network.py
 └──main.py
-└──l2a_xx.py (ours)
 └──util.py
 └──util_results.py
 └──README.md
@@ -151,7 +150,7 @@ python baseline/S2V_DQN.py  # run S2V_DQN
 python baseline/DIMES.py  # run DIMES
 ```
 ```
-python l2a.py  # our algorithm
+python baseline/l2a.py  # our algorithm
 ```
 
 
@@ -161,7 +160,7 @@ python l2a.py  # our algorithm
 
 [SCIP](https://www.scipopt.org/index.php#welcome)
 
-## Benchmarks
+## Compared Methods
 
 
 * Learning to branch
@@ -215,7 +214,7 @@ Results will be written to a file result.txt in the folder "result". The first c
 
 The partial results are stored in [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing).
 
-## Performance
+## Results for graph maxcut
 In the following experiments, we use GPU during training by default. 
 
 
