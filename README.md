@@ -148,11 +148,10 @@ python baseline/l2a.py  # our algorithm
 ```
 
 
-## Solvers to Compare with
+## Commercial Solvers to Compare with
 
 [Gurobi](https://www.gurobi.com/)
 
-[SCIP](https://www.scipopt.org/index.php#welcome)
 
 ## Compared Methods
 
