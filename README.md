@@ -205,8 +205,6 @@ Results will be written to a file result.txt in the folder "result". The first c
 
 5 2  # node 5 in set 2
 
-The partial results are stored in [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing).
-
 ## Results for graph maxcut
 In the following experiments, we use GPU during training by default. 
 
