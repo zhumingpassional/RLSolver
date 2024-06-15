@@ -2,6 +2,7 @@ import os
 import time
 import numpy as np
 import torch as th
+import pandas as pd
 from typing import Union
 
 try:
@@ -10,6 +11,7 @@ try:
 
     mpl.use('Agg') if os.name != 'nt' else None  # Generating matplotlib graphs without a running X server [duplicate]
 except ImportError:
+    print(f"| ImportError import matplotlib")
     mpl = None
     plt = None
 
@@ -18,10 +20,10 @@ ARY = np.ndarray
 
 
 class EncoderBase64:
-    def __init__(self, num_nodes: int):
+    def __init__(self, encode_len: int):
         num_power = 6
-        self.num_nodes = num_nodes
-        self.num_length = -int(-(num_nodes / num_power) // 1)  # ceil(num_nodes / num_power)
+        self.encode_len = encode_len
+        self.string_len = -int(-(encode_len / num_power) // 1)  # ceil(num_nodes / num_power)
 
         self.base_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$"
         self.base_num = len(self.base_digits)
@@ -44,7 +46,7 @@ class EncoderBase64:
             x_str = '\n'.join([x_str[i:i + 120] for i in range(0, len(x_str), 120)])
         if len(x_str) > 64:
             x_str = f"\n{x_str}"
-        return x_str.zfill(self.num_length)
+        return x_str.zfill(self.string_len)
 
     def str_to_bool(self, x_str: str) -> TEN:
         x_b64 = x_str.replace('\n', '').replace(' ', '')
@@ -58,137 +60,70 @@ class EncoderBase64:
             x_int += digit * (self.base_num ** power)
 
         x_bin: str = bin(x_int)[2:]
-        x_bool = th.zeros(self.num_nodes, dtype=th.bool)
+        x_bool = th.zeros(self.encode_len, dtype=th.bool)
         x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.bool)
         return x_bool
 
 
-class Evaluator0:  # todo 标记后，将在下一次PR里把所有 Evaluator0 改为 Evaluator
-    def __init__(self, sim, enc):
-        self.start_time = time.time()
-        self.best_score = -th.inf
-        self.best_solution = 'none'
-        self.get_scores = sim.get_scores
-        self.bool_to_str = enc.bool_to_str
-
-    def evaluate_and_print(self, solutions, i, obj):
-        scores = self.get_scores(solutions)
-        used_time = time.time() - self.start_time
-
-        max_score, max_id = th.max(scores, dim=0)
-        if max_score > self.best_score:
-            self.best_score = max_score
-            self.best_solution = solutions[max_id]
-            print(f"best_score {self.best_score}  best_sln_x \n{self.bool_to_str(self.best_solution)}")
-
-        print(f"|{used_time:9.0f}  {i:6}  {obj.item():9.3f}  "
-              f"max_score {max_score.item():9.0f}  "
-              f"best_score {self.best_score:9.0f}")
-
-
-class Evaluator1:
-    def __init__(self, save_dir: str, num_nodes: int, solution: TEN, obj: float):
-        self.start_timer = time.time()
-        self.recorder1 = []
-        self.recorder2 = []
-        self.encoder_base64 = EncoderBase64(num_nodes=num_nodes)
-
-        self.best_solution = solution  # solution x
-        self.best_obj = obj  # objective value of solution x
-
-        self.save_dir = save_dir
-        os.makedirs(self.save_dir, exist_ok=True)
-
-        self.record1(i=0, obj=self.best_obj)
-        self.record2(i=0, obj=self.best_obj, solution=self.best_solution)
-
-    def record1(self, i: float, obj: float):
-        self.recorder1.append((i, obj))
-
-    def record2(self, i: float, obj: float, solution: TEN):
-        self.recorder2.append((i, obj))
-
-        if_update = obj > self.best_obj
-        if if_update:
-            self.best_solution = solution
-            self.best_obj = obj
-        return if_update
-
-    def plot_record(self, fig_dpi: int = 300):
-        if plt is None:
-            return
-
-        if len(self.recorder1) == 0 or len(self.recorder2) == 0:
-            return
-        recorder1 = np.array(self.recorder1)
-        recorder2 = np.array(self.recorder2)
-        np.save(f"{self.save_dir}/recorder1.npy", recorder1)
-        np.save(f"{self.save_dir}/recorder2.npy", recorder2)
-
-        plt.plot(recorder1[:, 0], recorder1[:, 1], linestyle='-', label='real time')
-        plt.plot(recorder2[:, 0], recorder2[:, 1], linestyle=':', label='back test')
-        plt.scatter(recorder2[:, 0], recorder2[:, 1])
-
-        plt.title(f"best_obj_value {self.best_obj}")
-        plt.axis('auto')
-        plt.legend()
-        plt.grid()
-
-        plt.savefig(f"{self.save_dir}/recorder.jpg", dpi=fig_dpi)
-        plt.close('all')
-
-    def logging_print(self, solution: TEN, obj: float, show_str: str = '', if_show_solution: bool = False):
-        used_time = int(time.time() - self.start_timer)
-        solution_str = self.encoder_base64.bool_to_str(solution) if if_show_solution else ''
-        i = self.recorder2[-1][0]
-        print(f"|{i:6} {used_time:4} sec  v {obj:6.0f} < {self.best_obj:6.0f}  "
-              f"{show_str}  {solution_str}")
-
-
 class Evaluator:
-    def __init__(self, save_dir: str, num_nodes: int, x: TEN, v: float):
+    def __init__(self, save_dir: str, num_bits: int, x: TEN, v: float, if_maximize: bool):
         self.start_timer = time.time()
         self.recorder1 = []
         self.recorder2 = []
-        self.encoder_base64 = EncoderBase64(num_nodes=num_nodes)
+        encoder_base64 = EncoderBase64(encode_len=num_bits)  # todo plan to num_bits=x.shape[-1]
+        self.bool_to_str = encoder_base64.bool_to_str
+        self.str_to_bool = encoder_base64.str_to_bool
 
         self.best_x = x  # solution x
         self.best_v = v  # objective value of solution x
 
+        self.if_maximize = if_maximize
         self.save_dir = save_dir
         os.makedirs(self.save_dir, exist_ok=True)
 
         self.record1(i=0, v=self.best_v)
-        self.record2(i=0, v=self.best_v, x=self.best_x)
+        self.record2(i=0, vs=self.best_v, xs=self.best_x)
 
     def record1(self, i: float, v: float):
         self.recorder1.append((i, v))
 
-    def record2(self, i: float, v: float, x: TEN):
-        self.recorder2.append((i, v))
+    def record2(self, i: float, vs: Union[TEN, float], xs: TEN):
+        if len(xs.shape) == 2:
+            good_i = vs.argmax() if self.if_maximize else vs.argmin()
+            good_x = xs[good_i]
+            good_v = vs[good_i]
+        else:
+            good_x = xs
+            good_v = vs
+        good_v = float(good_v)
 
-        if_update = v > self.best_v
+        exec_time = time.time() - self.start_timer
+        self.recorder2.append((i, good_v, exec_time))
+
+        if_update = (good_v > self.best_v) if self.if_maximize else (good_v < self.best_v)
         if if_update:
-            self.best_x = x
-            self.best_v = v
+            self.best_x = good_x
+            self.best_v = good_v
         return if_update
 
-    def plot_record(self, fig_dpi: int = 300):
-        if plt is None:
-            return
-
+    def save_record_draw_plot(self, fig_dpi: int = 300):
         if len(self.recorder1) == 0 or len(self.recorder2) == 0:
             return
+
+        '''save_record'''
         recorder1 = np.array(self.recorder1)
         recorder2 = np.array(self.recorder2)
         np.save(f"{self.save_dir}/recorder1.npy", recorder1)
         np.save(f"{self.save_dir}/recorder2.npy", recorder2)
 
+        '''draw_plot'''
+        if plt is None:
+            return
         plt.plot(recorder1[:, 0], recorder1[:, 1], linestyle='-', label='real time')
         plt.plot(recorder2[:, 0], recorder2[:, 1], linestyle=':', label='back test')
-        plt.scatter(recorder2[:, 0], recorder2[:, 1])
+        plt.scatter(recorder2[:, 0], recorder2[:, 1], s=24)
 
-        plt.title(f"best_obj_value {self.best_v}")
+        plt.title(f"best_obj_value_{self.best_v}")
         plt.axis('auto')
         plt.legend()
         plt.grid()
@@ -196,12 +131,101 @@ class Evaluator:
         plt.savefig(f"{self.save_dir}/recorder.jpg", dpi=fig_dpi)
         plt.close('all')
 
-    def logging_print(self, x: TEN, v: float, show_str: str = '', if_show_x: bool = False):
+    def logging_print(self, show_str: str = '', if_show_x: bool = False):
         used_time = int(time.time() - self.start_timer)
-        x_str = self.encoder_base64.bool_to_str(x) if if_show_x else ''
+        x_str = self.best_x_str if if_show_x else ''
         i = self.recorder2[-1][0]
-        print(f"|{i:6} {used_time:4} sec  v {v:6.0f} < {self.best_v:6.0f}  "
-              f"{show_str}  {x_str}")
+        print(f"|{i:6} {used_time:4} sec  best {self.best_v:12.4f} {show_str}  {x_str}")
+
+    @property
+    def first_v(self) -> float:
+        return self.recorder2[0][1]
+
+    @property
+    def best_x_str(self):
+        return self.bool_to_str(self.best_x).replace('\n', '')
+
+
+class TrainingLogger:
+    def __init__(self):
+        self.recorder = []
+        self.start_time = time.time()
+
+    def add_and_print(self, repeat_id, buffer_id, objective_item):
+        exec_time = int(time.time() - self.start_time)
+        self.recorder.append((repeat_id, buffer_id, exec_time, objective_item))
+        print(f"| {repeat_id:4} {buffer_id:4}  {exec_time:4} sec | obj {objective_item:9.4f}")
+
+    def save_as_csv(self, csv_path: str = './recorder.csv'):
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        os.remove(csv_path) if os.path.exists(csv_path) else None
+        df = pd.DataFrame(self.recorder, columns=['repeat_id', 'buffer_id', 'exec_time', 'objective'])
+        df.to_csv(csv_path, index=False)
+
+    @staticmethod
+    def plot_training_recorder(csv_path, ignore_n: int = 8):
+        # data_dir = f"./recorder"
+        dir_path = os.path.dirname(csv_path)
+        file_name = os.path.basename(csv_path)
+
+        df = pd.read_csv(csv_path)
+        df = df.iloc[ignore_n:]
+
+        name = os.path.splitext(file_name)[0]
+        plt.plot(df['exec_time'], df['objective'], marker=None)
+        plt.xlabel('exec_time')
+        plt.ylabel('objective')
+        plt.title(name)
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(f"{dir_path}/{name}.jpg", dpi=200)
+        print(f"| TrainingLogger save jpg in {dir_path}/{name}.jpg")
+
+    @staticmethod
+    def plot_training_recorders(data_dir: str = './recorder', graph_type_id: int = 0):
+        # data_dir = f"./recorder"
+        import re
+
+        fig, axs = plt.subplots(2, 4, figsize=(18, 10))
+        axs = axs.flatten()
+
+        ignore_n = 8
+        graph_type = ['ErdosRenyi', 'BarabasiAlbert', 'PowerLaw'][graph_type_id]
+        file_names = os.listdir(data_dir)
+        file_names = [name for name in file_names if name.find(graph_type) >= 0]
+        file_names = sorted(file_names, key=lambda name: int(re.search(r'Node(\d+)', name).group(1)))
+        for i, name in enumerate(file_names):
+            path = f"{data_dir}/{name}"
+            df = pd.read_csv(path)
+
+            df = df.iloc[ignore_n:]
+            ax = axs[i]
+            ax.plot(df['exec_time'] / 3600, df['objective'], marker=None)
+            ax.set_xlabel('exec_time (hours)')
+            ax.set_ylabel('objective')
+            ax.set_title(f'{name}')
+            ax.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+
+def read_info_from_recorder(recorder, per_second):
+    recorder = np.array(recorder)
+    exec_times = recorder[:, 2]
+    obj_values = recorder[:, 1]
+
+    for i in range(1, obj_values.shape[0]):
+        obj_values[i] = obj_values[i - 1:i + 1].max()
+
+    ids = []
+    for exec_time in range(per_second, int(exec_times[-1]), per_second):
+        idx = np.searchsorted(exec_times, exec_time, side='right') - 1
+        ids.append(idx)
+    ids.append(-1)
+    ids = np.array(ids)
+
+    info_str = ' '.join(str(v) for v in obj_values[ids].astype(int))
+    return info_str
 
 
 '''check'''
@@ -214,7 +238,8 @@ def check_evaluator():
     temp_xs = th.zeros((1, num_nodes))
     temp_vs = th.ones((1,))
 
-    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_nodes=num_nodes, x=temp_xs[0], v=temp_vs[0].item())
+    evaluator = Evaluator(save_dir=f"{graph_name}_{gpu_id}", num_bits=num_nodes, if_maximize=True,
+                          x=temp_xs[0], v=temp_vs[0].item(), )
     assert isinstance(evaluator, Evaluator)
 
 
@@ -317,7 +342,7 @@ def check_solution_x():
 
     x_str = X_G14
     num_nodes = simulator.num_nodes
-    encoder = EncoderBase64(num_nodes=num_nodes)
+    encoder = EncoderBase64(encode_len=num_nodes)
 
     x = encoder.str_to_bool(x_str)
     vs = simulator.calculate_obj_values(xs=x[None, :])
@@ -352,7 +377,7 @@ def check_solution_x_via_load_graph_info_from_data_dir():
 
     x_str = "1ENcAgeq5br$chpsVe3fOw70QQccW4GqYy308KKusnAOgtzatqJJcEscTR7Vr_FOEzI"
     num_nodes = simulator.num_nodes
-    encoder = EncoderBase64(num_nodes=num_nodes)
+    encoder = EncoderBase64(encode_len=num_nodes)
 
     x = encoder.str_to_bool(x_str)
     xs = x[None, :]

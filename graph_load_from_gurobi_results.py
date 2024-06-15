@@ -88,7 +88,7 @@ def collect_obj_value():
     df.to_csv(save_csv, index=False)
 
 
-def load_graph_info_from_data_dir(csv_path: str, csv_id: int):
+def load_graph_info_from_data_dir(csv_path: str, csv_id: int) -> (str, str):
     # graph_type = ['ErdosRenyi', 'PowerLaw', 'BarabasiAlbert'][1]
     # csv_path = f'./data/syn_{graph_type}_3600.csv'
 
@@ -111,7 +111,16 @@ def load_graph_info_from_data_dir(csv_path: str, csv_id: int):
     if not os.path.exists(txt_path):
         graph_name = map_graph_type_to_name[graph_type]
         txt_path = f"./data/syn_{graph_type}/{graph_name}_{num_nodes}_ID{random_seed_id}.txt"
-    assert os.path.exists(txt_path)
+    if not os.path.exists(txt_path):
+        from graph_utils import load_graph_list
+        graph_name = f"{graph_type}_{num_nodes}_ID{random_seed_id}"
+        graph_list = load_graph_list(graph_name=graph_name)
+        num_edges = len(graph_list)
+        with open(txt_path, 'w') as file:
+            file.write(f"{num_nodes} {num_edges}\n")
+            for n0, n1, dt in graph_list:
+                file.write(f"{n0 + 1} {n1 + 1} {dt}\n")  # 将node_id 由“从0开始”改为“从1开始”
+    assert os.path.exists(txt_path)  # todo
 
     sim_name = f"{graph_type}_{num_nodes}_ID{random_seed_id}"
     return txt_path, sim_name
