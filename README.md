@@ -61,7 +61,7 @@ Pattern II: Take graph maxcut as an example. In right part of the above figure, 
 	</div>
 </a> 
 
-From the above figures, we see that the sampling efficiency is improved by at least 2 ordrs by using GPU-based massively parallel environments compared with conventional methods, i.e., CPU-based environments.
+From the above figures, we used CPU and GPU based environments. We see that the sampling efficiency is improved by at least 2 ordrs by using GPU-based massively parallel environments compared with conventional methods, i.e., CPU-based environments.
 
 # Key References
 
