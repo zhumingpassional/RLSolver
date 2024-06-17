@@ -5,7 +5,7 @@ We aim to showcase the effectiveness of massively parallel environments for comb
 # Overview
 <a target="\_blank">
 	<div align="center">
-		<img src=fig/RLCO_framework.png width="80%"/>
+		<img src=fig/RLSolver_framework.png width="80%"/>
 	</div>
 </a>  
 
