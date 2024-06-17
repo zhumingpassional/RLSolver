@@ -16,7 +16,7 @@ from util import (obj_maxcut,
                   obj_set_cover,
                   obj_graph_coloring,
                   )
-from util import read_set_cover
+from util import read_set_cover_data
 from util import plot_fig
 from util import transfer_nxgraph_to_weightmatrix
 from util import cover_all_edges

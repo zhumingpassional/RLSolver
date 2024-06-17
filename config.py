@@ -1,7 +1,7 @@
 import torch as th
-from typing import List, Union, Tuple
+from typing import List
 from enum import Enum, unique
-from graph_utils import GraphList, obtain_num_nodes
+from baseline.l2a_graph_utils import GraphList, obtain_num_nodes
 import os
 
 @unique
@@ -125,7 +125,7 @@ class ConfigPolicy:
         # from network import PolicyRNN
         # net = PolicyRNN(inp_dim=self.inp_dim, mid_dim=self.mid_dim, out_dim=self.out_dim,
         #                 embed_dim=self.embed_dim, num_heads=self.num_heads, num_layers=self.num_layers).to(device)
-        from network import PolicyTRS
+        from baseline.l2a_network import PolicyTRS
         net = PolicyTRS(inp_dim=self.inp_dim, mid_dim=self.mid_dim, out_dim=self.out_dim,
                         embed_dim=self.embed_dim, num_heads=self.num_heads, num_layers=self.num_layers).to(device)
         if if_valid:
