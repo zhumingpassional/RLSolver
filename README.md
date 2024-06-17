@@ -195,7 +195,7 @@ python baseline/l2a.py  # our algorithm
 
 ## Store Results 
 
-Results will be written to a file result.txt in the folder "result". The first column is the node, and the second column is the label of classified set. For example, 
+Results will be written to a file result.txt in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of classified set. For example, 
 
 1 2  # node 1 in set 2
 
