@@ -52,9 +52,9 @@ Pattern II: Take graph maxcut as an example. In right part of the above figure, 
 
 
 <p align="center">
-  <img alt="Light" src="fig/speed_up_maxcut1.png" width="45%">
+  <img src="fig/speed_up_maxcut1.png" width="45%">
 &nbsp; &nbsp; &nbsp; &nbsp;
-  <img alt="Dark" src="fig/speed_up_maxcut2.png" width="45%">
+  <img src="fig/speed_up_maxcut2.png" width="45%">
 </p>
 
 <a target="\_blank">
