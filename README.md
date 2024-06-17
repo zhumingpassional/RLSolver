@@ -1,4 +1,4 @@
-# RLSolver: Massively Parallel Environments for Combinatorial Optimization (CO) Problems Using Reinforcement Learning
+# RLSolver: GPU-based Massively Parallel Environments for Combinatorial Optimization (CO) Problems Using Reinforcement Learning
 
 We aim to showcase the effectiveness of massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU based parallel environments can significantly improve the sampling efficiency and can obtain high-quality solutions within short time. 
 
@@ -10,7 +10,7 @@ We aim to showcase the effectiveness of massively parallel environments for comb
 </a>  
 
 # Key Technologies
-- **Massively parallel environments** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
+- **GPU-based Massively parallel environments** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
 
 # Two Patterns
 
@@ -46,6 +46,28 @@ We introduce four important functions for a gym-style environment:
 - obj(): Calculate the objective value.
 
 Pattern II: Take graph maxcut as an example. In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
+
+# Sampling Efficiency for GPU-based Massively Parallel Environments
+
+<a target="\_blank">
+	<div align="center">
+		<img src=fig/speed_up_maxcut1.png width="80%"/>
+	</div>
+</a> 
+
+<a target="\_blank">
+	<div align="center">
+		<img src=fig/speed_up_maxcut2.png width="80%"/>
+	</div>
+</a> 
+
+<a target="\_blank">
+	<div align="center">
+		<img src=fig/sampling_efficiency_maxcut.png width="80%"/>
+	</div>
+</a> 
+
+From the above figures, we see that the sampling efficiency is improved by at least 2 ordrs by using GPU-based massively parallel environments compared with conventional methods, i.e., CPU-based environments.
 
 # Key References
 
