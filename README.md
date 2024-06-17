@@ -50,9 +50,11 @@ Pattern II: Take graph maxcut as an example. In right part of the above figure, 
 # Sampling Efficiency for GPU-based Massively Parallel Environments
 
 
-<p float="middle">
-  <img src="/fig/speed_up_maxcut1.png" width="100" />
-  <img src="/fig/speed_up_maxcut2.png" width="100" /> 
+
+<p align="center">
+  <img alt="Light" src="speed_up_maxcut1.png" width="45%">
+&nbsp; &nbsp; &nbsp; &nbsp;
+  <img alt="Dark" src="speed_up_maxcut2.png" width="45%">
 </p>
 
 <a target="\_blank">
