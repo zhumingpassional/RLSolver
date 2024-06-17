@@ -47,9 +47,7 @@ We introduce four important functions for a gym-style environment:
 
 Pattern II: Take graph maxcut as an example. In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
 
-# Sampling Efficiency for GPU-based Massively Parallel Environments
-
-
+# Sampling Efficiency of GPU-based Massively Parallel Environments
 
 <p align="center">
   <img src="fig/speed_up_maxcut1.png" width="43%">
@@ -103,8 +101,6 @@ RLSolver
 └──util.py
 └──util_results.py
 └──README.md
-
-
 ```
 
 
