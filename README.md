@@ -64,9 +64,9 @@ Pattern II: Take graph maxcut as an example. In right part of the above figure, 
 ```
 RLSolver
 └──envs
-    └──graph_max_cut_isco.py
-    └──graph_max_cut_mh_sampling.py
-    └──TNCO_mh_sampling.py
+    └──env_isco.py
+    └──env_l2a_graph_maxcut.py
+    └──env_l2a_TNCO.py
 └──baseline
     └──greedy.py
     └──gurobi.py
@@ -74,17 +74,14 @@ RLSolver
     └──random_walk.py
     └──scip.py
     └──simulated_annealing.py
-    └──S2V_DQN
-    └──DIMES
+    └──l2a_xx.py (ours)
+    └──S2V-DQN
+    └──RUN-CSP
     └──iSCO
     └──PI-GNN
 └──data
 └──result
 └──config.py
-└──evaluator.py
-└──l2a_xx.py (ours)
-└──network.py
-└──main.py
 └──util.py
 └──util_results.py
 └──README.md
@@ -143,7 +140,7 @@ python baseline/iSCO/main.py  # run iSCO
 python baseline/PI-GNN/main.py  # run PI-GNN
 ```
 ```
-python baseline/l2a.py  # our algorithm
+python baseline/l2a_x.py  # our algorithm
 ```
 
 
