@@ -49,8 +49,11 @@ Pattern II: Take graph maxcut as an example. In right part of the above figure, 
 
 # Sampling Efficiency for GPU-based Massively Parallel Environments
 
-![alt-text-1](fig/speed_up_maxcut1.png "Reward in Pattern I") ![alt-text-2](fig/speed_up_maxcut2.png "Objective in in Pattern II")
 
+<p float="left">
+  <img src="/fig/speed_up_maxcut1.png" width="100" />
+  <img src="/fig/speed_up_maxcut2.png" width="100" /> 
+</p>
 
 <a target="\_blank">
 	<div align="center">
