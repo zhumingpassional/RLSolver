@@ -17,7 +17,7 @@ class Problem(Enum):
     graph_coloring = 'graph_coloring'
     tsp = 'tsp'
 
-PROBLEM = Problem.graph_coloring
+PROBLEM = Problem.maxcut
 
 @unique
 class GraphDistriType(Enum):

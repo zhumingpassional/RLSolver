@@ -3,24 +3,23 @@ sys.path.append('../')
 
 import copy
 import time
-from typing import List, Union, Optional
+from typing import Union, Optional
 import numpy as np
 import multiprocessing as mp
 import networkx as nx
-from util import read_nxgraph
-from util import (obj_maxcut,
-                  obj_graph_partitioning,
-                  obj_minimum_vertex_cover,
-                  obj_maximum_independent_set,
-                  obj_set_cover_ratio,
-                  obj_set_cover,
-                  obj_graph_coloring,
-                  )
-from util import read_set_cover_data
-from util import plot_fig
-from util import transfer_nxgraph_to_weightmatrix
-from util import cover_all_edges
-from util import run_greedy_over_multiple_files
+from baseline.util import read_nxgraph
+from baseline.util import (obj_maxcut,
+                           obj_graph_partitioning,
+                           obj_minimum_vertex_cover,
+                           obj_maximum_independent_set,
+                           obj_set_cover_ratio,
+                           obj_set_cover,
+                           obj_graph_coloring,
+                           )
+from baseline.util import plot_fig
+from baseline.util import transfer_nxgraph_to_weightmatrix
+from baseline.util import cover_all_edges
+from baseline.util import run_greedy_over_multiple_files
 from config import *
 
 def split_list(my_list: List[int], chunk_size: int):
@@ -400,7 +399,7 @@ if __name__ == '__main__':
         elif PROBLEM == Problem.graph_coloring:
             num_steps = None
             gr_score, gr_solution, gr_scores = greedy_graph_coloring(num_steps, graph)
-            from util import plot_nxgraph
+            from baseline.util import plot_nxgraph
             fig_filename = '../result/fig.png'
             plot_nxgraph(graph, fig_filename)
 

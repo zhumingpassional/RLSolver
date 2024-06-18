@@ -1,25 +1,22 @@
 import sys
 sys.path.append('../')
 from gurobipy import *
-import os
 import copy
-from typing import List
 import networkx as nx
 import time
 import sys
 import matplotlib.pyplot as plt
 
-from util import read_nxgraph
-from util import calc_txt_files_with_prefix
-from util import calc_result_file_name
-from util import calc_avg_std_of_objs
-from util import plot_fig
-from util import fetch_node
-from util import (transfer_float_to_binary,
-                  transfer_nxgraph_to_adjacencymatrix,
-                  obtain_first_number)
-from util import fetch_indices
-from util import read_tsp,read_knapsack_data,read_set_cover_data
+from baseline.util import read_nxgraph
+from baseline.util import calc_txt_files_with_prefix
+from baseline.util import calc_result_file_name
+from baseline.util import calc_avg_std_of_objs
+from baseline.util import plot_fig
+from baseline.util import fetch_node
+from baseline.util import (transfer_float_to_binary,
+                           transfer_nxgraph_to_adjacencymatrix)
+# from util import fetch_indices
+from baseline.util import read_tsp,read_knapsack_data,read_set_cover_data
 from config import *
 from itertools import combinations
 
@@ -108,7 +105,7 @@ def find_subtour(edges,n):
 def write_statistics(model, new_file, add_slash = False):
     prefix = '// ' if add_slash else ''
     if PROBLEM == Problem.maximum_independent_set:
-        from util import obj_maximum_independent_set
+        from baseline.util import obj_maximum_independent_set
         solution = model._attribute['solution']
         graph = model._attribute['graph']
         obj = obj_maximum_independent_set(solution, graph)
@@ -184,15 +181,15 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
             nodes.append(node)
             values.append(value)
         except ValueError:
-
-            indices = fetch_indices(var.VarName)
-            if indices is not None:
-                i, j = indices
-                if GUROBI_VAR_CONTINUOUS:
-                    value = var.x
-                else:
-                    value = transfer_float_to_binary(var.x)
-                tuples_and_values[(i, j)] = value
+            pass
+            # indices = fetch_indices(var.VarName)
+            # if indices is not None:
+            #     i, j = indices
+            #     if GUROBI_VAR_CONTINUOUS:
+            #         value = var.x
+            #     else:
+            #         value = transfer_float_to_binary(var.x)
+            #     tuples_and_values[(i, j)] = value
 
     with open(new_filename, 'w', encoding="UTF-8") as new_file:
         model._attribute['solution'] = values
@@ -535,7 +532,7 @@ if __name__ == '__main__':
         prefixes = ['syn_10_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)
     else:
-        if_use_syn = False
+        if_use_syn = True
         # time_limits = GUROBI_TIME_LIMITS
         # time_limits = [10 * 60, 20 * 60, 30 * 60, 40 * 60, 50 * 60, 60 * 60]
         if if_use_syn:
@@ -555,7 +552,7 @@ if __name__ == '__main__':
             directory_data = '../data/tsp'
             prefixes = ['tsp_']
 
-        if_use_knapsack = True
+        if_use_knapsack = False
         if if_use_knapsack:
             directory_data = '../data/knapsack'
             prefixes = ['kp_']

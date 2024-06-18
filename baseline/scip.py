@@ -1,17 +1,17 @@
 import sys
 sys.path.append('../')
-from pyscipopt import Model, quicksum, multidict
+from pyscipopt import Model, quicksum
 import os
 import time
 from typing import List
 import networkx as nx
-from util import read_nxgraph
-from util import calc_txt_files_with_prefix
-from util import calc_result_file_name
-from util import calc_avg_std_of_objs
-from util import plot_fig
-from util import fetch_node
-from util import transfer_float_to_binary
+from baseline.util import read_nxgraph
+from baseline.util import calc_txt_files_with_prefix
+from baseline.util import calc_result_file_name
+from baseline.util import calc_avg_std_of_objs
+from baseline.util import plot_fig
+from baseline.util import fetch_node
+from baseline.util import transfer_float_to_binary
 
 
 # the file has been open
