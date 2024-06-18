@@ -2,21 +2,20 @@ import sys
 sys.path.append('../')
 import copy
 import time
-from typing import List, Union, Optional
+from typing import Union, Optional
 import numpy as np
 import random
 import networkx as nx
 from util import read_nxgraph
 from util import cover_all_edges
-from util import read_set_cover
+from util import read_set_cover_data
 from util import (obj_maxcut,
-                  obj_graph_partitioning,
-                  obj_minimum_vertex_cover,
-                  obj_maximum_independent_set,
-                  obj_maximum_independent_set_SA,
-                  obj_set_cover,
-                  obj_graph_coloring,
-                  )
+                           obj_graph_partitioning,
+                           obj_minimum_vertex_cover,
+                           obj_maximum_independent_set,
+                           obj_set_cover,
+                           obj_graph_coloring,
+                           )
 from greedy import (greedy_maxcut,
                     greedy_graph_partitioning,
                     greedy_minimum_vertex_cover,
@@ -25,9 +24,9 @@ from greedy import (greedy_maxcut,
                     greedy_graph_coloring,
                     )
 from util import (write_result,
-                  calc_txt_files_with_prefix,
-                  write_result2,
-                  write_result_set_cover)
+                           calc_txt_files_with_prefix,
+                           write_result2,
+                           write_result_set_cover)
 from util import plot_fig
 # from util import run_simulated_annealing_over_multiple_files
 from config import *
@@ -245,7 +244,7 @@ def run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature,
             filename = files[i]
             print(f'The {i}-th file: {filename}')
             if PROBLEM == Problem.set_cover:
-                num_items, num_sets, item_matrix = read_set_cover(filename)
+                num_items, num_sets, item_matrix = read_set_cover_data(filename)
                 init_temperature = 4
                 num_steps = int(50 * num_sets)
                 score, solution, scores = simulated_annealing_set_cover(init_temperature, num_steps,
@@ -288,7 +287,7 @@ if __name__ == '__main__':
         if_run_set_cover = False
         if if_run_set_cover:
             filename = '../data/set_cover/frb30-15-1.msc'
-            num_items, num_sets, item_matrix = read_set_cover(filename)
+            num_items, num_sets, item_matrix = read_set_cover_data(filename)
             print(f'num_items: {num_items}, num_sets: {num_sets}, item_matrix: {item_matrix}')
             init_temperature = 4
             num_steps = int(100 * num_sets)

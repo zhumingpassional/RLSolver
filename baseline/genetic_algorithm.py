@@ -1,0 +1,192 @@
+import copy
+import numpy as np
+import random
+
+from baseline.util import read_nxgraph
+from baseline.util import obj_maxcut
+
+# constants for tabuSearch
+P_iter = 100
+MaxIter = 100000
+gamma = 60
+
+
+def generate_random(graph):
+    nodes = list(graph.nodes())
+    binary_vector = [random.randint(0, 1) for _ in range(len(nodes))]
+    return tabu_search(binary_vector, graph)
+
+
+def generate_random_population(graph, pop_size):
+    count = 1
+    Pop = []
+    best_binary_vector = []
+    score_list = []
+    best_score = 0
+    while len(Pop) < pop_size:
+        binary_vector, result = generate_random(graph)
+        score = result
+
+        if binary_vector not in Pop:
+            score_list.append(score)
+            Pop.append(binary_vector)
+            print(count, "Score: ", score)
+            count += 1
+            if score > best_score:
+                best_score = score
+                best_binary_vector = binary_vector
+    return Pop, best_binary_vector, best_score, score_list
+
+
+def tenure(iteration, maxT):
+    # Define the sequence of values for the tenure function
+    a = [maxT * bi for bi in [1, 2, 1, 4, 1, 2, 1, 8, 1, 2, 1, 4, 1, 2, 1]]
+    # Define the sequence of interval margins
+    x = [1] + [x + 4 * maxT * bi for x, bi in zip([1] * 15, [1, 2, 1, 4, 1, 2, 1, 8, 1, 2, 1, 4, 1, 2, 1])]
+    # Find the interval to determine the tenure
+    interval = next(i for i, xi in enumerate(x) if xi > iteration) - 1
+    return a[interval]
+
+
+def compute_move_gains(graph, vector, tabu_list):
+    move_gains = []
+    for i in range(len(vector)):
+        delta_v = 0
+        neighbor_nodes = list(graph.neighbors(i))
+        for j in neighbor_nodes:
+            if vector[i] == vector[j]:
+                delta_v += 1
+            else:
+                delta_v -= 1
+        move_gains.append(delta_v)
+
+    return move_gains
+
+
+def update_move_gains(node_flipped, move_gains, vector, graph):
+    neighbors = list(graph.neighbors(node_flipped))
+    for i in neighbors:
+        if vector[i] == vector[node_flipped]:
+            move_gains[i] += 2
+        else:
+            move_gains[i] -= 2
+    move_gains[node_flipped] = -move_gains[node_flipped]
+    return move_gains
+
+
+def perturb(binary_vector):
+    # Randomly select gamma vertices to move
+    vertices_to_move = random.sample(range(len(binary_vector)), gamma)
+
+    # Flip the subsets for the selected vertices
+    for vertex in vertices_to_move:
+        binary_vector[vertex] = 1 - binary_vector[vertex]
+
+    return binary_vector
+
+
+def tabu_search(initial_solution, graph):
+    # Initialize best solution and its score
+    best_solution = initial_solution
+    best_score = obj_maxcut(initial_solution, graph)
+    curr_solution = copy.deepcopy(initial_solution)
+    curr_score = best_score
+    # Initialize iteration counter
+    Iter = 0
+    pit = 0
+
+    # Initialize tabu list and tabu tenure
+    tabu_list = [0] * len(curr_solution)
+    maxT = 150
+
+    # Compute move gains
+    move_gains = compute_move_gains(graph, curr_solution, tabu_list)
+    while Iter < MaxIter:
+        v = 0
+        delta_v = -999999
+        for i in range(0, len(move_gains)):
+            if delta_v < move_gains[i] and tabu_list[i] <= Iter:
+                delta_v = move_gains[i]
+                v = i
+
+        # Move v from its original subset to the opposite set
+        curr_solution[v] = 1 - curr_solution[v]
+        curr_score += delta_v
+        # print("Current ",curr_score)
+        # print("Actual ",obj_maxcut(curr_solution,graph))
+        # Update tabu list and move gains for each vertex v ∈ V
+        tabu_list[v] = maxT + Iter
+        move_gains = update_move_gains(v, move_gains, curr_solution, graph)
+
+        # Update best solution if current solution is better
+        if curr_score > best_score:
+            best_solution = copy.deepcopy(curr_solution)
+            best_score = curr_score
+            pit = 0
+
+        # Increment iteration counter
+        Iter += 1
+        pit += 1
+        # Check if best solution hasn't improved after P_iter iterations
+        if pit == P_iter and curr_score <= best_score:
+            pit = 0
+            curr_solution = perturb(curr_solution)
+            curr_score = obj_maxcut(curr_solution, graph)
+            tabu_list = [0] * len(curr_solution)
+            move_gains = compute_move_gains(graph, curr_solution, tabu_list)
+
+    return best_solution, best_score
+
+def cross_over(population):
+    selected_parents = random.sample(population, num_parents)
+
+    child = []
+    for node in range(0,len(selected_parents[0])):
+        node_in_same_set = all(parent[node] == selected_parents[0][node] for parent in selected_parents)
+
+        if node_in_same_set:
+            child.append(selected_parents[0][node])
+        else:
+            child.append(random.randint(0,1))
+    child, child_score = tabu_search(child,graph)
+    return child
+
+def algorithm_run(graph):
+    population, best_binary_vector, best_score, population_scores = generate_random_population(graph, 10)
+    c_iter = 0
+    print("Start Genetic Crossover")
+    while c_iter < c_itMax:
+        child = cross_over(population)
+        if(child not in population):
+            child_score = obj_maxcut(child,graph)
+
+            print(c_iter + 1," Childs Score: ", child_score)
+    
+            # Finding the min score in the list and replacing it with the child if smaller than child cut
+            min_score_index = np.argmin(population_scores)
+            if(population_scores[min_score_index] < child_score):
+                population_scores[min_score_index] = child_score
+                population[min_score_index] = child
+            c_iter += 1
+        
+
+    max_score_index = np.argmax(population_scores)
+    max_score_vector = population[max_score_index]
+    print("Binary Vector: ", max_score_vector)
+    print("Score of Cut: ", population_scores[max_score_index])
+    print("Genetic Search Complete")
+
+
+    
+if __name__ == '__main__':
+    # Constants
+    num_parents = 5
+    c_itMax = 5
+    # read data
+    graph = read_nxgraph('../data/syn_PL/powerlaw_100_ID0.txt')
+    print("Genetic Search Start")
+    algorithm_run(graph)
+
+    # Cut checker
+    # vector = [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1]
+    # print(obj_maxcut(vector,graph))

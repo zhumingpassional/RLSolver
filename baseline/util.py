@@ -943,8 +943,8 @@ if __name__ == '__main__':
 
     read_txt = True
     if read_txt:
-        graph1 = read_nxgraph('data/gset/gset_14.txt')
-        graph2 = read_nxgraph('data/syn_5_5.txt')
+        graph1 = read_nxgraph('../data/gset/gset_14.txt')
+        graph2 = read_nxgraph('../data/syn_5_5.txt')
 
     # result = Tensor([0, 1, 0, 1, 0, 1, 1])
     # write_result(result)
@@ -997,7 +997,7 @@ if __name__ == '__main__':
 
     if_plot = True
     if(if_plot):
-        dir = 'result/syn_PL_gurobi'
+        dir = '../result/syn_PL_gurobi'
         prefixes = 'powerlaw_1400_'
         running_durations = RUNNING_DURATIONS
         read_result_comments_multifiles(dir, prefixes, running_durations)
@@ -1010,11 +1010,11 @@ if __name__ == '__main__':
         # num_nodess = [20]
         num_graphs = 30
         graph_type = GraphDistriType.barabasi_albert
-        dir = 'data/syn_BA'
+        dir = '../data/syn_BA'
         generate_write_distribution(num_nodess, num_graphs, graph_type, dir)
 
     if_test_read_set_cover = False
-    filename = 'data/set_cover/frb45-21-5.msc'
+    filename = '../data/set_cover/frb45-21-5.msc'
     if if_test_read_set_cover:
         num_items, num_sets, item_matrix = read_set_cover_data(filename)
         print(f'num_items: {num_items}, num_sets: {num_sets}, item_matrix: {item_matrix}')

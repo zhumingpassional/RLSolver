@@ -5,8 +5,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg
-from util import obj_maxcut
-from util import read_nxgraph
+from baseline.util import obj_maxcut
+from baseline.util import read_nxgraph
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     filename = '../data/syn/syn_50_176.txt'
     sdp_maxcut(filename)
 
-    from util import run_sdp_over_multiple_files
+    from baseline.util import run_sdp_over_multiple_files
     alg = sdp_maxcut
     alg_name = 'sdp'
     directory_data = '../data/syn_BA'
