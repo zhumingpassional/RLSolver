@@ -157,7 +157,7 @@ PROBLEM = Problem.maxcut
 ```
 We can select the problems including maxcut, graph partitioning, maximum independent set, set cover, TSP, etc. 
 
-- Process 2: select datasets
+- Process 2: select dataset
 
 Take baseline/greedy.py as an example:
 
