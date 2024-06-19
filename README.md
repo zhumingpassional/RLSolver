@@ -115,7 +115,17 @@ Most data is graph, such as graph maxcut, graph partitioning, TSP.
 - [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
 - __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Google Drive](https://drive.google.com/drive/folders/1gkpndZPj09ew-s9IvrWEZvvCFDWzd7vL?usp=sharing) or [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh for China users).
-  
+
+Take g14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
+
+800 4694 # #nodes is 800, and #edges is 4694.
+
+1 7 1 # node 1 connects with node 7, weight = 1
+
+1 10 1 # node 1 connects node 10,  weight = 1
+
+1 12 1 # node 1 connects node 12, weight = 1
+
 2) Non-graph
 
 The data is not graph, such as the set cover problem, knapsack problem, and binary integer linear programming (BILP).
@@ -124,6 +134,18 @@ The data is not graph, such as the set cover problem, knapsack problem, and bina
 ## Results
 
 Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
+
+Results will be written to a file result.txt in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of classified set. For example, 
+
+1 2  # node 1 in set 2
+
+2 1  # node 2 in set 1
+
+3 2  # node 3 in set 2
+
+4 1  # node 4 in set 1
+
+5 2  # node 5 in set 2
 
 ## Run algorithms
 
@@ -205,19 +227,6 @@ python baseline/l2a_x.py  # our algorithm
   - Branch-and-bound
   - Cutting plane
 
-## Store Results 
-
-Results will be written to a file result.txt in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of classified set. For example, 
-
-1 2  # node 1 in set 2
-
-2 1  # node 2 in set 1
-
-3 2  # node 3 in set 2
-
-4 1  # node 4 in set 1
-
-5 2  # node 5 in set 2
 
 ## Results for graph maxcut
 In the following experiments, we use GPU during training by default. 
