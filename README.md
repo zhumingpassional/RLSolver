@@ -221,6 +221,7 @@ python methods/l2a_x.py  # ours
   - [Random walk]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/random_walk.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/random_walk.py))
   - [Greedy]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/greedy.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/greedy.py))
   - [Simulated annealing]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/simulated_annealing.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/simulated_annealing.py))
+  - [Genetic algorithm](https://github.com/zhumingpassional/RLSolver/blob/master/methods/genetic_algorithm.py)
   - Local search
   - Beam search
   - Tabu search
