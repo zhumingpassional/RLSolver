@@ -17,7 +17,7 @@ from methods.util import (transfer_float_to_binary,
                           transfer_nxgraph_to_adjacencymatrix)
 # from util import fetch_indices
 from methods.util import read_tsp,read_knapsack_data,read_set_cover_data
-from config import *
+from methods.config import *
 from itertools import combinations
 
 # 定义回调函数，每隔一段时间将当前找到的最佳可行解输出到当前目录下以 solution 开头

@@ -29,7 +29,7 @@ from util import (write_result,
                            write_result_set_cover)
 from util import plot_fig
 # from util import run_simulated_annealing_over_multiple_files
-from config import *
+from methods.config import *
 
 
 def simulated_annealing_set_cover(init_temperature: int,

@@ -111,7 +111,7 @@ def obtain_first_number(s: str):
 
 if __name__ == '__main__':
     # dir = 'syn_BA_greedy2approx'
-    dir = 'result/syn_ER_gurobi'
+    dir = '../result/syn_ER_gurobi'
     prefixes = 'erdos_renyi_'
     max_ID = 9
     objs, running_durations, avg_objs, avg_running_durations, std_objs, std_running_durations = read_result_comments_multifiles2(dir, prefixes, max_ID)

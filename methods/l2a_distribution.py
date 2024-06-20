@@ -1,24 +1,11 @@
-import os
-import sys
-import time
-import math
 import json
-import networkx as nx
 import numpy as np
-import torch as th
-import torch.nn as nn
-from tqdm import tqdm
 from l2a_evaluator import Evaluator0
 from simulator import MaxcutSimulator
-from util import (load_graph_from_txt,
-                  save_graph_info_to_txt,
-                  generate_graph,
-                  generate_graph_for_validation,
-                  load_graph,
-                  EncoderBase64,
-                  calc_device
+from util import (generate_graph,
+                  EncoderBase64
                   )
-from config import *
+from methods.config import *
 
 try:
     import matplotlib as mpl

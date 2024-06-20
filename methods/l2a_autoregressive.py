@@ -1,11 +1,10 @@
-import os
-from simulator import MaxcutSimulatorAutoregressive, MaxcutSimulatorReinforce
+from simulator import MaxcutSimulatorAutoregressive
 from local_search import *
 from l2a_evaluator import EncoderBase64
 from l2a_net import PolicyMLP, Net
 from torch.distributions import Binomial
 
-from config import *
+from methods.config import *
 
 def train_embedding_net(simulator: MaxcutSimulatorAutoregressive, net_path='embedding_net.pth'):
     num_nodes = simulator.num_nodes

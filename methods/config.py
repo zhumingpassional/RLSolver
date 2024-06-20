@@ -30,8 +30,8 @@ def calc_device(gpu_id: int):
 
 GPU_ID: int = 0  # -1: cpu, >=0: gpu
 DEVICE: th.device = calc_device(GPU_ID)
-DATA_DIR: str = './data'
-GSET_DIR: str = './data/gset'
+DATA_DIR: str = '../data'
+GSET_DIR: str = '../data/gset'
 GRAPH_DISTRI_TYPE = GraphDistriType.powerlaw
 GRAPH_DISTRI_TYPES: List[GraphDistriType] = [GraphDistriType.erdos_renyi, GraphDistriType.powerlaw, GraphDistriType.barabasi_albert]
     # graph_types = ['erdos_renyi', 'powerlaw', 'barabasi_albert']

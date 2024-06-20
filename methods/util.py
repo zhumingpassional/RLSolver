@@ -2,24 +2,14 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import copy
 from torch.autograd import Variable
-import os
 import functools
 import time
-import torch.nn as nn
 import numpy as np
-from typing import List, Union, Tuple, Optional
+from typing import Union, Tuple
 import networkx as nx
-import pandas as pd
-import torch as th
 from torch import Tensor
-from os import system
-from config import *
-import math
-from enum import Enum
-import tqdm
-import re
 # from methods.simulated_annealing import simulated_annealing_set_cover, simulated_annealing
-from config import *
+from methods.config import *
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
@@ -31,7 +21,7 @@ INT = th.IntTensor
 TEN = th.Tensor
 GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
-from config import GSET_DIR
+from methods.config import GSET_DIR
 DataDir = GSET_DIR
 
 class MyGraph:

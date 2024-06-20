@@ -5,7 +5,7 @@ from util import load_graph, load_graph_auto
 from torch.distributions.categorical import Categorical
 from l2a_net import PolicyGNN
 from l2a_evaluator import Evaluator1
-from config import *
+from methods.config import *
 def map_to_power_of_two(x):
     n = 0
     while 2 ** n <= x:

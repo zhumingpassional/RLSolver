@@ -4,7 +4,7 @@ import logging
 import torch as th
 from torch.nn.utils import clip_grad_norm_
 
-from config import ConfigPolicy, ConfigGraph, GraphList
+from methods.config import ConfigPolicy, ConfigGraph, GraphList
 from methods.l2a_network import reset_parameters_of_model, GraphTRS
 from methods.l2a_evaluator import Evaluator, read_info_from_recorder
 from methods.l2a_graph_max_cut_simulator import SimulatorGraphMaxCut
