@@ -5,13 +5,13 @@ import os
 import time
 from typing import List
 import networkx as nx
-from baseline.util import read_nxgraph
-from baseline.util import calc_txt_files_with_prefix
-from baseline.util import calc_result_file_name
-from baseline.util import calc_avg_std_of_objs
-from baseline.util import plot_fig
-from baseline.util import fetch_node
-from baseline.util import transfer_float_to_binary
+from methods.util import read_nxgraph
+from methods.util import calc_txt_files_with_prefix
+from methods.util import calc_result_file_name
+from methods.util import calc_avg_std_of_objs
+from methods.util import plot_fig
+from methods.util import fetch_node
+from methods.util import transfer_float_to_binary
 
 
 # the file has been open

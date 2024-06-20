@@ -5,11 +5,11 @@ import torch as th
 from torch.nn.utils import clip_grad_norm_
 
 from config import ConfigPolicy, ConfigGraph, GraphList
-from baseline.l2a_network import reset_parameters_of_model, GraphTRS
-from baseline.l2a_evaluator import Evaluator, read_info_from_recorder
-from baseline.l2a_graph_max_cut_simulator import SimulatorGraphMaxCut
-from baseline.l2a_graph_max_cut_local_search import SolverLocalSearch, show_gpu_memory
-from baseline.l2a_graph_utils import load_graph_list
+from methods.l2a_network import reset_parameters_of_model, GraphTRS
+from methods.l2a_evaluator import Evaluator, read_info_from_recorder
+from methods.l2a_graph_max_cut_simulator import SimulatorGraphMaxCut
+from methods.l2a_graph_max_cut_local_search import SolverLocalSearch, show_gpu_memory
+from methods.l2a_graph_utils import load_graph_list
 
 TEN = th.Tensor
 
@@ -153,7 +153,7 @@ def valid_in_single_graph(
     '''model'''
     # from network import PolicyORG
     # policy_net = PolicyORG(num_nodes=num_nodes).to(device)
-    from baseline.l2a_network import PolicyMLP
+    from methods.l2a_network import PolicyMLP
     policy_net = PolicyMLP(num_bits=num_nodes, mid_dim=256).to(device)
     policy_net = th.compile(policy_net) if th.__version__ < '2.0' else policy_net
     # from network import PolicyLSTM
@@ -309,7 +309,7 @@ def valid_in_single_graph_with_graph_net_and_rnn(
     graph_net = GraphTRS(inp_dim=args1.inp_dim, mid_dim=args1.mid_dim, out_dim=args1.out_dim,
                          embed_dim=args1.embed_dim, num_heads=args1.num_heads, num_layers=args1.num_layers).to(device)
     # policy_net = args0.load_net(net_path=args0.net_path, device=device, if_valid=if_valid)
-    from baseline.l2a_network import PolicyRNN
+    from methods.l2a_network import PolicyRNN
     policy_net = PolicyRNN(inp_dim=args1.inp_dim, mid_dim=args1.mid_dim, out_dim=args1.out_dim,
                            embed_dim=args1.embed_dim, num_heads=args1.num_heads, num_layers=args1.num_layers).to(device)
     policy_net = th.compile(policy_net) if th.__version__ < '2.0' else policy_net
