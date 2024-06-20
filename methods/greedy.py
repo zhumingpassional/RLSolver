@@ -20,7 +20,7 @@ from methods.util import plot_fig
 from methods.util import transfer_nxgraph_to_weightmatrix
 from methods.util import cover_all_edges
 from methods.util import run_greedy_over_multiple_files
-from config import *
+from methods.config import *
 
 def split_list(my_list: List[int], chunk_size: int):
     res = []
