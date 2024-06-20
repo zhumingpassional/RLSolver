@@ -169,15 +169,15 @@ Take baseline/greedy.py as an example:
 - Process 3: run algorithm
 
 ```
-python baseline/greedy.py  # run greedy
-python baseline/gurobiy.py  # run gurobi
-python baseline/simulated_annealing.py  # run simulated_annealing
-python baseline/mcpg.py  # run mcpg
-python baseline/iSCO/main.py  # run iSCO
-python baseline/PI-GNN/main.py  # run PI-GNN
+python methods/greedy.py  # run greedy
+python methods/gurobiy.py  # run gurobi
+python methods/simulated_annealing.py  # run simulated_annealing
+python methods/mcpg.py  # run mcpg
+python methods/iSCO/main.py  # run iSCO
+python methods/PI-GNN/main.py  # run PI-GNN
 ```
 ```
-python baseline/l2a_x.py  # our algorithm
+python methods/l2a_x.py  # ours
 ```
 
 
@@ -201,11 +201,11 @@ python baseline/l2a_x.py  # our algorithm
 
 [code](https://github.com/zhumingpassional/Maxcut/tree/master/baseline/variational_classical_annealing_RNN) (VCA_RNN) 2023 Machine_Learning Supplementing recurrent neural networks with annealing to solve combinatorial optimization problems
 
-[code](https://github.com/zhumingpassional/Maxcut/tree/master/baseline/variational_neural_annealing) (VNA) 2021 Nature_Machine_Intelligence Variational neural annealing
+[code](https://github.com/zhumingpassional/Maxcut/tree/master/baseline/variational_neural_annealing) (VNA) 2021 Nature Machine_Intelligence Variational neural annealing
 
 * Discrete sampling
 
-[code](https://github.com/zhumingpassional/RLSolver/tree/master/baseline/iSCO) 2023 (iSCO) ICML Revisiting Sampling for Combinatorial Optimization
+[code](https://github.com/zhumingpassional/RLSolver/tree/master/baseline/iSCO) (iSCO) 2023 ICML Revisiting Sampling for Combinatorial Optimization
   
 * Learning to branch
   
