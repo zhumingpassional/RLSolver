@@ -205,7 +205,7 @@ python methods/l2a_x.py  # ours
 
 * Discrete sampling
 
-[code](https://github.com/zhumingpassional/RLSolver/tree/master/baseline/iSCO) (iSCO) 2023 ICML Revisiting Sampling for Combinatorial Optimization
+[code](https://github.com/zhumingpassional/RLSolver/tree/master/methods/iSCO) (iSCO) 2023 ICML Revisiting Sampling for Combinatorial Optimization
   
 * Learning to branch
   
