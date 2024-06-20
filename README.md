@@ -218,10 +218,10 @@ python methods/l2a_x.py  # ours
 [code](https://github.com/Wenbo11/learntocut) 2020 ICML Reinforcement learning for integer programming: Learning to cut
 
 * Classical methods
-  - [Random walk]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/random_walk.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/random_walk.py))
-  - [Greedy]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/greedy.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/greedy.py))
-  - [Simulated annealing]([https://github.com/zhumingpassional/Maxcut/blob/master/baseline/simulated_annealing.py](https://github.com/zhumingpassional/RLSolver/blob/master/baseline/simulated_annealing.py))
+  - [Greedy](https://github.com/zhumingpassional/RLSolver/blob/master/methods/greedy.py)
+  - [Simulated annealing](https://github.com/zhumingpassional/RLSolver/blob/master/methods/simulated_annealing.py)
   - [Genetic algorithm](https://github.com/zhumingpassional/RLSolver/blob/master/methods/genetic_algorithm.py)
+  - [Random walk](https://github.com/zhumingpassional/RLSolver/blob/master/methods/random_walk.py)
   - Local search
   - Beam search
   - Tabu search
