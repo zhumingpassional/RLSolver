@@ -17,7 +17,7 @@ import math
 from enum import Enum
 import tqdm
 import re
-# from baseline.simulated_annealing import simulated_annealing_set_cover, simulated_annealing
+# from methods.simulated_annealing import simulated_annealing_set_cover, simulated_annealing
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt

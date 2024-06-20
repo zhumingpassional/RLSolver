@@ -18,7 +18,7 @@ import math
 from enum import Enum
 import tqdm
 import re
-# from baseline.simulated_annealing import simulated_annealing_set_cover, simulated_annealing
+# from methods.simulated_annealing import simulated_annealing_set_cover, simulated_annealing
 from config import *
 try:
     import matplotlib as mpl
@@ -901,7 +901,7 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str
             filename = files[i]
             print(f'The {i}-th file: {filename}')
             if PROBLEM == Problem.set_cover:
-                from baseline.greedy import greedy_set_cover
+                from methods.greedy import greedy_set_cover
                 num_items, num_sets, item_matrix = read_set_cover_data(filename)
                 score, solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
                 scoress.append(scores)

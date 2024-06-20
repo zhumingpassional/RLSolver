@@ -7,19 +7,19 @@ from typing import Union, Optional
 import numpy as np
 import multiprocessing as mp
 import networkx as nx
-from baseline.util import read_nxgraph
-from baseline.util import (obj_maxcut,
-                           obj_graph_partitioning,
-                           obj_minimum_vertex_cover,
-                           obj_maximum_independent_set,
-                           obj_set_cover_ratio,
-                           obj_set_cover,
-                           obj_graph_coloring,
-                           )
-from baseline.util import plot_fig
-from baseline.util import transfer_nxgraph_to_weightmatrix
-from baseline.util import cover_all_edges
-from baseline.util import run_greedy_over_multiple_files
+from methods.util import read_nxgraph
+from methods.util import (obj_maxcut,
+                          obj_graph_partitioning,
+                          obj_minimum_vertex_cover,
+                          obj_maximum_independent_set,
+                          obj_set_cover_ratio,
+                          obj_set_cover,
+                          obj_graph_coloring,
+                          )
+from methods.util import plot_fig
+from methods.util import transfer_nxgraph_to_weightmatrix
+from methods.util import cover_all_edges
+from methods.util import run_greedy_over_multiple_files
 from config import *
 
 def split_list(my_list: List[int], chunk_size: int):
@@ -399,7 +399,7 @@ if __name__ == '__main__':
         elif PROBLEM == Problem.graph_coloring:
             num_steps = None
             gr_score, gr_solution, gr_scores = greedy_graph_coloring(num_steps, graph)
-            from baseline.util import plot_nxgraph
+            from methods.util import plot_nxgraph
             fig_filename = '../result/fig.png'
             plot_nxgraph(graph, fig_filename)
 
