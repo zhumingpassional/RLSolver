@@ -83,7 +83,8 @@ RLSolver
     └──env_isco.py
     └──env_l2a_graph_maxcut.py
     └──env_l2a_TNCO.py
-└──baseline
+└──methods
+    └──config.py
     └──genetic_algorithm.py
     └──greedy.py
     └──gurobi.py
@@ -93,14 +94,13 @@ RLSolver
     └──simulated_annealing.py
     └──l2a_xx.py (ours)
     └──util.py
+    └──util_results.py
     └──S2V-DQN
     └──RUN-CSP
     └──iSCO
     └──PI-GNN
 └──data
 └──result
-└──config.py
-└──util_results.py
 └──README.md
 ```
 
