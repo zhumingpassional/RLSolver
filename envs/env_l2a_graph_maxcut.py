@@ -54,7 +54,7 @@ def metropolis_hastings_sampling(probs: TEN, start_xs: TEN, num_repeats: int, nu
     return xs
 
 
-class McMcIterator:
+class MCMC:
     def __init__(self, num_nodes: int, num_sims: int, num_repeats: int, num_searches: int,
                  graph_list: GraphList = (), device=th.device('cpu')):
         self.num_nodes = num_nodes
