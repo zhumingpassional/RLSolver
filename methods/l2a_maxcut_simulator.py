@@ -10,7 +10,7 @@ from l2a_graph_utils import update_xs_by_vs, gpu_info_str, evolutionary_replacem
 TEN = th.Tensor
 
 
-class SimulatorGraphMaxCut:
+class SimulatorMaxcut:
     def __init__(self, sim_name: str = 'max_cut', graph_list: GraphList = (),
                  device=th.device('cpu'), if_bidirectional: bool = False):
         self.device = device
@@ -41,7 +41,7 @@ class SimulatorGraphMaxCut:
         self.sim_ids = th.zeros(len_sim_ids, dtype=int_type, device=device)[None, :]
         self.n0_num_n1 = th.tensor([n1s.shape[0] for n1s in n0_to_n1s], device=device)[None, :]
 
-    def calculate_obj_values(self, xs: TEN, if_sum: bool = True) -> TEN:
+    def obj(self, xs: TEN, if_sum: bool = True) -> TEN:
         num_sims = xs.shape[0]  # 并行维度，环境数量。xs, vs第一个维度， dim0 , 就是环境数量
         if num_sims != self.sim_ids.shape[0]:
             self.n0_ids = self.n0_ids[0].repeat(num_sims, 1)
@@ -55,7 +55,7 @@ class SimulatorGraphMaxCut:
             values = values // 2
         return values
 
-    def calculate_obj_values_for_loop(self, xs: TEN, if_sum: bool = True) -> TEN:  # 代码简洁，但是计算效率低
+    def obj_for_loop(self, xs: TEN, if_sum: bool = True) -> TEN:  # 代码简洁，但是计算效率低
         num_sims, num_nodes = xs.shape
         values = th.zeros((num_sims, num_nodes), dtype=self.int_type, device=self.device)
         for node0 in range(num_nodes):
@@ -77,7 +77,7 @@ class SimulatorGraphMaxCut:
     def local_search_inplace(self, good_xs: TEN, good_vs: TEN,
                              num_iters: int = 8, num_spin: int = 8, noise_std: float = 0.3):
 
-        vs_raw = self.calculate_obj_values_for_loop(good_xs, if_sum=False)
+        vs_raw = self.obj_for_loop(good_xs, if_sum=False)
         good_vs = vs_raw.sum(dim=1).long() if good_vs.shape == () else good_vs.long()
         ws = self.n0_num_n1 - (2 if self.if_bidirectional else 1) * vs_raw
         ws_std = ws.max(dim=0, keepdim=True)[0] - ws.min(dim=0, keepdim=True)[0]
@@ -92,7 +92,7 @@ class SimulatorGraphMaxCut:
 
             xs = good_xs.clone()
             xs[spin_mask] = th.logical_not(xs[spin_mask])
-            vs = self.calculate_obj_values(xs)
+            vs = self.obj(xs)
 
             update_xs_by_vs(good_xs, good_vs, xs, vs, if_maximize=self.if_maximize)
 
@@ -100,7 +100,7 @@ class SimulatorGraphMaxCut:
         for i in range(self.num_nodes):
             xs1 = good_xs.clone()
             xs1[:, i] = th.logical_not(xs1[:, i])
-            vs1 = self.calculate_obj_values(xs1)
+            vs1 = self.obj(xs1)
 
             update_xs_by_vs(good_xs, good_vs, xs1, vs1, if_maximize=self.if_maximize)
         return good_xs, good_vs
@@ -128,7 +128,7 @@ def find_best_num_sims():
 
     graph = load_graph_list(graph_name=graph_name)
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
-    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph_list=graph, device=device, if_bidirectional=False)
+    simulator = SimulatorMaxcut(sim_name=graph_name, graph_list=graph, device=device, if_bidirectional=False)
 
     print('find the best num_sims')
     from math import ceil
@@ -156,11 +156,11 @@ def check_simulator():
 
     graph = load_graph_list(graph_name=graph_name)
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
-    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph_list=graph, device=device)
+    simulator = SimulatorMaxcut(sim_name=graph_name, graph_list=graph, device=device)
 
     for i in range(8):
         xs = simulator.generate_xs_randomly(num_sims=num_sims)
-        obj = simulator.calculate_obj_values(xs=xs)
+        obj = simulator.obj(xs=xs)
         print(f"| {i}  max_obj_value {obj.max().item()}")
     pass
 
@@ -185,12 +185,12 @@ def check_local_search():
         num_iters = 2 ** 5
 
     '''simulator'''
-    sim = SimulatorGraphMaxCut(graph_list=graph_list, device=device, if_bidirectional=True)
+    sim = SimulatorMaxcut(graph_list=graph_list, device=device, if_bidirectional=True)
     if_maximize = sim.if_maximize
 
     '''evaluator'''
     good_xs = sim.generate_xs_randomly(num_sims=num_sims)
-    good_vs = sim.calculate_obj_values(xs=good_xs)
+    good_vs = sim.obj(xs=good_xs)
     from l2a_evaluator import Evaluator
     evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, if_maximize=if_maximize,
                           x=good_xs[0], v=good_vs[0].item(), )
@@ -213,7 +213,7 @@ def check_local_search():
             sys.stdout.flush()
 
             good_xs = sim.generate_xs_randomly(num_sims=num_sims)
-            good_vs = sim.calculate_obj_values(xs=good_xs)
+            good_vs = sim.obj(xs=good_xs)
 
     print(f"\nbest_x.shape {evaluator.best_x.shape}"
           f"\nbest_v {evaluator.best_v}"

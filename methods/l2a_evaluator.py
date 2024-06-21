@@ -334,23 +334,23 @@ hI1MHL$$n7W32E96659blS3WAnnGOr0Vwg7MMvyKS8ignmH_pfy7g1TeTVF1R7SSnUPCojEBO7Sz4ds6
 
 
 def check_solution_x():
-    from l2a_graph_max_cut_simulator import SimulatorGraphMaxCut, load_graph_list
+    from l2a_maxcut_simulator import SimulatorMaxcut, load_graph_list
     graph_name = 'gset_14'
 
     graph = load_graph_list(graph_name=graph_name)
-    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph_list=graph)
+    simulator = SimulatorMaxcut(sim_name=graph_name, graph_list=graph)
 
     x_str = X_G14
     num_nodes = simulator.num_nodes
     encoder = EncoderBase64(encode_len=num_nodes)
 
     x = encoder.str_to_bool(x_str)
-    vs = simulator.calculate_obj_values(xs=x[None, :])
+    vs = simulator.obj(xs=x[None, :])
     print(f"objective value  {vs[0].item():8.2f}  solution {x_str}")
 
 
 def check_solution_x_via_load_graph_info_from_data_dir():
-    from l2a_graph_max_cut_mh_sampling import SimulatorGraphMaxCut
+    from l2a_maxcut_end2end import SimulatorMaxcut
     from l2a_graph_utils import load_graph_list_from_txt
     from l2a_graph_load_from_gurobi_results import load_graph_info_from_data_dir
 
@@ -366,11 +366,11 @@ def check_solution_x_via_load_graph_info_from_data_dir():
 
     txt_path, sim_name = load_graph_info_from_data_dir(csv_path, csv_id)
     graph_list = load_graph_list_from_txt(txt_path=txt_path)
-    simulator = SimulatorGraphMaxCut(sim_name=sim_name, graph_list=graph_list, device=device)
+    simulator = SimulatorMaxcut(sim_name=sim_name, graph_list=graph_list, device=device)
 
     num_sims = 4
     xs = simulator.generate_xs_randomly(num_sims=num_sims)
-    obj = simulator.calculate_obj_values(xs=xs)
+    obj = simulator.obj(xs=xs)
     obj_avg = obj.float().mean().item()
     obj_max = obj.max().item()
     print(f"| obj_value {obj_avg} < {obj_max}")
@@ -381,7 +381,7 @@ def check_solution_x_via_load_graph_info_from_data_dir():
 
     x = encoder.str_to_bool(x_str)
     xs = x[None, :]
-    obj = simulator.calculate_obj_values(xs=xs)
+    obj = simulator.obj(xs=xs)
     obj_avg = obj.float().mean().item()
     obj_max = obj.max().item()
     print(f"| obj_value {obj_avg} < {obj_max}")

@@ -148,10 +148,10 @@ def load_graph_for_sim(df_row, device):  # todo 待处理完beta3的代码后，
     num_nodes = df_row['num_nodes']
     random_seed_id = df_row['random_seed_id']
     txt_path = f"./data/syn_{graph_type}/{graph_type}_{num_nodes}_ID{random_seed_id}.txt"
-    from l2a_graph_max_cut_simulator import SimulatorGraphMaxCut
+    from l2a_maxcut_simulator import SimulatorMaxcut
     from l2a_graph_utils import load_graph_list_from_txt
     graph = load_graph_list_from_txt(txt_path=txt_path)
-    sim = SimulatorGraphMaxCut(sim_name=f"{graph_type}_{num_nodes}_ID{random_seed_id}", graph_list=graph, device=device)
+    sim = SimulatorMaxcut(sim_name=f"{graph_type}_{num_nodes}_ID{random_seed_id}", graph_list=graph, device=device)
     return sim
 
 

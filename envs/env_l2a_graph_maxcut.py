@@ -3,8 +3,8 @@ import sys
 import logging
 import torch as th
 from methods.config import  GraphList
-from methods.l2a_graph_max_cut_simulator import SimulatorGraphMaxCut
-from methods.l2a_graph_max_cut_local_search import SolverLocalSearch, show_gpu_memory
+from methods.l2a_maxcut_simulator import SimulatorMaxcut
+from methods.l2a_maxcut_local_search import SolverLocalSearch, show_gpu_memory
 
 TEN = th.Tensor
 
@@ -54,7 +54,7 @@ def metropolis_hastings_sampling(probs: TEN, start_xs: TEN, num_repeats: int, nu
     return xs
 
 
-class MCMC:
+class MCMC_Maxcut:
     def __init__(self, num_nodes: int, num_sims: int, num_repeats: int, num_searches: int,
                  graph_list: GraphList = (), device=th.device('cpu')):
         self.num_nodes = num_nodes
@@ -65,12 +65,12 @@ class MCMC:
         self.sim_ids = th.arange(num_sims, device=device)
 
         # build in reset
-        self.simulator = SimulatorGraphMaxCut(graph_list=graph_list, device=self.device)  # 初始值
+        self.simulator = SimulatorMaxcut(graph_list=graph_list, device=self.device)  # 初始值
         self.searcher = SolverLocalSearch(simulator=self.simulator, num_nodes=self.num_nodes)
 
     # 如果end to end, graph_list为空元组。如果distribution, 抽样赋值
     def reset(self, graph_list: GraphList = ()):
-        self.simulator = SimulatorGraphMaxCut(graph_list=graph_list, device=self.device)
+        self.simulator = SimulatorMaxcut(graph_list=graph_list, device=self.device)
         self.searcher = SolverLocalSearch(simulator=self.simulator, num_nodes=self.num_nodes)
         self.searcher.reset(xs=self.simulator.generate_xs_randomly(num_sims=self.num_sims))
 
