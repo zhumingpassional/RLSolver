@@ -1,6 +1,6 @@
 from methods.l2a_TNCO_simulator import *
 from methods.l2a_TNCO_local_search import *
-from env_l2a_graph_maxcut import show_gpu_memory, reset_parameters_of_model
+from env_l2a_maxcut import show_gpu_memory, reset_parameters_of_model
 from methods.config import ConfigPolicy
 from torch.nn.utils import clip_grad_norm_
 

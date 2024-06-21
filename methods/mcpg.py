@@ -4,11 +4,11 @@ import sys
 from torch_geometric.data import Data
 from l2a_evaluator import EncoderBase64
 from l2a_maxcut_simulator import load_graph_list
-from envs.env_mcpg_graph_maxcut import (metro_sampling,
-                                        pick_good_xs,
-                                        get_return,
-                                        Sampler
-                                        )
+from envs.env_mcpg_maxcut import (metro_sampling,
+                                  pick_good_xs,
+                                  get_return,
+                                  Sampler
+                                  )
 
 GPU_ID = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 
