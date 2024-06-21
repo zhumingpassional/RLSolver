@@ -5,10 +5,10 @@ import networkx as nx
 import numpy as np
 from typing import List, Union
 import random
-from methods.util import read_nxgraph
-from methods.util import obj_maxcut
-from methods.util import write_result
-from methods.util import plot_fig
+from util import read_nxgraph
+from util import obj_maxcut
+from util import write_result
+from util import plot_fig
 
 import sys
 sys.path.append('../')

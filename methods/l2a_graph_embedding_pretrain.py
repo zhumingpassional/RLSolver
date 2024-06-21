@@ -5,7 +5,7 @@ import torch as th
 import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
 
-from methods.config import ConfigGraph, GraphList
+from config import ConfigGraph, GraphList
 from l2a_network import GraphTRS, create_mask
 from l2a_evaluator import TrainingLogger
 from l2a_graph_utils import build_adjacency_bool, load_graph_list
