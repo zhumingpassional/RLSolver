@@ -80,8 +80,8 @@ From the above figures, we used CPU and GPU based environments. We see that the 
 ```
 RLSolver
 └──envs
-    └──env_isco.py
-    └──env_l2a_graph_maxcut.py
+    └──env_isco_maxcut.py
+    └──env_l2a_maxcut.py
     └──env_l2a_TNCO.py
 └──methods
     └──config.py
