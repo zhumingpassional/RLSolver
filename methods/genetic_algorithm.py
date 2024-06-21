@@ -2,8 +2,8 @@ import copy
 import numpy as np
 import random
 
-from methods.util import read_nxgraph
-from methods.util import obj_maxcut
+from util import read_nxgraph
+from util import obj_maxcut
 
 # constants for tabuSearch
 P_iter = 100

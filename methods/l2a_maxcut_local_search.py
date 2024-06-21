@@ -4,7 +4,7 @@ import time
 import torch as th
 import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
-from l2a_graph_max_cut_simulator import SimulatorGraphMaxCut
+from l2a_maxcut_simulator import SimulatorMaxcut
 from l2a_evaluator import X_G14, X_G15, X_G49, X_G50, X_G22, X_G55, X_G70
 from l2a_evaluator import Evaluator, EncoderBase64
 
@@ -16,7 +16,7 @@ TEN = th.Tensor
 
 
 class SolverLocalSearch:
-    def __init__(self, simulator: SimulatorGraphMaxCut, num_nodes: int):
+    def __init__(self, simulator: SimulatorMaxcut, num_nodes: int):
         self.simulator = simulator
         self.num_nodes = num_nodes
 
@@ -25,7 +25,7 @@ class SolverLocalSearch:
         self.good_vs = th.tensor([])  # objective value
 
     def reset(self, xs: TEN):
-        vs = self.simulator.calculate_obj_values(xs=xs)
+        vs = self.simulator.obj(xs=xs)
 
         self.good_xs = xs
         self.good_vs = vs
@@ -36,7 +36,7 @@ class SolverLocalSearch:
         xs = th.empty((num_sims, self.num_nodes), dtype=th.bool, device=self.simulator.device)
         for sim_id in range(num_sims):
             _xs = self.simulator.generate_xs_randomly(num_sims=num_sims)
-            _vs = self.simulator.calculate_obj_values(_xs)
+            _vs = self.simulator.obj(_xs)
             xs[sim_id] = _xs[_vs.argmax()]
         return xs
 
@@ -46,7 +46,7 @@ class SolverLocalSearch:
         kth = self.num_nodes - num_spin
 
         prev_xs = self.good_xs.clone()
-        prev_vs_raw = sim.calculate_obj_values_for_loop(prev_xs, if_sum=False)
+        prev_vs_raw = sim.obj_for_loop(prev_xs, if_sum=False)
         prev_vs = prev_vs_raw.sum(dim=1)
 
         thresh = None
@@ -61,7 +61,7 @@ class SolverLocalSearch:
 
             xs = prev_xs.clone()
             xs[spin_mask] = th.logical_not(xs[spin_mask])
-            vs = sim.calculate_obj_values(xs)
+            vs = sim.obj(xs)
 
             update_xs_by_vs(prev_xs, prev_vs, xs, vs)
 
@@ -69,7 +69,7 @@ class SolverLocalSearch:
         for i in range(sim.num_nodes):
             xs1 = prev_xs.clone()
             xs1[:, i] = th.logical_not(xs1[:, i])
-            vs1 = sim.calculate_obj_values(xs1)
+            vs1 = sim.obj(xs1)
 
             update_xs_by_vs(prev_xs, prev_vs, xs1, vs1)
 
@@ -128,7 +128,7 @@ def train_loop(num_train, device, seq_len, best_x, num_sims1, sim, net, optimize
         mask = mask[th.randperm(num_nodes)]
         rand_x = best_x.clone()
         rand_x[mask] = th.logical_not(rand_x[mask])
-        rand_v = sim.calculate_obj_values(rand_x[None, :])[0]
+        rand_v = sim.obj(rand_x[None, :])[0]
         good_xs = rand_x.repeat(num_sims1, 1)
         good_vs = rand_v.repeat(num_sims1, )
 
@@ -146,7 +146,7 @@ def train_loop(num_train, device, seq_len, best_x, num_sims1, sim, net, optimize
             noise = th.randn_like(out) * noise_std
             sample = (out + noise).argmax(dim=1)
             xs[sim_ids, sample] = th.logical_not(xs[sim_ids, sample])
-            vs = sim.calculate_obj_values(xs)
+            vs = sim.obj(xs)
 
             out_list[:, i] = out[sim_ids, sample]
 
@@ -171,7 +171,7 @@ def train_loop(num_train, device, seq_len, best_x, num_sims1, sim, net, optimize
 def check_net(net, sim, num_sims):
     num_nodes = sim.encode_len
     good_xs = sim.generate_xs_randomly(num_sims=num_sims)
-    good_vs = sim.calculate_obj_values(good_xs)
+    good_vs = sim.obj(good_xs)
 
     xs = good_xs.clone()
     sim_ids = th.arange(num_sims, device=sim.device)
@@ -181,7 +181,7 @@ def check_net(net, sim, num_sims):
 
         sample = out.argmax(dim=1)
         xs[sim_ids, sample] = th.logical_not(xs[sim_ids, sample])
-        vs = sim.calculate_obj_values(xs)
+        vs = sim.obj(xs)
 
         update_xs_by_vs(good_xs, good_vs, xs, vs)
     return good_xs, good_vs
@@ -209,7 +209,7 @@ def check_generate_best_x():
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
     '''simulator'''
-    sim = SimulatorGraphMaxCut(sim_name=sim_name, device=device)
+    sim = SimulatorMaxcut(sim_name=sim_name, device=device)
     enc = EncoderBase64(encode_len=sim.num_nodes)
     num_nodes = sim.num_nodes
 
@@ -218,7 +218,7 @@ def check_generate_best_x():
     optimizer = th.optim.Adam(net.parameters(), lr=lr, maximize=True)
 
     best_x = enc.str_to_bool(x_str).to(device)
-    best_v = sim.calculate_obj_values(best_x[None, :])[0]
+    best_v = sim.obj(best_x[None, :])[0]
     print(f"{sim_name:32}  num_nodes {sim.num_nodes:4}  obj_value {best_v.item()}  ")
 
     train_loop(num_train, device, seq_len, best_x, num_sims, sim, net, optimizer, show_gap, noise_std)
@@ -276,7 +276,7 @@ def search_and_evaluate_local_search():
 
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
-    simulator_class = SimulatorGraphMaxCut
+    simulator_class = SimulatorMaxcut
     solver_class = SolverLocalSearch
 
     '''simulator'''
@@ -285,7 +285,7 @@ def search_and_evaluate_local_search():
 
     '''evaluator'''
     temp_xs = sim.generate_xs_randomly(num_sims=1)
-    temp_vs = sim.calculate_obj_values(xs=temp_xs)
+    temp_vs = sim.obj(xs=temp_xs)
     evaluator = Evaluator(save_dir=f"{sim_name}_{gpu_id}", num_bits=num_nodes, x=temp_xs[0], v=temp_vs[0].item())
 
     '''solver'''
@@ -298,7 +298,7 @@ def search_and_evaluate_local_search():
     for j2 in range(num_reset):
         print(f"|\n| reset {j2}")
         best_xs = sim.generate_xs_randomly(num_sims)
-        best_vs = sim.calculate_obj_values(best_xs)
+        best_vs = sim.obj(best_xs)
 
         update_j1 = 0
         for j1 in range(num_iter1):

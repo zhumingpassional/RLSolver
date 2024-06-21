@@ -7,106 +7,16 @@ from torch.nn.utils import clip_grad_norm_
 from methods.config import ConfigPolicy, ConfigGraph, GraphList
 from l2a_network import reset_parameters_of_model, GraphTRS
 from l2a_evaluator import Evaluator, read_info_from_recorder
-from l2a_graph_max_cut_simulator import SimulatorGraphMaxCut
-from l2a_graph_max_cut_local_search import SolverLocalSearch, show_gpu_memory
+from l2a_maxcut_simulator import SimulatorMaxcut
+from l2a_maxcut_local_search import SolverLocalSearch, show_gpu_memory
 from l2a_graph_utils import load_graph_list
 
 TEN = th.Tensor
 
-
-def metropolis_hastings_sampling(probs: TEN, start_xs: TEN, num_repeats: int, num_iters: int = -1) -> TEN:
-    """随机平稳采样 是 metropolis-hastings sampling is:
-    - 在状态转移链上 using transition kernel in Markov Chain
-    - 使用随机采样估计 Monte Carlo sampling
-    - 依赖接受概率去达成细致平稳条件 with accept ratio to satisfy detailed balance condition
-    的采样方法。
-
-    工程实现上:
-    - 让它从多个随机的起始位置 start_xs 开始
-    - 每个起始位置建立多个副本 repeat
-    - 循环多次 for _ in range
-    - 直到接受的样本数量超过阈值 count >= 再停止
-
-    这种采样方法允许不同的区域能够以平稳的概率采集到符合采样概率的样本，确保样本数量比例符合期望。
-    具体而言，每个区域内采集到的样本数与该区域所占的平稳分布概率成正比。
-    """
-    # metropolis-hastings sampling: Monte Carlo sampling using transition kernel in Markov Chain with accept ratio
-    xs = start_xs.repeat(num_repeats, 1)  # 并行，，
-    ps = probs.repeat(num_repeats, 1)
-
-    num, dim = xs.shape
-    device = xs.device
-    num_iters = int(dim // 4) if num_iters == -1 else num_iters  # 希望至少有1/4的节点的采样结果被接受
-
-    count = 0
-    for _ in range(4):  # 迭代4轮后，即便被拒绝的节点很多，也不再迭代了。
-        ids = th.randperm(dim, device=device)  # 按随机的顺序，均匀地选择节点进行采样。避免不同节点被采样的次数不同。
-        for i in range(dim):
-            idx = ids[i]
-            chosen_p0 = ps[:, idx]
-            chosen_xs = xs[:, idx]
-            chosen_ps = th.where(chosen_xs, chosen_p0, 1 - chosen_p0)
-
-            accept_rates = (1 - chosen_ps) / chosen_ps
-            accept_masks = th.rand(num, device=device).lt(accept_rates)
-            xs[:, idx] = th.where(accept_masks, th.logical_not(chosen_xs), chosen_xs)
-
-            count += accept_masks.sum()
-            if count >= num * num_iters:
-                break
-        if count >= num * num_iters:
-            break
-    return xs
-
-
-class McMcIterator:
-    def __init__(self, num_nodes: int, num_sims: int, num_repeats: int, num_searches: int,
-                 graph_list: GraphList = (), device=th.device('cpu')):
-        self.num_nodes = num_nodes
-        self.num_sims = num_sims
-        self.num_repeats = num_repeats
-        self.num_searches = num_searches
-        self.device = device
-        self.sim_ids = th.arange(num_sims, device=device)
-
-        # build in reset
-        self.simulator = SimulatorGraphMaxCut(graph_list=graph_list, device=self.device)  # 初始值
-        self.searcher = SolverLocalSearch(simulator=self.simulator, num_nodes=self.num_nodes)
-
-    # 如果end to end, graph_list为空元组。如果distribution, 抽样赋值
-    def reset(self, graph_list: GraphList = ()):
-        self.simulator = SimulatorGraphMaxCut(graph_list=graph_list, device=self.device)
-        self.searcher = SolverLocalSearch(simulator=self.simulator, num_nodes=self.num_nodes)
-        self.searcher.reset(xs=self.simulator.generate_xs_randomly(num_sims=self.num_sims))
-
-        good_xs = self.searcher.good_xs
-        good_vs = self.searcher.good_vs
-        return good_xs, good_vs
-
-    # probs: 策略网络输出值
-    # start_xs： 上一轮step的输出的解中，并行环境输出的最好的解
-    def step(self, start_xs: TEN, probs: TEN) -> (TEN, TEN):
-        xs = metropolis_hastings_sampling(probs=probs, start_xs=start_xs, num_repeats=self.num_repeats, num_iters=-1)
-        vs = self.searcher.reset(xs)
-        for _ in range(self.num_searches):
-            # 再用local search, searcher 是local search
-            xs, vs, num_update = self.searcher.random_search(num_iters=8)
-        return xs, vs
-
-    # 好的解的数量是sim数量，一个环境出一个好的解
-    def pick_good_xs(self, full_xs, full_vs) -> (TEN, TEN):
-        # update good_xs: use .view() instead of .reshape() for saving GPU memory
-        xs_view = full_xs.view(self.num_repeats, self.num_sims, self.num_nodes)
-        vs_view = full_vs.view(self.num_repeats, self.num_sims)
-        ids = vs_view.argmax(dim=0)
-
-        good_xs = xs_view[ids, self.sim_ids]
-        good_vs = vs_view[ids, self.sim_ids]
-        return good_xs, good_vs
+from envs.env_l2a_maxcut import MCMC_Maxcut
 
 
 '''run'''
-
 
 def valid_in_single_graph(
         args0: ConfigPolicy = None,
@@ -167,14 +77,14 @@ def valid_in_single_graph(
 
     '''iterator'''
     th.set_grad_enabled(False)
-    iterator = McMcIterator(num_nodes=num_nodes, num_sims=num_sims, num_repeats=num_repeats, num_searches=num_searches,
-                            graph_list=graph_list, device=device)
-    if_maximize = iterator.simulator.if_maximize
+    mcmc = MCMC_Maxcut(num_nodes=num_nodes, num_sims=num_sims, num_repeats=num_repeats, num_searches=num_searches,
+                       graph_list=graph_list, device=device)
+    if_maximize = mcmc.simulator.if_maximize
 
     '''evaluator'''
     save_dir = f"./ORG_{graph_type}_{num_nodes}"
     os.makedirs(save_dir, exist_ok=True)
-    good_xs, good_vs = iterator.reset(graph_list=graph_list)
+    good_xs, good_vs = mcmc.reset(graph_list=graph_list)
     evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, x=good_xs[0], v=good_vs[0].item(),
                           if_maximize=if_maximize)
     evaluators = []
@@ -185,8 +95,8 @@ def valid_in_single_graph(
         probs = policy_net.auto_regressive(xs_flt=good_xs[good_vs.argmax(), None, :].float())
         probs = probs.repeat(num_sims, 1)
 
-        full_xs, full_vs = iterator.step(start_xs=good_xs, probs=probs)
-        good_xs, good_vs = iterator.pick_good_xs(full_xs=full_xs, full_vs=full_vs)
+        full_xs, full_vs = mcmc.step(start_xs=good_xs, probs=probs)
+        good_xs, good_vs = mcmc.pick_good_xs(full_xs=full_xs, full_vs=full_vs)
 
         advantages = full_vs.float()
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
@@ -245,7 +155,7 @@ def valid_in_single_graph(
 
             _graph_id += 1
             _graph_name = f'{args0.graph_type}_{args0.num_nodes}_ID{_graph_id}'
-            good_xs, good_vs = iterator.reset(graph_list=load_graph_list(graph_name=_graph_name))
+            good_xs, good_vs = mcmc.reset(graph_list=load_graph_list(graph_name=_graph_name))
 
             evaluators.append(evaluator)
             evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, x=good_xs[0], v=good_vs[0].item(),
@@ -320,11 +230,11 @@ def valid_in_single_graph_with_graph_net_and_rnn(
 
     '''iterator'''
     th.set_grad_enabled(False)
-    iterator = McMcIterator(num_nodes=num_nodes, num_sims=num_sims, num_repeats=num_repeats, num_searches=num_searches,
-                            graph_list=graph_list, device=device)
-    if_maximize = iterator.simulator.if_maximize
+    mcmc = MCMC_Maxcut(num_nodes=num_nodes, num_sims=num_sims, num_repeats=num_repeats, num_searches=num_searches,
+                       graph_list=graph_list, device=device)
+    if_maximize = mcmc.simulator.if_maximize
 
-    adj_bool_seq = iterator.simulator.adjacency_bool.float()[:, None, :]
+    adj_bool_seq = mcmc.simulator.adjacency_bool.float()[:, None, :]
     _, _, dec_node = graph_net.get_graph_information(adj_bool_seq, mask=None)
     batch_size = adj_bool_seq.shape[1]
     assert dec_node.shape == (num_nodes, batch_size, args0.embed_dim)
@@ -333,7 +243,7 @@ def valid_in_single_graph_with_graph_net_and_rnn(
     '''evaluator'''
     save_dir = f"./EMB_{graph_type}_{num_nodes}"
     os.makedirs(save_dir, exist_ok=True)
-    good_xs, good_vs = iterator.reset(graph_list=graph_list)
+    good_xs, good_vs = mcmc.reset(graph_list=graph_list)
     evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, x=good_xs[0], v=good_vs[0].item(),
                           if_maximize=if_maximize)
     evaluators = []
@@ -344,8 +254,8 @@ def valid_in_single_graph_with_graph_net_and_rnn(
         probs = policy_net.auto_regressive(xs_flt=good_xs[good_vs.argmax(), None, :].float(), dec_node=dec_node)
         probs = probs.repeat(num_sims, 1)
 
-        full_xs, full_vs = iterator.step(start_xs=good_xs, probs=probs)
-        good_xs, good_vs = iterator.pick_good_xs(full_xs=full_xs, full_vs=full_vs)
+        full_xs, full_vs = mcmc.step(start_xs=good_xs, probs=probs)
+        good_xs, good_vs = mcmc.pick_good_xs(full_xs=full_xs, full_vs=full_vs)
 
         advantages = full_vs.float()
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
@@ -405,9 +315,9 @@ def valid_in_single_graph_with_graph_net_and_rnn(
 
             _graph_id += 1
             _graph_name = f'{args0.graph_type}_{args0.num_nodes}_ID{_graph_id}'
-            adj_bool_seq = iterator.simulator.adjacency_bool.float()[:, None, :]
+            adj_bool_seq = mcmc.simulator.adjacency_bool.float()[:, None, :]
             _, _, dec_node = graph_net.get_graph_information(adj_bool_seq, mask=None)
-            good_xs, good_vs = iterator.reset(graph_list=load_graph_list(graph_name=_graph_name))
+            good_xs, good_vs = mcmc.reset(graph_list=load_graph_list(graph_name=_graph_name))
 
             evaluators.append(evaluator)
             evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, x=good_xs[0], v=good_vs[0].item(),
@@ -481,11 +391,11 @@ def valid_in_single_graph_with_graph_net_and_trs(
 
     '''iterator'''
     th.set_grad_enabled(False)
-    iterator = McMcIterator(num_nodes=num_nodes, num_sims=num_sims, num_repeats=num_repeats, num_searches=num_searches,
-                            graph_list=graph_list, device=device)
-    if_maximize = iterator.simulator.if_maximize
+    mcmc = MCMC_Maxcut(num_nodes=num_nodes, num_sims=num_sims, num_repeats=num_repeats, num_searches=num_searches,
+                       graph_list=graph_list, device=device)
+    if_maximize = mcmc.simulator.if_maximize
 
-    adj_bool_seq = iterator.simulator.adjacency_bool.float()[:, None, :]
+    adj_bool_seq = mcmc.simulator.adjacency_bool.float()[:, None, :]
     _, _, dec_node = graph_net.get_graph_information(adj_bool_seq, mask=None)
     batch_size = adj_bool_seq.shape[1]
     assert dec_node.shape == (num_nodes, batch_size, args0.embed_dim)
@@ -494,7 +404,7 @@ def valid_in_single_graph_with_graph_net_and_trs(
     '''evaluator'''
     save_dir = f"./EMB_{graph_type}_{num_nodes}"
     os.makedirs(save_dir, exist_ok=True)
-    good_xs, good_vs = iterator.reset(graph_list=graph_list)
+    good_xs, good_vs = mcmc.reset(graph_list=graph_list)
     evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, x=good_xs[0], v=good_vs[0].item(),
                           if_maximize=if_maximize)
     evaluators = []
@@ -506,8 +416,8 @@ def valid_in_single_graph_with_graph_net_and_trs(
         probs = policy_net.auto_regressive(xs_flt=good_xs[good_vs.argmax(), None, :].float(), dec_node=dec_node)
         probs = probs.repeat(num_sims, 1)
 
-        full_xs, full_vs = iterator.step(start_xs=good_xs, probs=probs)
-        good_xs, good_vs = iterator.pick_good_xs(full_xs=full_xs, full_vs=full_vs)
+        full_xs, full_vs = mcmc.step(start_xs=good_xs, probs=probs)
+        good_xs, good_vs = mcmc.pick_good_xs(full_xs=full_xs, full_vs=full_vs)
 
         advantages = full_vs.float()
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
@@ -567,9 +477,9 @@ def valid_in_single_graph_with_graph_net_and_trs(
 
             _graph_id += 1
             _graph_name = f'{args0.graph_type}_{args0.num_nodes}_ID{_graph_id}'
-            adj_bool_seq = iterator.simulator.adjacency_bool.float()[:, None, :]
+            adj_bool_seq = mcmc.simulator.adjacency_bool.float()[:, None, :]
             _, _, dec_node = graph_net.get_graph_information(adj_bool_seq, mask=None)
-            good_xs, good_vs = iterator.reset(graph_list=load_graph_list(graph_name=_graph_name))
+            good_xs, good_vs = mcmc.reset(graph_list=load_graph_list(graph_name=_graph_name))
 
             evaluators.append(evaluator)
             evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, x=good_xs[0], v=good_vs[0].item(),
@@ -702,7 +612,7 @@ def run_trs(graph_type='ErdosRenyi'):
     logging.shutdown()
 
 
-def end_to_end_demo_input_graph_list_then_output_x_using_mlp():
+def maxcut_end2end_mlp():
     graph_type = 'PowerLaw'  # ['ErdosRenyi', 'BarabasiAlbert', 'PowerLaw']
     num_nodes = 300
     model_dir = './model/mlp'  # ['model/mlp', 'model/lstm', 'model/trs']
@@ -727,7 +637,7 @@ def end_to_end_demo_input_graph_list_then_output_x_using_mlp():
     print(f"|Solution X {x}")
 
 
-def end_to_end_demo_input_graph_list_then_output_x_using_rnn():
+def maxcut_end2end_rnn():
     graph_type = 'PowerLaw'  # ['ErdosRenyi', 'BarabasiAlbert', 'PowerLaw']
     num_nodes = 300
     model_dir = './model/mlp'  # ['model/mlp', 'model/lstm', 'model/trs']
@@ -752,7 +662,7 @@ def end_to_end_demo_input_graph_list_then_output_x_using_rnn():
     print(f"|Solution X {x}")
 
 
-def end_to_end_demo_input_graph_list_then_output_x_using_trs():
+def maxcut_end2end_trs():
     graph_type = 'PowerLaw'  # ['ErdosRenyi', 'BarabasiAlbert', 'PowerLaw']
     num_nodes = 300
     model_dir = './model/trs'  # ['model/mlp', 'model/lstm', 'model/trs']
@@ -782,6 +692,14 @@ def end_to_end_demo_input_graph_list_then_output_x_using_trs():
 
 
 if __name__ == '__main__':
-    end_to_end_demo_input_graph_list_then_output_x_using_mlp()  # an end-to-end tutorial
-    end_to_end_demo_input_graph_list_then_output_x_using_rnn()  # an end-to-end tutorial
-    end_to_end_demo_input_graph_list_then_output_x_using_trs()  # an end-to-end tutorial
+    # choose 3 neural networks: mlp, rnn, trs
+    use_mlp = True
+    use_rnn = False
+    use_trs = False
+    if use_mlp:
+        maxcut_end2end_mlp()  # an end-to-end tutorial
+    if use_rnn:
+        maxcut_end2end_rnn()  # an end-to-end tutorial
+    if use_trs:
+        maxcut_end2end_trs()  # an end-to-end tutorial
+

@@ -1,6 +1,6 @@
 from l2a_TNCO_simulator import *
 from l2a_TNCO_local_search import *
-from l2a_graph_max_cut_mh_sampling import show_gpu_memory, reset_parameters_of_model
+from l2a_maxcut_end2end import show_gpu_memory, reset_parameters_of_model
 from methods.config import ConfigPolicy
 from torch.nn.utils import clip_grad_norm_
 
@@ -51,7 +51,7 @@ def metropolis_hastings_sampling(probs: TEN, start_xs: TEN, num_repeats: int, nu
     return xs
 
 
-class McMcIterator:
+class MCMC_TNCO:
     def __init__(self, num_sims: int, num_repeats: int, num_searches: int,
                  graph_type: str = 'graph', nodes_list: list = (), device=th.device('cpu')):
         self.num_sims = num_sims
@@ -136,8 +136,8 @@ def valid_in_single_graph(
     show_gap = args0.show_gap
 
     '''iterator'''
-    iterator = McMcIterator(num_sims=num_sims, num_repeats=num_repeats, num_searches=num_searches,
-                            graph_type=graph_type, nodes_list=nodes_list, device=device)
+    iterator = MCMC_TNCO(num_sims=num_sims, num_repeats=num_repeats, num_searches=num_searches,
+                         graph_type=graph_type, nodes_list=nodes_list, device=device)
     num_bits = iterator.num_bits  # todo add num_bits
     if_maximize = iterator.if_maximize
 

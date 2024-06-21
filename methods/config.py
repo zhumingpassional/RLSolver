@@ -16,7 +16,6 @@ class Problem(Enum):
     set_cover = 'set_cover'
     graph_coloring = 'graph_coloring'
     tsp = 'tsp'
-
 PROBLEM = Problem.maxcut
 
 @unique

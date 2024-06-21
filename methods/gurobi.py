@@ -7,17 +7,17 @@ import time
 import sys
 import matplotlib.pyplot as plt
 
-from methods.util import read_nxgraph
-from methods.util import calc_txt_files_with_prefix
-from methods.util import calc_result_file_name
-from methods.util import calc_avg_std_of_objs
-from methods.util import plot_fig
-from methods.util import fetch_node
-from methods.util import (transfer_float_to_binary,
+from util import read_nxgraph
+from util import calc_txt_files_with_prefix
+from util import calc_result_file_name
+from util import calc_avg_std_of_objs
+from util import plot_fig
+from util import fetch_node
+from util import (transfer_float_to_binary,
                           transfer_nxgraph_to_adjacencymatrix)
 # from util import fetch_indices
-from methods.util import read_tsp,read_knapsack_data,read_set_cover_data
-from methods.config import *
+from util import read_tsp,read_knapsack_data,read_set_cover_data
+from config import *
 from itertools import combinations
 
 # 定义回调函数，每隔一段时间将当前找到的最佳可行解输出到当前目录下以 solution 开头
@@ -105,7 +105,7 @@ def find_subtour(edges,n):
 def write_statistics(model, new_file, add_slash = False):
     prefix = '// ' if add_slash else ''
     if PROBLEM == Problem.maximum_independent_set:
-        from methods.util import obj_maximum_independent_set
+        from util import obj_maximum_independent_set
         solution = model._attribute['solution']
         graph = model._attribute['graph']
         obj = obj_maximum_independent_set(solution, graph)
