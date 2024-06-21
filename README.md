@@ -35,7 +35,7 @@ Pattern I: RL-based heuristic formulates the CO problem as Markov decision proce
 
 Pattern I: Take graph maxcut as an example. In left part of of the above figure, the initial state is empty, i.e., no node is selected. Then we select node 1 with the maximum Q-value and add it to the state, thus the new state is [1]. The reward is 2.
 
-Pattern II: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy $\pi$, is a probability vector__ denoting the node is belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. 
+Pattern II: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy is a vector probabilities__ of the nodes belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. 
 
 We introduce four important functions for a gym-style environment:  
 - reset(): Generate a random initial solution. 
