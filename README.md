@@ -47,7 +47,7 @@ Pattern I: In left part of of the above figure, the initial state is empty, i.e.
 
 Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
 
-# Implementation Details for Parallelism
+# Implementation for Parallelism
 
 - All states and objective values are stored by __PyTorch Tensors__, so that they are mapped to CUDA cores and tensor cores of GPUs.
 
