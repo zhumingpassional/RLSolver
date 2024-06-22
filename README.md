@@ -51,7 +51,7 @@ Pattern II: In right part of the above figure, the current state is [2, 3], i.e.
 
 - All states and objective values are stored by __PyTorch Tensors__, so that they are mapped to CUDA cores and tensor cores of GPUs.
 
-- we use __vmap__ to push the map into PyTorch operations, effectively vectorizing those operations.
+- we use __vmap__ (one GPU) or __pmap__ (multiple GPUs) to push the map into PyTorch operations, effectively vectorizing those operations.
 
 '''python
 from torch import vmap
