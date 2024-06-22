@@ -47,6 +47,18 @@ Pattern I: In left part of of the above figure, the initial state is empty, i.e.
 
 Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
 
+# Implementation Details
+
+- All states and objective values are stored by __PyTorch Tensors__, so that they are mapped to CUDA cores and tensor cores of GPUs.
+
+- we use __vmap__ to push the map into PyTorch operations, effectively vectorizing those operations.
+
+'''python
+from torch import vmap
+batched_obj = vmap(obj)
+objs = batched_obj(states) # calculate the objectives of states over the states over all parallel environments
+'''
+
 # Sampling Efficiency of GPU-based Massively Parallel Environments
 
 <p align="center">
