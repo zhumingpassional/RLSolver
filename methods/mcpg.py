@@ -2,8 +2,8 @@ import os
 import torch as th
 import sys
 from torch_geometric.data import Data
-from l2a_evaluator import EncoderBase64
-from l2a_maxcut_simulator import load_graph_list
+from methods.L2A.evaluator import EncoderBase64
+from methods.L2A.maxcut_simulator import load_graph_list
 from envs.env_mcpg_maxcut import (metro_sampling,
                                   pick_good_xs,
                                   get_return,
@@ -223,8 +223,8 @@ def run():
     optimizer = th.optim.Adam(net.parameters(), lr=8e-2)
 
     '''addition'''
-    from l2a_maxcut_simulator import SimulatorMaxcut
-    from l2a_maxcut_local_search import SolverLocalSearch
+    from methods.L2A.maxcut_simulator import SimulatorMaxcut
+    from methods.L2A.maxcut_local_search import SolverLocalSearch
     sim = SimulatorMaxcut(sim_name=sim_name, device=device)
     solver = SolverLocalSearch(simulator=sim, num_nodes=num_nodes)
 

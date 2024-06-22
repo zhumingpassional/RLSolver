@@ -6,10 +6,10 @@ import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
 
 from config import ConfigGraph, GraphList
-from l2a_network import GraphTRS, create_mask
-from l2a_evaluator import TrainingLogger
-from l2a_graph_utils import build_adjacency_bool, load_graph_list
-from l2a_graph_utils import generate_graph_list, get_hot_image_of_graph, get_adjacency_distance_matrix
+from network import GraphTRS, create_mask
+from evaluator import TrainingLogger
+from graph_utils import build_adjacency_bool, load_graph_list
+from graph_utils import generate_graph_list, get_hot_image_of_graph, get_adjacency_distance_matrix
 
 
 def generate_adjacency_seq(num_sims, graph_type, num_nodes, if_tqdm=False):

@@ -112,7 +112,7 @@ def load_graph_info_from_data_dir(csv_path: str, csv_id: int) -> (str, str):
         graph_name = map_graph_type_to_name[graph_type]
         txt_path = f"./data/syn_{graph_type}/{graph_name}_{num_nodes}_ID{random_seed_id}.txt"
     if not os.path.exists(txt_path):
-        from l2a_graph_utils import load_graph_list
+        from graph_utils import load_graph_list
         graph_name = f"{graph_type}_{num_nodes}_ID{random_seed_id}"
         graph_list = load_graph_list(graph_name=graph_name)
         num_edges = len(graph_list)
@@ -148,8 +148,8 @@ def load_graph_for_sim(df_row, device):  # todo 待处理完beta3的代码后，
     num_nodes = df_row['num_nodes']
     random_seed_id = df_row['random_seed_id']
     txt_path = f"./data/syn_{graph_type}/{graph_type}_{num_nodes}_ID{random_seed_id}.txt"
-    from l2a_maxcut_simulator import SimulatorMaxcut
-    from l2a_graph_utils import load_graph_list_from_txt
+    from maxcut_simulator import SimulatorMaxcut
+    from graph_utils import load_graph_list_from_txt
     graph = load_graph_list_from_txt(txt_path=txt_path)
     sim = SimulatorMaxcut(sim_name=f"{graph_type}_{num_nodes}_ID{random_seed_id}", graph_list=graph, device=device)
     return sim

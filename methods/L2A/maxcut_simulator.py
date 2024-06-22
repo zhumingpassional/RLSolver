@@ -3,9 +3,9 @@ import sys
 import time
 import torch as th
 
-from l2a_graph_utils import load_graph_list, GraphList
-from l2a_graph_utils import build_adjacency_bool, build_adjacency_indies, obtain_num_nodes
-from l2a_graph_utils import update_xs_by_vs, gpu_info_str, evolutionary_replacement
+from graph_utils import load_graph_list, GraphList
+from graph_utils import build_adjacency_bool, build_adjacency_indies, obtain_num_nodes
+from graph_utils import update_xs_by_vs, gpu_info_str, evolutionary_replacement
 
 TEN = th.Tensor
 
@@ -191,7 +191,7 @@ def check_local_search():
     '''evaluator'''
     good_xs = sim.generate_xs_randomly(num_sims=num_sims)
     good_vs = sim.obj(xs=good_xs)
-    from l2a_evaluator import Evaluator
+    from evaluator import Evaluator
     evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, if_maximize=if_maximize,
                           x=good_xs[0], v=good_vs[0].item(), )
 
