@@ -334,7 +334,7 @@ hI1MHL$$n7W32E96659blS3WAnnGOr0Vwg7MMvyKS8ignmH_pfy7g1TeTVF1R7SSnUPCojEBO7Sz4ds6
 
 
 def check_solution_x():
-    from l2a_maxcut_simulator import SimulatorMaxcut, load_graph_list
+    from maxcut_simulator import SimulatorMaxcut, load_graph_list
     graph_name = 'gset_14'
 
     graph = load_graph_list(graph_name=graph_name)
@@ -350,9 +350,9 @@ def check_solution_x():
 
 
 def check_solution_x_via_load_graph_info_from_data_dir():
-    from l2a_maxcut_end2end import SimulatorMaxcut
-    from l2a_graph_utils import load_graph_list_from_txt
-    from l2a_graph_load_from_gurobi_results import load_graph_info_from_data_dir
+    from maxcut_end2end import SimulatorMaxcut
+    from graph_utils import load_graph_list_from_txt
+    from graph_load_from_gurobi_results import load_graph_info_from_data_dir
 
     gpu_id = -1
     excel_id = 152  # num_nodes==400, ID=0

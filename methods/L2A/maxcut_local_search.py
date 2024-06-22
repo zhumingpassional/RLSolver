@@ -4,9 +4,9 @@ import time
 import torch as th
 import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
-from l2a_maxcut_simulator import SimulatorMaxcut
-from l2a_evaluator import X_G14, X_G15, X_G49, X_G50, X_G22, X_G55, X_G70
-from l2a_evaluator import Evaluator, EncoderBase64
+from maxcut_simulator import SimulatorMaxcut
+from evaluator import X_G14, X_G15, X_G49, X_G50, X_G22, X_G55, X_G70
+from evaluator import Evaluator, EncoderBase64
 
 # TODO plan to remove
 

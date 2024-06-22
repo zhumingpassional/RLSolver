@@ -1,10 +1,7 @@
-import os
-import sys
-import logging
 import torch as th
 from methods.config import  GraphList
-from methods.l2a_maxcut_simulator import SimulatorMaxcut
-from methods.l2a_maxcut_local_search import SolverLocalSearch, show_gpu_memory
+from methods.L2A.maxcut_simulator import SimulatorMaxcut
+from methods.L2A.maxcut_local_search import SolverLocalSearch
 
 TEN = th.Tensor
 

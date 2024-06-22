@@ -2,8 +2,8 @@ import os
 import time
 
 import torch as th
-from l2a_TNCO_simulator import SimulatorTensorNetContract
-from l2a_evaluator import Evaluator
+from TNCO_simulator import SimulatorTensorNetContract
+from evaluator import Evaluator
 
 TEN = th.Tensor
 
@@ -113,12 +113,12 @@ def check_searcher():
     gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
-    from l2a_TNCO_simulator import EdgeSortStrH2OSycamoreN53M20, NodesSycamoreN53M20
+    from TNCO_simulator import EdgeSortStrH2OSycamoreN53M20, NodesSycamoreN53M20
     graph_name = 'SycamoreN53M20'
     nodes_list, ban_edges = NodesSycamoreN53M20, 0
     edge_sort_str = EdgeSortStrH2OSycamoreN53M20  # 21.1282464668655585, otherSOTA 18.544
 
-    from l2a_TNCO_simulator import convert_str_ary_to_list_as_edge_sort
+    from TNCO_simulator import convert_str_ary_to_list_as_edge_sort
     edge_sort = convert_str_ary_to_list_as_edge_sort(edge_sort_str)
     edge_sort = th.tensor(edge_sort, dtype=th.long).to(device)
 
@@ -138,9 +138,9 @@ def check_searcher():
 
     '''edge_sort to x'''
     # edge_sort = th.arange(env.num_edges, device=device)
-    from l2a_TNCO_simulator import StrSycamoreN53M20
+    from TNCO_simulator import StrSycamoreN53M20
     x_str = StrSycamoreN53M20
-    from l2a_evaluator import EncoderBase64
+    from evaluator import EncoderBase64
     encoder_base64 = EncoderBase64(encode_len=env.num_bits)
     x = encoder_base64.str_to_bool(x_str=x_str).to(device)
     edge_sorts = env.convert_binary_xs_to_edge_sorts(xs=x[None, :])

@@ -1,6 +1,6 @@
-from l2a_TNCO_simulator import *
-from l2a_TNCO_local_search import *
-from l2a_maxcut_end2end import show_gpu_memory, reset_parameters_of_model
+from TNCO_simulator import *
+from TNCO_local_search import *
+from maxcut_end2end import show_gpu_memory, reset_parameters_of_model
 from methods.config import ConfigPolicy
 from torch.nn.utils import clip_grad_norm_
 
@@ -144,7 +144,7 @@ def valid_in_single_graph(
     '''model'''
     # from network import PolicyORG
     # policy_net = PolicyORG(num_bits=num_bits).to(device)
-    from l2a_network import PolicyMLP
+    from network import PolicyMLP
     policy_net = PolicyMLP(num_bits=num_bits).to(device)
     policy_net = th.compile(policy_net) if th.__version__ < '2.0' else policy_net
 

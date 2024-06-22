@@ -1191,7 +1191,7 @@ def check_str_edge_sort():
           f"\nnum_edges      {sim.num_edges:9}"
           f"\nban_edges      {sim.ban_edges:9}")
 
-    from l2a_evaluator import EncoderBase64
+    from evaluator import EncoderBase64
     encoder_base64 = EncoderBase64(encode_len=sim.num_bits)
     x = encoder_base64.str_to_bool(x_str=x_str)
     edge_sorts = sim.convert_binary_xs_to_edge_sorts(xs=x[None, :])
