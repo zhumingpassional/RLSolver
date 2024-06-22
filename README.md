@@ -56,7 +56,7 @@ Pattern II: In right part of the above figure, the current state is [2, 3], i.e.
 ```
 from torch import vmap
 batched_obj = vmap(obj)
-objs = batched_obj(states) # calculate the objectives of states over the states over all parallel environments
+objs = batched_obj(states) # calculate the objective values of states over all parallel environments
 ```
 
 # Sampling Efficiency of GPU-based Massively Parallel Environments
