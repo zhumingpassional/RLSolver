@@ -192,7 +192,7 @@ python methods/iSCO/main.py  # run iSCO
 python methods/PI-GNN/main.py  # run PI-GNN
 ```
 ```
-python methods/l2a/l2a_x.py  # ours
+python methods/L2A/maxcut_end2end.py  # ours
 ```
 
 
