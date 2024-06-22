@@ -47,7 +47,7 @@ Pattern I: In left part of of the above figure, the initial state is empty, i.e.
 
 Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
 
-# Implementation for Parallelism
+# GPU-based Implementation for Parallelism
 
 - All states and objective values are stored by __PyTorch Tensors__, so that they are mapped to CUDA cores and tensor cores of GPUs.
 
@@ -162,7 +162,7 @@ Results will be written to a file result.txt in the folder "result". Take graph 
 
 5 2  # node 5 in set 2
 
-## Run algorithms
+## Run methods
 
 - Process 1: select problem
 
@@ -181,7 +181,7 @@ Take baseline/greedy.py as an example:
  prefixes = ['erdos_renyi_1000_'] # select the graphs with 1000 nodes
 ```
 
-- Process 3: run algorithm
+- Process 3: run method
 
 ```
 python methods/greedy.py  # run greedy
@@ -192,7 +192,7 @@ python methods/iSCO/main.py  # run iSCO
 python methods/PI-GNN/main.py  # run PI-GNN
 ```
 ```
-python methods/l2a_x.py  # ours
+python methods/l2a/l2a_x.py  # ours
 ```
 
 
@@ -244,7 +244,7 @@ python methods/l2a_x.py  # ours
   - Cutting plane
 
 
-## Results for graph maxcut
+## Results for Graph Maxcut
 
 In the following experiments, we used GPU during training by default. The best-known results are labed in bold.
 
