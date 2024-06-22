@@ -59,7 +59,7 @@ from torch import vmap
 batched_obj = vmap(objective)
 objs = batched_obj(states)
 ```
-where ``objective" is the calculation of the objective value for a state.  
+where "objective" is the calculation of the objective value for a state.  
 
 # Sampling Efficiency of GPU-based Massively Parallel Environments
 
