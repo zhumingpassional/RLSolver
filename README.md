@@ -106,9 +106,9 @@ RLSolver
     └──random_walk.py
     └──scip.py
     └──simulated_annealing.py
-    └──l2a_xx.py (ours)
     └──util.py
     └──util_results.py
+    └──L2A (ours)
     └──S2V-DQN
     └──RUN-CSP
     └──iSCO
