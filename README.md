@@ -20,14 +20,10 @@ We aim to showcase the effectiveness of massively parallel environments for comb
 	</div>
 </a>  
 
-
-
 Pattern I: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into the solution set. There are three important functions for a gym-style environment:  
 - reset(): Set the selected nodes as an empty set. 
 - step(): Select the node with maximum Q-value and then add it to the set.  
 - reward(): Calculate the objective values over all simulation environments.
-
-
 
 Pattern II: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy is a vector of probabilities__ of the nodes belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. 
 
@@ -39,7 +35,7 @@ We introduce four important functions for a gym-style environment:
 - pick\_good\_xs(): Select the good solutions in all parallel environments, where each environment returns exactly one good solution with corresponding objective value.
 - obj(): Calculate the objective value.
 
-# Example 
+# Example (Graph Maxcut)
 
 <a target="\_blank">
 	<div align="center">
@@ -47,9 +43,9 @@ We introduce four important functions for a gym-style environment:
 	</div>
 </a> 
 
-Pattern I: Take graph maxcut as an example. In left part of of the above figure, the initial state is empty, i.e., no node is selected. Then we select node 1 with the maximum Q-value and add it to the state, thus the new state is [1]. The reward is 2.
+Pattern I: In left part of of the above figure, the initial state is empty, i.e., no node is selected. Then we select node 1 with the maximum Q-value and add it to the state, thus the new state is [1]. The reward is 2.
 
-Pattern II: Take graph maxcut as an example. In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
+Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
 
 # Sampling Efficiency of GPU-based Massively Parallel Environments
 
