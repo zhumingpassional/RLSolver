@@ -173,7 +173,7 @@ config.py
 ```
 PROBLEM = Problem.maxcut
 ```
-We can select the problems including maxcut, graph partitioning, maximum independent set, set cover, TSP, etc. 
+We can select the problems including maxcut, graph partitioning, TSP, etc. 
 
 - Process 2: select dataset
 
@@ -224,9 +224,9 @@ python methods/L2A/maxcut_end2end.py  # ours
 
 * Variational annealing
 
-[code](https://github.com/zhumingpassional/Maxcut/tree/master/baseline/variational_classical_annealing_RNN) (VCA_RNN) 2023 Machine_Learning Supplementing recurrent neural networks with annealing to solve combinatorial optimization problems
+[code](https://github.com/VectorInstitute/VariationalNeuralAnnealing) (VCA_RNN) 2023 Machine_Learning Supplementing recurrent neural networks with annealing to solve combinatorial optimization problems
 
-[code](https://github.com/zhumingpassional/Maxcut/tree/master/baseline/variational_neural_annealing) (VNA) 2021 Nature Machine_Intelligence Variational neural annealing
+[code](https://github.com/VectorInstitute/VariationalNeuralAnnealing) (VNA) 2021 Nature Machine_Intelligence Variational neural annealing
 
 * Discrete sampling
 
