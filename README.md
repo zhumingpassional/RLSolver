@@ -208,9 +208,9 @@ python methods/L2A/maxcut_end2end.py  # ours
 
 * RL-based annealing using massively parallel enironments
   
-2023 [code](https://github.com/zhumingpassional/RLSolver) NeurIPS Classical Simulation of Quantum Circuits: Parallel Environments and Benchmark
+[code](https://github.com/zhumingpassional/RLSolver) 2023 NeurIPS Classical Simulation of Quantum Circuits: Parallel Environments and Benchmark
 
-2023 [code](https://github.com/zhumingpassional/RLSolver) NeurIPS workshop K-Spin Ising Model for Combinatorial Optimizations over Graphs: A Reinforcement Learning Approach
+[code](https://github.com/zhumingpassional/RLSolver) 2023 NeurIPS workshop K-Spin Ising Model for Combinatorial Optimizations over Graphs: A Reinforcement Learning Approach
 
 [code](https://github.com/AI4Finance-Foundation/ElegantRL) 2021 NeurIPS workshop ElegantRL-Podracer: Scalable and Elastic Library for Cloud-Native Deep Reinforcement Learning
 
