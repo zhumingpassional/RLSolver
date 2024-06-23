@@ -12,6 +12,10 @@ We aim to showcase the effectiveness of massively parallel environments for comb
 # Key Technologies
 - **GPU-based Massively parallel environments** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
 
+# Why Use GPU-based Massively Parallel Environments?
+
+RL is a promising technique for solving CO problems due to its powerful search capability; however, the bottleneck is sampling efficiency since existing solver engines (a.k.a, gym-style environments) are implemented on CPUs. Training the policy network is essentially estimating the gradients via a Markov chain Monte Carlo (MCMC) simulation, which requires a large number of samples from environments. Existing CPU-based environments have two significant disadvantages: 1) The number of CPU cores is typically small, generally ranging from 16 to 256, resulting in a small number of parallel environments. 2) The communication link between CPUs and GPUs has limited bandwidth.
+
 # Two Patterns
 
 <a target="\_blank">
