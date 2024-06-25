@@ -420,11 +420,11 @@ if __name__ == '__main__':
 
         alg_name = "greedy"
         num_steps = None
-        # directory_data = '../data/syn_BA'
-        directory_data = '../data/syn_ER'
+        directory_data = '../data/syn_BA'
+        # directory_data = '../data/syn_ER'
         # directory_data = '../data/syn'
         # prefixes = ['barabasi_albert_100_']
-        prefixes = ['erdos_renyi_100_']
+        prefixes = ['barabasi_albert_100_']
         # prefixes = ['syn_10_']
 
         if_run_set_cover = False
