@@ -6,16 +6,22 @@ from typing import Union, Optional
 import numpy as np
 import random
 import networkx as nx
-from util import read_nxgraph
-from util import cover_all_edges
-from util import read_set_cover_data
+
 from util import (obj_maxcut,
-                           obj_graph_partitioning,
-                           obj_minimum_vertex_cover,
-                           obj_maximum_independent_set,
-                           obj_set_cover,
-                           obj_graph_coloring,
-                           )
+                  read_nxgraph,
+                  cover_all_edges,
+                  read_set_cover_data,
+                  obj_graph_partitioning,
+                  obj_minimum_vertex_cover,
+                  obj_maximum_independent_set,
+                  obj_set_cover,
+                  obj_graph_coloring,
+                  write_result,
+                  calc_txt_files_with_prefix,
+                  write_result2,
+                  write_result_set_cover,
+                  plot_fig
+                 )
 from greedy import (greedy_maxcut,
                     greedy_graph_partitioning,
                     greedy_minimum_vertex_cover,
@@ -23,11 +29,6 @@ from greedy import (greedy_maxcut,
                     greedy_set_cover,
                     greedy_graph_coloring,
                     )
-from util import (write_result,
-                           calc_txt_files_with_prefix,
-                           write_result2,
-                           write_result_set_cover)
-from util import plot_fig
 # from util import run_simulated_annealing_over_multiple_files
 from methods.config import *
 
@@ -99,8 +100,8 @@ def simulated_annealing_set_cover(init_temperature: int,
     return curr_score, curr_solution, scores
 
 
-def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: nx.Graph) -> (
-int, Union[List[int], np.array], List[int]):
+def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: nx.Graph) \
+        -> (int, Union[List[int], np.array], List[int]):
     print('simulated_annealing')
     num_nodes = int(graph.number_of_nodes())
     if PROBLEM == Problem.maxcut:
