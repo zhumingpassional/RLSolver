@@ -423,7 +423,6 @@ if __name__ == '__main__':
         directory_data = '../data/syn_BA'
         # directory_data = '../data/syn_ER'
         # directory_data = '../data/syn'
-        # prefixes = ['barabasi_albert_100_']
         prefixes = ['barabasi_albert_100_']
         # prefixes = ['syn_10_']
 
