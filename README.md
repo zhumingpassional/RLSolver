@@ -182,8 +182,8 @@ We can select the problems including maxcut, graph partitioning, TSP, etc.
 Take methods/greedy.py as an example:
 
 ```
- directory_data = '../data/syn_ER' # the directory of datasets
- prefixes = ['erdos_renyi_1000_'] # select the graphs with 1000 nodes
+ directory_data = '../data/syn_BA' # the directory of datasets
+ prefixes = ['barabasi_albert_100_'] # select the graphs with 100 nodes
 ```
 
 - Process 3: run method
@@ -226,7 +226,7 @@ python methods/L2A/maxcut_end2end.py  # ours
 
 * Variational annealing
 
-[code](https://github.com/VectorInstitute/VariationalNeuralAnnealing) (VCA_RNN) 2023 Machine_Learning Supplementing recurrent neural networks with annealing to solve combinatorial optimization problems
+[code](https://github.com/RNN-VCA-CO/RNN-VCA-CO) (VCA_RNN) 2023 Machine_Learning Supplementing recurrent neural networks with annealing to solve combinatorial optimization problems
 
 [code](https://github.com/VectorInstitute/VariationalNeuralAnnealing) (VNA) 2021 Nature Machine_Intelligence Variational neural annealing
 
