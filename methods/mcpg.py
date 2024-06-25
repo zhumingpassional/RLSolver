@@ -2,8 +2,8 @@ import os
 import torch as th
 import sys
 from torch_geometric.data import Data
-from methods.L2A.evaluator import EncoderBase64
-from methods.L2A.maxcut_simulator import load_graph_list
+from L2A.evaluator import EncoderBase64
+from L2A.maxcut_simulator import load_graph_list
 from envs.env_mcpg_maxcut import (metro_sampling,
                                   pick_good_xs,
                                   get_return,
@@ -162,8 +162,8 @@ def run():
     # path = 'data/gset_15.txt'
     # path = 'data/gset_49.txt'
     # path = 'data/gset_50.txt'
-    graph_type = ['ErdosRenyi', 'BarabasiAlbert', 'PowerLaw'][2]
-    num_nodes = 300
+    graph_type = ['ErdosRenyi', 'BarabasiAlbert', 'PowerLaw'][1]
+    num_nodes = 100
     graph_id = 0
     graph_name = f"{graph_type}_{num_nodes}_ID{graph_id}"
     path = f'temp_{graph_name}.txt'

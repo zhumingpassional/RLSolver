@@ -54,6 +54,9 @@ def read_result_comments_multifiles2(dir: str, prefixes: str, max_ID: int):
         num_nodes, ID, running_duration, obj = read_result_comments(file)
         if ID >= max_ID + 1:
             continue
+        if num_nodes == 200:
+            print("ID: ", ID)
+            aaa = 1
         if str(num_nodes) not in objs.keys():
             objs[str(num_nodes)] = [obj]
             running_durations[str(num_nodes)] = [running_duration]
@@ -111,8 +114,9 @@ def obtain_first_number(s: str):
 
 if __name__ == '__main__':
     # dir = 'syn_BA_greedy2approx'
-    dir = '../result/syn_ER_gurobi'
-    prefixes = 'erdos_renyi_'
+    dir = '../result/syn_BA_gurobi'
+    # prefixes = 'barabasi_albert_200'
+    prefixes = 'barabasi_albert_'
     max_ID = 9
     objs, running_durations, avg_objs, avg_running_durations, std_objs, std_running_durations = read_result_comments_multifiles2(dir, prefixes, max_ID)
 
