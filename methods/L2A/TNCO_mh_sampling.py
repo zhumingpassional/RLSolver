@@ -1,7 +1,7 @@
 from TNCO_simulator import *
 from TNCO_local_search import *
 from maxcut_end2end import show_gpu_memory, reset_parameters_of_model
-from methods.config import ConfigPolicy
+from config import ConfigPolicy
 from torch.nn.utils import clip_grad_norm_
 
 
