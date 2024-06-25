@@ -4,6 +4,7 @@ from enum import Enum, unique
 from methods.L2A.graph_utils import GraphList, obtain_num_nodes
 import os
 
+ModelDir = './model'  # FIXME plan to cancel
 
 class ConfigGraph:
     def __init__(self, graph_list: GraphList = None, graph_type: str = 'max_cut', num_nodes: int = 0):
