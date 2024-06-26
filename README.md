@@ -4,8 +4,8 @@ We aim to showcase the effectiveness of massively parallel environments for comb
 
 # Overview
 
-This project has three layers:
-- GPU-based environments: providing massively parallel environments using GPUs.
+RLSolver has three layers:
+- Environments: providing massively parallel environments using GPUs.
 - RL agents: providing RL algorithms, e.g., REINFORCE.
 - Problems: typical CO problems, e.g., graph maxcut and TNCO.
 
