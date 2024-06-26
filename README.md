@@ -79,7 +79,7 @@ Pattern II: In right part of the above figure, the current state is [2, 3], i.e.
 
 - All states and objective values are stored by __PyTorch Tensors__, so that they are mapped to CUDA cores and tensor cores of GPUs.
 
-- we use __vmap__ (one GPU) or __pmap__ (multiple GPUs) to push the map into PyTorch operations, effectively vectorizing those operations.
+- We use __vmap__ (one GPU) or __pmap__ (multiple GPUs) to push the map into PyTorch operations, effectively vectorizing those operations.
 
 For example, we calculate the objective values of states over all parallel environments with the following codes:
 ```
@@ -87,7 +87,7 @@ from torch import vmap
 batched_obj = vmap(objective)
 objs = batched_obj(states)
 ```
-where "objective" is the calculation of the objective value for a state.  
+where "objective" is the calculation of the objective value for one state.  
 
 
 # Key References
@@ -106,6 +106,8 @@ where "objective" is the calculation of the objective value for a state.
 
 ```
 RLSolver
+└──data
+└──result
 └──envs
     └──env_isco_maxcut.py
     └──env_l2a_maxcut.py
@@ -127,8 +129,6 @@ RLSolver
     └──iSCO
     └──PI-GNN
     └──tsp_alg // TSP algorithms
-└──data
-└──result
 └──README.md
 ```
 
@@ -162,7 +162,7 @@ The data is not graph, such as the set cover problem, knapsack problem, and bina
 
 Link: [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y)
 
-Results will be written to a file result.txt in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of the set.
+Results will be written to the file "result.txt" in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of the set.
 
 1 2  # node 1 in set 2
 
@@ -182,7 +182,7 @@ config.py
 ```
 PROBLEM = Problem.maxcut
 ```
-We can select the problems including maxcut, graph partitioning, TSP, etc. 
+We can select a problem such as maxcut. 
 
 - Process 2: select dataset
 
