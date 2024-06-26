@@ -3,6 +3,12 @@
 We aim to showcase the effectiveness of massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU based parallel environments can significantly improve the sampling efficiency and can obtain high-quality solutions within short time. 
 
 # Overview
+
+This project has three layers:
+- GPU-based environments: providing massively parallel environments using GPUs.
+- RL agents: providing RL algorithms, e.g., REINFORCE.
+- Problems: typical CO problems, e.g., graph maxcut and TNCO.
+
 <a target="\_blank">
 	<div align="center">
 		<img src=fig/RLSolver_framework.png width="80%"/>
