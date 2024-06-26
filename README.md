@@ -135,7 +135,7 @@ Most data is graph, such as graph maxcut, graph partitioning, TSP.
 
 - [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
-- __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Baidu Wangpan](https://pan.baidu.com/s/11ljW8aS2IKE9fDzjSm5xVQ) (CODE hojh).
+- __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y).
 
 Take g14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
 
@@ -154,7 +154,7 @@ The data is not graph, such as the set cover problem, knapsack problem, and bina
   
 ## Results
 
-Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
+Link: [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y)
 
 Results will be written to a file result.txt in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of the set.
 
