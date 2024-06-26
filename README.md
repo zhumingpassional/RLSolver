@@ -156,7 +156,7 @@ The data is not graph, such as the set cover problem, knapsack problem, and bina
 
 Link: https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw (CODE: gc8y)
 
-Results will be written to a file result.txt in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of classified set. For example, 
+Results will be written to a file result.txt in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of the set.
 
 1 2  # node 1 in set 2
 
