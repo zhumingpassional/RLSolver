@@ -1,6 +1,6 @@
 # RLSolver: GPU-based Massively Parallel Environments for Combinatorial Optimization (CO) Problems Using Reinforcement Learning
 
-We aim to showcase the effectiveness of massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU based parallel environments can significantly improve the sampling efficiency and can obtain high-quality solutions within short time. 
+We aim to showcase the effectiveness of massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU based parallel environments can significantly improve the sampling speed and can obtain high-quality solutions within short time. 
 
 # Overview
 
@@ -20,11 +20,11 @@ RLSolver has three layers:
 
 # Why Use GPU-based Massively Parallel Environments?
 
-The bottleneck of using RL for solving CO problems is the sampling efficiency since existing solver engines (a.k.a, gym-style environments) are implemented on CPUs. Training the policy network is essentially estimating the gradients via a Markov chain Monte Carlo (MCMC) simulation, which requires a large number of samples from environments. 
+The bottleneck of using RL for solving CO problems is the sampling speed since existing solver engines (a.k.a, gym-style environments) are implemented on CPUs. Training the policy network is essentially estimating the gradients via a Markov chain Monte Carlo (MCMC) simulation, which requires a large number of samples from environments. 
 
-Existing CPU-based environments have two significant disadvantages: 1) The number of CPU cores is typically small, generally ranging from 16 to 256, resulting in a small number of parallel environments. 2) The communication link between CPUs and GPUs has limited bandwidth. The massively parallel environments can overcome these disadvantages, since we can build thounsands of environments and the communication bottleneck between CPUs and GPUs is bypassed, therefore  the sampling efficiency is significantly improved. 
+Existing CPU-based environments have two significant disadvantages: 1) The number of CPU cores is typically small, generally ranging from 16 to 256, resulting in a small number of parallel environments. 2) The communication link between CPUs and GPUs has limited bandwidth. The massively parallel environments can overcome these disadvantages, since we can build thounsands of environments and the communication bottleneck between CPUs and GPUs is bypassed, therefore  the sampling speed is significantly improved. 
 
-# Sampling Efficiency of GPU-based Massively Parallel Environments
+# Sampling Speed of GPU-based Massively Parallel Environments
 
 <p align="center">
   <img src="fig/speed_up_maxcut1.png" width="43%">
@@ -38,7 +38,7 @@ Existing CPU-based environments have two significant disadvantages: 1) The numbe
 	</div>
 </a> 
 
-From the above figures, we used CPU and GPU based environments. We see that the sampling efficiency is improved by at least 2 ordrs by using GPU-based massively parallel environments compared with conventional CPUs.
+From the above figures, we used CPU and GPU based environments. We see that the sampling speed is improved by at least 2 ordrs by using GPU-based massively parallel environments compared with conventional CPUs.
 
 # Two Patterns
 
