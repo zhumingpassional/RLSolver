@@ -185,7 +185,7 @@ Results will be written to the file "result.txt" in the folder "result". Take gr
 
 ## Run Methods
 
-- Process 1: select problem
+- 1: select problem
 
 config.py
 ```
@@ -193,7 +193,7 @@ PROBLEM = Problem.maxcut
 ```
 We can select a problem such as maxcut. 
 
-- Process 2: select dataset
+- 2: select dataset
 
 Take methods/greedy.py as an example:
 
@@ -202,7 +202,7 @@ Take methods/greedy.py as an example:
  prefixes = ['barabasi_albert_100_'] # select the graphs with 100 nodes
 ```
 
-- Process 3: run method
+- 3: run method
 
 ```
 python methods/greedy.py  # run greedy
