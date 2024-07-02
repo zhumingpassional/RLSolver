@@ -182,7 +182,7 @@ Results will be written to the file "result.txt" in the folder "result". Take gr
 
 5 2  # node 5 in set 2
 
-## Run methods
+## Run Methods
 
 - Process 1: select problem
 
@@ -221,7 +221,7 @@ python methods/L2A/maxcut_end2end.py  # ours
 [Gurobi](https://www.gurobi.com/)
 
 
-## Methods
+## Existing Methods
 
 * RL-based annealing using massively parallel enironments
   
