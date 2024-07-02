@@ -101,7 +101,13 @@ where "objective" is the calculation of the objective value for one state.
 - Nair, Vinod, et al. "Solving mixed integer programs using neural networks." arXiv preprint arXiv:2012.13349 (2020).
 
 - Makoviychuk, Viktor, et al. "Isaac Gym: High performance GPU based physics simulation for robot learning." Thirty-fifth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (Round 2). 2021.
-  
+- 
+# Dependencies
+
+Python>=3.6
+
+PyTorch=0.2 and 0.3
+
 ## File Structure
 
 ```
