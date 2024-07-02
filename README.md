@@ -108,6 +108,8 @@ Python>=3.6
 
 PyTorch=0.2 and 0.3
 
+Numpy>=1.24
+
 ## File Structure
 
 ```
