@@ -1,24 +1,12 @@
-import importlib
-import argparse
+from config import get_config
+from until import get_data
 from absl import app
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--sampler', type=str, default="dlmc")
-parser.add_argument('--model', type=str, default="maxcut")
-args = parser.parse_args()
-
+from iSCO import iSCO_fast_vmap
 def main(_):
-    model_mod = importlib.import_module('models.%s' % args.model)
-    model = model_mod.build_model()
-
-    sampler_mod = importlib.import_module('%s' % args.sampler)
-    sampler = sampler_mod.build_sampler()
-
-    expirement_mod = importlib.import_module('expirement' )
-    expirement = expirement_mod.build_expirement()
-
-    expirement.get_results(model,sampler)
+    config = get_config()
+    data = get_data(config['data_root'])
+    sampler = iSCO_fast_vmap(config,data)
+    sampler.get_result()
 
 if __name__ == '__main__':
     app.run(main)
