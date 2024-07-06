@@ -276,9 +276,9 @@ python methods/L2A/maxcut_end2end.py  # ours
 
 In the following experiments, we used GPU during training by default. The best-known results are labed in bold.
 
-1) Element-wise (Gset)
+1) Instance-wise (Gset)
 
-We use the element-wise version of L2A, i.e., end to end, in the dataset [Gset](https://web.stanford.edu/~yyye/yyye/Gset/), which is opened by Stanford university. 
+We use the instance-wise version of L2A, i.e., end to end, in the dataset [Gset](https://web.stanford.edu/~yyye/yyye/Gset/), which is opened by Stanford university. 
 
 | Graph | Nodes| Edges | BLS | DSDP    | KHLWG   | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         |iSCO   | MCPG     | Ours | Improvement |  
 |--- |------|----  |---        |-----    |-----    |--------|-------| ---           | ---        | ----  | ----     | ----| ----|
@@ -293,7 +293,7 @@ We use the element-wise version of L2A, i.e., end to end, in the dataset [Gset](
 
 2) Distribution-wise (synthetic data)
 
-We use the distribution-wise version of L2A in the synthetic datasets, i.e., after training, we test the instances by inferring the neural networks in 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). The distribution-wise version of L2A is __much much faster__ than the element-wise methods, such as MCPG and iSCO. For graphs with n nodes, there are 10 datasets, and we calcualte the average of the obtained objective values. 
+We use the distribution-wise version of L2A in the synthetic datasets, i.e., after training, we test the instances by inferring the neural networks in 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). The distribution-wise version of L2A is __much much faster__ than the instance-wise methods, such as MCPG and iSCO, since we can obtain the results directly by inference. For graphs with n nodes, there are 10 datasets, and we calcualte the average of the obtained objective values. 
 
 Results on the BA distribution.
 |Nodes | Greedy | SDP  | SA       | GA     | Gurobi (1 h) | PI-GNN | iSCO   | MCPG   | Ours| 
