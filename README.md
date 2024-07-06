@@ -277,6 +277,7 @@ python methods/L2A/maxcut_end2end.py  # ours
 In the following experiments, we used GPU during training by default. The best-known results are labed in bold.
 
 1) Element-wise (__Gset__)
+
 We use the element-wise version of L2A in the dataset [Gset](https://web.stanford.edu/~yyye/yyye/Gset/), which is opened by Stanford university. 
 
 | Graph | Nodes| Edges | BLS | DSDP    | KHLWG   | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         |iSCO   | MCPG     | Ours | Improvement |  
