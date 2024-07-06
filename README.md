@@ -150,7 +150,7 @@ Most data is graph, such as graph maxcut, graph partitioning, TSP.
 
 - [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
-- __Syn__ is the synthetic data. The number of nodes is from 10 to 50000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y).
+- __Syn__ is the synthetic data. The number of nodes is from 100 to 1000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y).
 
 Take g14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
 
