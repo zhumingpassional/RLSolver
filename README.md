@@ -276,9 +276,8 @@ python methods/L2A/maxcut_end2end.py  # ours
 
 In the following experiments, we used GPU during training by default. The best-known results are labed in bold.
 
-1) __Gset__
-
-[Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Stanford university. 
+1) Element-wise (__Gset__)
+We use the element-wise version of L2A in the dataset [Gset](https://web.stanford.edu/~yyye/yyye/Gset/), which is opened by Stanford university. 
 
 | Graph | Nodes| Edges | BLS | DSDP    | KHLWG   | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         |iSCO   | MCPG     | Ours | Improvement |  
 |--- |------|----  |---        |-----    |-----    |--------|-------| ---           | ---        | ----  | ----     | ----| ----|
@@ -291,9 +290,9 @@ In the following experiments, we used GPU during training by default. The best-k
 |G55 | 5000 | 12468| 10294     | 9960    | 10236   | 10116  | 10138 | 10103         | 11.92\%    | 10218 |__10298__ |__10298__ |  +0.04\% | 
 |G70 | 10000| 9999 |9541       | 9456    | 9458    | -      | 9421  | 9490          |2.26\%      |  9442 | 9578     |__9583__ | +0.44\% | 
 
-2) __Syn__ 
+2) Distribution-wise (__Syn__)
 
-We use the whole synthetic data with 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). For graphs with n nodes, there are 10 datasets, and we run once for each dataset, and finally calcualte the average objective values. 
+We use the distribution-wise version of L2A in the synthetic datasets, i.e., after training, we test the instances by inferring the neural networks in 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). The distribution-wise version of L2A is much much faster than the element-wise methods, such as MCPG and iSCO. For graphs with n nodes, there are 10 datasets, and we calcualte the average of the obtained objective values. 
 
 Results on the BA distribution.
 |Nodes | Greedy | SDP  | SA       | GA     | Gurobi (1 h) | PI-GNN | iSCO   | MCPG   | Ours| 
