@@ -19,9 +19,11 @@ def main():
     parser.add_argument('-s', '--state_size', type=int, default=128, help='Size of the variable states in RUN-CSP')
     parser.add_argument('-b', '--batch_size', type=int, default=10, help='Batch size used during training')
     parser.add_argument('-e', '--epochs', type=int, default=25, help='Number of training epochs')
-    parser.add_argument('-m', '--model_dir', type=str, help='The model directory of a trained network')
+    parser.add_argument('-m', '--model_dir', default='model', type=str, help='The model directory of a trained network')
+    # parser.add_argument('-m', '--model_dir', type=str, help='The model directory of a trained network')
     parser.add_argument('-t', '--t_max', type=int, default=30, help='Number of iterations t_max for which RUN-CSP runs on each instance')
-    parser.add_argument('-d', '--data_path', help='A path to a training set of graphs in the dimacs graph format')
+    parser.add_argument('-d', '--data_path', default='data.G1.dimacs', help='A path to a training set of graphs in the dimacs graph format')
+    # parser.add_argument('-d', '--data_path', help='A path to a training set of graphs in the dimacs graph format')
     args = parser.parse_args()
 
     language = Constraint_Language.get_coloring_language(2)
