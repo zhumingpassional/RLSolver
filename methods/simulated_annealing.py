@@ -300,7 +300,7 @@ if __name__ == '__main__':
         alg_name = 'simulated_annealing'
         if_run_graph_based_problems = True
         if if_run_graph_based_problems:
-            init_temperature = 4
+            init_temperature = 0.2
             num_steps = None
             directory_data = '../data/syn_ER'
             prefixes = ['erdos_renyi_100_']
