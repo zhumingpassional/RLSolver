@@ -21,7 +21,7 @@ INT = th.IntTensor
 TEN = th.Tensor
 GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
-from methods.config import GSET_DIR
+from config import GSET_DIR
 DataDir = GSET_DIR
 
 class MyGraph:
