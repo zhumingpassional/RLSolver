@@ -221,7 +221,7 @@ def write_result_gurobi(model, filename: str = './result/result', running_durati
 
 
 
-def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = False):
+def run_using_gurobi(filename: str, init_x = None, time_limit: int = None, plot_fig_: bool = False):
     model = Model("maxcut")
 
     if PROBLEM == Problem.tsp:
@@ -251,6 +251,24 @@ def run_using_gurobi(filename: str, time_limit: int = None, plot_fig_: bool = Fa
         y_lb = adjacency_matrix.min()
         y_ub = adjacency_matrix.max()
         x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
+        mode = None
+        if init_x[0] is True or init_x[0] is False:
+            mode = 0
+        elif max(init_x) == 1:
+            mode = 1
+        elif max(init_x) == 2:
+            mode = 2
+        else:
+            raise ValueError("wrong mode")
+        for i in range(len(init_x)):
+            init = init_x[i]
+            if mode == 0:
+                x[i].start = 1 if init is True else 0
+            elif mode == 1:
+                x[i].start = 1 if init == 1 else 0
+            else:
+                x[i].start = 1 if init == 2 else 0
+
         if GUROBI_MILP_QUBO == 0:
             y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
             model.setObjective(quicksum(quicksum(adjacency_matrix[(i, j)] * y[(i, j)] for i in range(0, j)) for j in nodes),
@@ -519,15 +537,31 @@ def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], 
         for i in range(len(files)):
             print(f'The {i}-th file: {files[i]}')
             for j in range(len(time_limits)):
-                run_using_gurobi(files[i], time_limits[j])
+                run_using_gurobi(files[i], None, time_limits[j])
     avg_std = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 
 if __name__ == '__main__':
-    select_single_file = False
+    select_single_file = True
     if select_single_file:
-        filename = '../data/syn/syn_10_21.txt'
+        filename = '../data/gset/gset_14.txt'
         time_limits = GUROBI_TIME_LIMITS
-        run_using_gurobi(filename, time_limit=time_limits[0], plot_fig_=True)
+
+        from L2A.maxcut_simulator import SimulatorMaxcut, load_graph_list
+        from L2A.evaluator import *
+        graph_name = 'gset_14'
+
+        graph = load_graph_list(graph_name=graph_name)
+        simulator = SimulatorMaxcut(sim_name=graph_name, graph_list=graph)
+
+        x_str = X_G14
+        num_nodes = simulator.num_nodes
+        encoder = EncoderBase64(encode_len=num_nodes)
+
+        x = encoder.str_to_bool(x_str)
+        vs = simulator.obj(xs=x[None, :])
+        print(f"objective value  {vs[0].item():8.2f}  solution {x_str}")
+
+        run_using_gurobi(filename, x, time_limit=time_limits[0], plot_fig_=True)
         directory = '../result'
         prefixes = ['syn_10_']
         avg_std = calc_avg_std_of_objs(directory, prefixes, time_limits)

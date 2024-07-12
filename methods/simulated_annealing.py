@@ -18,8 +18,9 @@ from util import (obj_maxcut,
                   obj_graph_coloring,
                   write_result,
                   calc_txt_files_with_prefix,
-                  write_result2,
+                  write_result3,
                   write_result_set_cover,
+                  calc_result_file_name,
                   plot_fig
                  )
 from greedy import (greedy_maxcut,
@@ -100,14 +101,14 @@ def simulated_annealing_set_cover(init_temperature: int,
     return curr_score, curr_solution, scores
 
 
-def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: nx.Graph) \
+def simulated_annealing(init_temperature: int, num_steps: Optional[int], graph: nx.Graph, filename) \
         -> (int, Union[List[int], np.array], List[int]):
     print('simulated_annealing')
     num_nodes = int(graph.number_of_nodes())
     if PROBLEM == Problem.maxcut:
         if num_steps is None:
             num_steps = num_nodes
-        gr_score, gr_solution, gr_scores = greedy_maxcut(num_steps, graph)
+        gr_score, gr_solution, gr_scores = greedy_maxcut(num_steps, graph, filename)
     elif PROBLEM == Problem.graph_partitioning:
         num_steps = num_nodes
         gr_score, gr_solution, gr_scores = greedy_graph_partitioning(num_steps, graph)
@@ -256,11 +257,11 @@ def run_simulated_annealing_over_multiple_files(alg, alg_name, init_temperature,
                 write_result_set_cover(score, running_duration, num_items, num_sets, alg_name, filename)
             else:
                 graph = read_nxgraph(filename)
-                score, solution, scores = alg(init_temperature, num_steps, graph)
+                score, solution, scores = alg(init_temperature, num_steps, graph, filename)
                 scoress.append(scores)
                 running_duration = time.time() - start_time
                 num_nodes = int(graph.number_of_nodes())
-                write_result2(score, running_duration, num_nodes, alg_name, filename)
+                write_result3(score, running_duration, num_nodes, alg_name, solution, filename)
     return scoress
 
 
@@ -275,10 +276,11 @@ if __name__ == '__main__':
         if_run_graph_based_problems = False
         if if_run_graph_based_problems:
             # read data
+            filename = '../data/syn/syn_50_176.txt'
             graph = read_nxgraph('../data/syn/syn_50_176.txt')
             init_temperature = 4
             num_steps = None
-            sa_score, sa_solution, sa_scores = simulated_annealing(init_temperature, num_steps, graph)
+            sa_score, sa_solution, sa_scores = simulated_annealing(init_temperature, num_steps, graph, filename)
             # write result
             write_result(sa_solution, '../result/result.txt')
             # plot fig

@@ -20,6 +20,7 @@ from util import (read_nxgraph,
                   obj_set_cover_ratio,
                   obj_set_cover,
                   obj_graph_coloring,
+                  write_result3,
                 )
 
 from config import *
@@ -60,7 +61,7 @@ def traverse_in_greedy_maxcut(curr_solution, selected_nodes, graph):
 
 
 # init_solution is useless
-def greedy_maxcut(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
+def greedy_maxcut(num_steps: Optional[int], graph: nx.Graph, filename) -> (int, Union[List[int], np.array], List[int]):
     print('greedy')
     start_time = time.time()
     num_nodes = int(graph.number_of_nodes())
@@ -117,6 +118,8 @@ def greedy_maxcut(num_steps: Optional[int], graph: nx.Graph) -> (int, Union[List
     print("solution: ", curr_solution)
     running_duration = time.time() - start_time
     print('running_duration: ', running_duration)
+    alg_name = "greedy"
+    write_result3(score, running_duration, num_nodes, alg_name, curr_solution, filename)
     return curr_score, curr_solution, scores
 
 def greedy_graph_partitioning(num_steps:Optional[int], graph: nx.Graph) -> (int, Union[List[int], np.array], List[int]):
@@ -359,6 +362,7 @@ def greedy_graph_coloring(num_steps: Optional[int], graph: nx.Graph) -> (int, Un
 if __name__ == '__main__':
     # read data
     print(f'problem: {PROBLEM}')
+    filename = '../data/syn/syn_10_21.txt'
     graph = read_nxgraph('../data/syn/syn_10_21.txt')
     weightmatrix = transfer_nxgraph_to_weightmatrix(graph)
     # run alg
@@ -369,7 +373,7 @@ if __name__ == '__main__':
         # maxcut
         if PROBLEM == Problem.maxcut:
             num_steps = None
-            gr_score, gr_solution, gr_scores = greedy_maxcut(num_steps, graph)
+            gr_score, gr_solution, gr_scores = greedy_maxcut(num_steps, graph, filename)
 
         # graph_partitioning
         elif PROBLEM == Problem.graph_partitioning:
@@ -389,8 +393,9 @@ if __name__ == '__main__':
             print('obj: ', obj)
 
         elif PROBLEM == Problem.set_cover:
+            from util import read_set_cover_data
             filename = '../data/set_cover/frb30-15-1.msc'
-            num_items, num_sets, item_matrix = read_set_cover(filename)
+            num_items, num_sets, item_matrix = read_set_cover_data(filename)
             print(f'num_items: {num_items}, num_sets: {num_sets}, item_matrix: {item_matrix}')
             solution1 = [1] * num_sets
             obj1_ratio = obj_set_cover_ratio(solution1, num_items, item_matrix)
