@@ -5,17 +5,17 @@ from torch.autograd import Variable
 import functools
 import time
 import numpy as np
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 import networkx as nx
 from torch import Tensor
+import torch as th
 # from methods.simulated_annealing import simulated_annealing_set_cover, simulated_annealing
-from methods.config import *
+from config import *
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
 except ImportError:
     plt = None
-
 TEN = th.Tensor
 INT = th.IntTensor
 TEN = th.Tensor
@@ -575,7 +575,7 @@ def calc_result_file_name(file: str, add_tail: str= ''):
         new_file = new_file.replace('.txt', '') + add_tail + '.txt'
     return new_file
 
-# For example, syn_10_21_3600.txt, the prefix is 'syn_10_', time_limit is 3600 (seconds).
+# For example, syn_10_21_3601.txt, the prefix is 'syn_10_', time_limit is 3600 (seconds).
 # The gap and running_duration are also be calculated.
 def calc_avg_std_of_obj(directory: str, prefix: str, time_limit: int):
     init_time_limit = copy.deepcopy(time_limit)
@@ -858,15 +858,18 @@ def convert_matrix_to_vector(matrix):
     vector = [row[i + 1:] for i, row in enumerate(matrix)]
     return th.hstack(vector)
 
-def write_result2(obj, running_duration, num_nodes, alg_name, filename: str):
-    add_tail = '_' + str(int(running_duration)) if 'data' in filename else None
+def write_result3(obj, running_duration, num_nodes, alg_name, solution, filename: str):
+    add_tail = '_' if running_duration is None else '_' + str(int(running_duration)) if 'data' in filename else None
     new_filename = calc_result_file_name(filename, add_tail)
+    print("result filename: ", new_filename)
     with open(new_filename, 'w', encoding="UTF-8") as new_file:
         prefix = '// '
         new_file.write(f"{prefix}obj: {obj}\n")
         new_file.write(f"{prefix}running_duration: {running_duration}\n")
         new_file.write(f"// num_nodes: {num_nodes}\n")
         new_file.write(f"{prefix}alg_name: {alg_name}\n")
+        for i in range(len(solution)):
+            new_file.write(f"{i + 1} {solution[i] + 1}\n")
 
 def write_result_set_cover(obj, running_duration, num_items: int, num_sets: int, alg_name, filename: str):
     add_tail = '_' + str(int(running_duration)) if 'data' in filename else None
@@ -891,7 +894,7 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str
             filename = files[i]
             print(f'The {i}-th file: {filename}')
             if PROBLEM == Problem.set_cover:
-                from methods.greedy import greedy_set_cover
+                from greedy import greedy_set_cover
                 num_items, num_sets, item_matrix = read_set_cover_data(filename)
                 score, solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
                 scoress.append(scores)
@@ -900,12 +903,12 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str
                 write_result_set_cover(score, running_duration, num_items, num_sets, alg_name, filename)
             else:
                 graph = read_nxgraph(filename)
-                score, solution, scores = alg(num_steps, graph)
+                score, solution, scores = alg(num_steps, graph, filename)
                 scoress.append(scores)
-                running_duration = time.time() - start_time
-                num_nodes = int(graph.number_of_nodes())
-                write_result2(score, running_duration, num_nodes, alg_name, filename)
     return scoress
+
+
+
 
 def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: List[str])-> List[List[float]]:
     scores = []
@@ -922,7 +925,7 @@ def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: Li
             running_duration = time.time() - start_time
             graph = read_nxgraph(filename)
             num_nodes = int(graph.number_of_nodes())
-            write_result2(score, running_duration, num_nodes, alg_name, filename)
+            write_result3(score, running_duration, num_nodes, alg_name, solution, filename)
     return scores
 
 

@@ -1,9 +1,30 @@
 import copy
+import time
+import networkx as nx
 import numpy as np
 import random
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+import copy
+from torch.autograd import Variable
+import functools
+import time
+import numpy as np
+from typing import Union, Tuple, List
+import networkx as nx
+from torch import Tensor
+import torch as th
+from config import *
+try:
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 
-from util import read_nxgraph
-from util import obj_maxcut
+from util import (read_nxgraph,
+                  obj_maxcut,
+                  write_result3,
+                  calc_txt_files_with_prefix)
 
 # constants for tabuSearch
 P_iter = 100
@@ -137,7 +158,7 @@ def tabu_search(initial_solution, graph):
 
     return best_solution, best_score
 
-def cross_over(population):
+def cross_over(population, graph):
     selected_parents = random.sample(population, num_parents)
 
     child = []
@@ -151,12 +172,13 @@ def cross_over(population):
     child, child_score = tabu_search(child,graph)
     return child
 
-def algorithm_run(graph):
+def genetic_maxcut(graph: nx.Graph(), filename):
+    start_time = time.time()
     population, best_binary_vector, best_score, population_scores = generate_random_population(graph, 10)
     c_iter = 0
     print("Start Genetic Crossover")
     while c_iter < c_itMax:
-        child = cross_over(population)
+        child = cross_over(population, graph)
         if(child not in population):
             child_score = obj_maxcut(child,graph)
 
@@ -171,21 +193,54 @@ def algorithm_run(graph):
         
 
     max_score_index = np.argmax(population_scores)
-    max_score_vector = population[max_score_index]
-    print("Binary Vector: ", max_score_vector)
-    print("Score of Cut: ", population_scores[max_score_index])
+    obj = population_scores[max_score_index]
+    best_solution = population[max_score_index]
+    print("solution : ", best_solution)
+    print("obj: ", obj)
+
+    running_duration = time.time() - start_time
+    num_nodes = graph.number_of_nodes()
+    alg_name = "genetic algorithm"
+    write_result3(obj, running_duration, num_nodes, alg_name, best_solution, filename)
+
     print("Genetic Search Complete")
 
+def run_genetic_over_multiple_files(directory_data: str, prefixes: List[str])-> List[List[float]]:
+    assert PROBLEM == Problem.maxcut
+    scoress = []
+    for prefix in prefixes:
+        files = calc_txt_files_with_prefix(directory_data, prefix)
+        files.sort()
+        for i in range(len(files)):
+            filename = files[i]
+            print(f'The {i}-th file: {filename}')
+            graph = read_nxgraph(filename)
+            print("Genetic Search Start")
+            genetic_maxcut(graph, filename)
+    return scoress
 
     
 if __name__ == '__main__':
     # Constants
     num_parents = 5
     c_itMax = 5
-    # read data
-    graph = read_nxgraph('../data/syn_PL/powerlaw_100_ID0.txt')
-    print("Genetic Search Start")
-    algorithm_run(graph)
+
+    if_run_one_case = False
+    if if_run_one_case:
+        # read data
+        filename = '../data/syn_PL/powerlaw_100_ID0.txt'
+        graph = read_nxgraph(filename)
+        print("Genetic Search Start")
+        genetic_maxcut(graph, filename)
+
+    else:
+        directory_data = '../data/syn_BA'
+        # directory_data = '../data/syn_ER'
+        # directory_data = '../data/syn'
+        prefixes = ['barabasi_albert_100_']
+        run_genetic_over_multiple_files(directory_data, prefixes)
+
+
 
     # Cut checker
     # vector = [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1]
