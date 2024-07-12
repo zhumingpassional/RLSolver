@@ -9,7 +9,6 @@ from typing import Union, Tuple, List
 import networkx as nx
 from torch import Tensor
 import torch as th
-# from methods.simulated_annealing import simulated_annealing_set_cover, simulated_annealing
 from config import *
 try:
     import matplotlib as mpl
@@ -21,7 +20,7 @@ INT = th.IntTensor
 TEN = th.Tensor
 GraphList = List[Tuple[int, int, int]]
 IndexList = List[List[int]]
-from methods.config import GSET_DIR
+from config import GSET_DIR
 DataDir = GSET_DIR
 
 class MyGraph:
