@@ -252,7 +252,9 @@ def run_using_gurobi(filename: str, init_x = None, time_limit: int = None, plot_
         y_ub = adjacency_matrix.max()
         x = model.addVars(num_nodes, vtype=GRB.BINARY, name="x")
         mode = None
-        if init_x[0] is True or init_x[0] is False:
+        if init_x is None:
+            pass
+        elif init_x[0] is True or init_x[0] is False:
             mode = 0
         elif max(init_x) == 1:
             mode = 1
@@ -260,14 +262,15 @@ def run_using_gurobi(filename: str, init_x = None, time_limit: int = None, plot_
             mode = 2
         else:
             raise ValueError("wrong mode")
-        for i in range(len(init_x)):
-            init = init_x[i]
-            if mode == 0:
-                x[i].start = 1 if init is True else 0
-            elif mode == 1:
-                x[i].start = 1 if init == 1 else 0
-            else:
-                x[i].start = 1 if init == 2 else 0
+        if init_x is not None:
+            for i in range(len(init_x)):
+                init = init_x[i]
+                if mode == 0:
+                    x[i].start = 1 if init is True else 0
+                elif mode == 1:
+                    x[i].start = 1 if init == 1 else 0
+                else:
+                    x[i].start = 1 if init == 2 else 0
 
         if GUROBI_MILP_QUBO == 0:
             y = model.addVars(num_nodes, num_nodes, vtype=GRB.CONTINUOUS, lb=y_lb, ub=y_ub, name="y")
@@ -541,9 +544,10 @@ def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], 
     avg_std = calc_avg_std_of_objs(directory_result, prefixes, time_limits)
 
 if __name__ == '__main__':
-    select_single_file = True
+    select_single_file = False
     if select_single_file:
         filename = '../data/gset/gset_14.txt'
+        # filename = '../data/syn/syn_10_21.txt'
         time_limits = GUROBI_TIME_LIMITS
 
         from L2A.maxcut_simulator import SimulatorMaxcut, load_graph_list
