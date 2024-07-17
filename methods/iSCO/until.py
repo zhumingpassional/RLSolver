@@ -2,6 +2,7 @@ import torch
 import networkx as nx
 from torch.func import vmap,grad
 import os
+from config import *
 
 def get_data(filename):
 
@@ -31,8 +32,8 @@ def get_data(filename):
         edge_to[i] = y
         edge_weight[i] = e[2]['weight']
 
-    edge_from = torch.tensor(edge_from, dtype=torch.int32,device='cuda').long()
-    edge_to = torch.tensor(edge_to, dtype=torch.int32,device='cuda').long()
+    edge_from = torch.tensor(edge_from, dtype=torch.int32,device=DEVICE).long()
+    edge_to = torch.tensor(edge_to, dtype=torch.int32,device=DEVICE).long()
     data = {
         'num_nodes': num_nodes,
         "num_edges": num_edges,
@@ -44,7 +45,7 @@ def get_data(filename):
 
 
 def parallelization(x2y,y2x):
-        x2y  = vmap(x2y,in_dims=(0,0,0,0,None,None), randomness='different')
+        x2y  = vmap(x2y,in_dims=(0,None,0,0,None,None), randomness='different')
         y2x = vmap(y2x,in_dims=(0,0,0,0,0,0,0,0,None,None), randomness='different')
         return x2y,y2x
 
