@@ -1,8 +1,7 @@
 
-DATA_ROOT = r"D:\Document\zdhs\isco\gset\gset_14.txt"
-SAMPLER = 'iSCO_fast_vmap'
+DATA_ROOT = r"/home/shixi/iSCO/iSCO_no_grad/gset_14.txt"
 INIT_TEMPERATURE = 1.0
 FINAL_TEMPERATURE = 0.0
-BATCH_SIZE = 300
-DEVICE = 'cuda'
-CHAIN_LENGTH = 50
+BATCH_SIZE = 30
+DEVICE = 'cuda:2'
+CHAIN_LENGTH = 15000
