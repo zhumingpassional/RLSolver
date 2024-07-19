@@ -18,8 +18,8 @@ def main(_):
     sampler.x2y,sampler.y2x = until.parallelization(sampler.x2y,sampler.y2x)
     start_time = time.time()
     for step in tqdm.tqdm(range(0,sampler.chain_length)):
-        poisson_dist = poisson(mu)
-        path_length = max(1,int(poisson_dist.rvs(size=1)))
+        poisson_sample = torch.poisson(torch.tensor([mu]))
+        path_length = max(1, int(poisson_sample.item()))
         average_path_length += path_length
         temperature = sampler.init_temperature  - step / sampler.chain_length * (sampler.init_temperature -sampler.final_temperature)
         sample,new_energy,acc = sampler.step(path_length,temperature,sample)
