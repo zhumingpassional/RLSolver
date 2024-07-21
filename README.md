@@ -49,14 +49,12 @@ From the above figures, we used CPU and GPU based environments. We see that the 
 	</div>
 </a>  
 
-Pattern I: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into the solution set. There are three important functions for a gym-style environment:  
+__Pattern I__: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into the solution set. There are three important functions for a gym-style environment:  
 - reset(): Set the selected nodes as an empty set. 
 - step(): Select the node with maximum Q-value and then add it to the set.  
 - reward(): Calculate the objective values over all simulation environments.
 
-Pattern II: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy is a vector of probabilities__ of the nodes belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. 
-
-We introduce four important functions for all parallel environments:  
+__Pattern II__: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy is a vector of probabilities__ of the nodes belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. We introduce four important functions for all parallel environments:  
 - reset(): Generate random initial solutions for all parallel environments. 
 - step(): Search for better solutions based on the current solutions. It has two sub-functions. 
   - sampling() is the sampling method.
@@ -90,8 +88,7 @@ objs = batched_obj(states)
 ```
 where "objective" is the calculation of the objective value for one state.  
 
-__Dimension of states and objective values:__
-The states over all parallel environments are stored as PyTorch tensors with the environments as the first dimension and the graph nodes as the second dimension. For example, for the graph with 100 nodes, and we use 1000 environments, and the dimension of states is 1000 * 100. Correspondingly, the dimension of the objective values over all parallel environments is 1000 * 1. 
+__Dimension of states and objective values:__ The states over all parallel environments are stored as PyTorch tensors with the environments as the first dimension and the graph nodes as the second dimension. For example, for the graph with 100 nodes, and we use 1000 environments, and the dimension of states is 1000 * 100. Correspondingly, the dimension of the objective values over all parallel environments is 1000 * 1. 
 
 
 
@@ -278,14 +275,14 @@ In the following experiments, we used GPU during training by default. The best-k
 
 We use the instance-wise version of L2A, i.e., end to end, in the dataset [Gset](https://web.stanford.edu/~yyye/yyye/Gset/), which is opened by Stanford university. 
 
-| Graph | Nodes| Edges | BLS | DSDP    | KHLWG   | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         |iSCO     | MCPG     | Ours | Improvement |  
+| Graph | Nodes| Edges | BLS | DSDP    | KHLWG     | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         |iSCO   | MCPG     | Ours | Improvement |  
 |--- |------|----  |---        |-----    |-----    |--------|-------| ---           | ---        | ----  | ----     | ----| ----|
-|    |      |  |       |  |   ||Pattern I|         |         | Pattern I| Pattern II     | Pattern II| |
+|    |      |  |       |  |   ||Pattern I|         |         | Pattern I| Pattern II     | Pattern II|   |
 |G14 | 800  | 4694 | __3064__  |         | 2922    | 3061   | 2943  |3037           | 4.28\%     |  3056 |__3064__  | __3064__ | +0\%|
 |G15 | 800  | 4661 | __3050__  | 2938    |__3050__ | 2928   | 2990  |3022           |4.37\%      |  3046 |__3050__  | __3050__ | +0\% | 
 |G22 | 2000 | 19990|__13359__  | 12960   |__13359__| 13028  | 13181 |13217          | 30.56\%    |  13289|__13359__ | __13359__ |  +0\% | 
 |G49 | 3000 | 6000 | __6000__  | __6000__|__6000__ |__6000__| 5918  |__6000__       |0           | 5940  |__6000__  | __6000__|  +0\% | 
-|G50 | 3000 | 6000 | __5880__  | __5880__|__5880__ |__5880__| 5820  |__5880__       |0.51\%           | 5880  |__5880__  | __5880__|  +0\% | 
+|G50 | 3000 | 6000 | __5880__  | __5880__|__5880__ |__5880__| 5820  |__5880__       |0.51\%      | __5880__  |__5880__  | __5880__|  +0\% | 
 |G55 | 5000 | 12468| 10294     | 9960    | 10236   | 10116  | 10138 | 10115         | 17.09\%    | 10218 | 10296    |__10298__ |  +0.04\% | 
 |G70 | 10000| 9999 |9541       | 9456    | 9458    | -      | 9421  | 9579          |1.75\%      |  9442 | 9578     |__9586__ | +0.47\% | 
 
