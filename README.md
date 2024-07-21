@@ -291,7 +291,7 @@ We use the instance-wise version of L2A, i.e., end to end, in the dataset [Gset]
 
 2) Distribution-wise (synthetic data)
 
-We use the distribution-wise version of L2A in the synthetic datasets in 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). That is, after training, we test the instances by inferring the neural networks. The distribution-wise version of L2A is __much much faster__ than the instance-wise methods (such as MCPG and iSCO), since we can obtain the results directly by inference. For graphs with $$n (100 \leq 1000)$$ nodes, there are 10 datasets, and we calcualte the average of the obtained objective values. 
+We use the distribution-wise version of L2A in the synthetic datasets in 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). That is, after training, we test the instances by inferring the neural networks. The distribution-wise version of L2A is __much much faster__ than the instance-wise methods (such as MCPG and iSCO), since we can obtain the results directly by inference. For graphs with $n (100 \leq 1000)$ nodes, there are 10 datasets, and we calcualte the average of the obtained objective values. 
 
 Results on the BA distribution.
 |Nodes | Greedy | SDP  | SA       | GA     | Gurobi (1 h) | PI-GNN | iSCO   | MCPG   | Ours| 
