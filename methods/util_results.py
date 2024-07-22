@@ -41,17 +41,21 @@ def read_result_comments(filename: str):
                     running_duration = obtain_first_number(line)
                 if 'obj:' in line:
                     obj = float(line.split('obj:')[1])
+                if 'obj_bound:' in line:
+                    obj_bound = float(line.split('obj_bound:')[1])
+
             line = file.readline()
-    return int(num_nodes), ID, running_duration, obj
+    return int(num_nodes), ID, running_duration, obj, obj_bound
 
 def read_result_comments_multifiles2(dir: str, prefixes: str, max_ID: int):
     objs = {}
     running_durations = {}
+    obj_bounds = {}
     # for prefix in prefixes:
     files = calc_txt_files_with_prefix(dir, prefixes)
     for i in range(len(files)):
         file = files[i]
-        num_nodes, ID, running_duration, obj = read_result_comments(file)
+        num_nodes, ID, running_duration, obj, obj_bound = read_result_comments(file)
         if ID >= max_ID + 1:
             continue
         if num_nodes == 200:
@@ -63,23 +67,35 @@ def read_result_comments_multifiles2(dir: str, prefixes: str, max_ID: int):
         else:
             objs[str(num_nodes)].append(obj)
             running_durations[str(num_nodes)].append(running_duration)
+        if str(num_nodes) not in obj_bounds.keys():
+            obj_bounds[str(num_nodes)] = [obj_bound]
+        else:
+            obj_bounds[str(num_nodes)].append(obj_bound)
 
     label = f"num_nodes={num_nodes}"
     print(f"objs: {objs}, running_durations: {running_durations}")
     # objs = [(key, objs[key]) for key in sorted(objs.keys())]
     objs = dict(sorted(objs.items(), key=lambda x: x[0]))
+    obj_bounds = dict(sorted(obj_bounds.items(), key=lambda x: x[0]))
     running_durations = dict(sorted(running_durations.items(), key=lambda x: x[0]))
+
     avg_objs = {}
+    avg_obj_bounds = {}
     avg_running_durations = {}
     std_objs = {}
+    std_obj_bounds = {}
     std_running_durations = {}
     for key, value in objs.items():
         avg_objs[key] = np.average(value)
         std_objs[key] = np.std(value)
+    for key, value in obj_bounds.items():
+        avg_obj_bounds[key] = np.average(value)
+        std_obj_bounds[key] = np.std(value)
     for key, value in running_durations.items():
         avg_running_durations[key] = np.average(value)
         std_running_durations[key] = np.std(value)
-    return objs, running_durations, avg_objs, avg_running_durations, std_objs, std_running_durations
+
+    return objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, avg_running_durations, std_objs, std_obj_bounds, std_running_durations
 
 
 
@@ -118,9 +134,10 @@ if __name__ == '__main__':
     # prefixes = 'barabasi_albert_200'
     prefixes = 'barabasi_albert_'
     max_ID = 9
-    objs, running_durations, avg_objs, avg_running_durations, std_objs, std_running_durations = read_result_comments_multifiles2(dir, prefixes, max_ID)
+    objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, avg_running_durations, std_objs, std_obj_bounds, std_running_durations = read_result_comments_multifiles2(dir, prefixes, max_ID)
 
 
 
 
     print(avg_objs)
+    print(obj_bounds)
