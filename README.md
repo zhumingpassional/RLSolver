@@ -17,13 +17,13 @@ RLSolver has three layers:
 
 # Key Technologies
 - **GPU-based Massively parallel environments** of Markov chain Monte Carlo (MCMC) simulations on GPU using thousands of CUDA cores and tensor cores.
-- **Distribution-wise** is __much much faster__ than the instance-wise methods, such as MCPG and iSCO, since we can obtain the results directly by inference.
+- **Distribution-wise** is __much much faster__ than the instance-wise methods (such as MCPG and iSCO), since we can obtain the results directly by inference.
 
 # Why Use GPU-based Massively Parallel Environments?
 
 The bottleneck of using RL for solving CO problems is the sampling speed since existing solver engines (a.k.a, gym-style environments) are implemented on CPUs. Training the policy network is essentially estimating the gradients via a Markov chain Monte Carlo (MCMC) simulation, which requires a large number of samples from environments. 
 
-Existing CPU-based environments have two significant disadvantages: 1) The number of CPU cores is typically small, generally ranging from 16 to 256, resulting in a small number of parallel environments. 2) The communication link between CPUs and GPUs has limited bandwidth. The massively parallel environments can overcome these disadvantages, since we can build thounsands of environments and the communication bottleneck between CPUs and GPUs is bypassed, therefore  the sampling speed is significantly improved. 
+Existing CPU-based environments have two significant disadvantages: 1) The number of CPU cores is typically small, generally ranging from 16 to 256, resulting in a small number of parallel environments. 2) The communication link between CPUs and GPUs has limited bandwidth. The massively parallel environments can overcome these disadvantages, since we can build thounsands of environments and the communication bottleneck between CPUs and GPUs is bypassed; therefore the sampling speed is significantly improved. 
 
 # Sampling Speed of GPU-based Massively Parallel Environments
 
@@ -39,7 +39,7 @@ Existing CPU-based environments have two significant disadvantages: 1) The numbe
 	</div>
 </a> 
 
-From the above figures, we used CPU and GPU based environments. We see that the sampling speed is improved by at least 2 ordrs by using GPU-based massively parallel environments compared with conventional CPUs.
+From the above figures, we used CPU and GPU based environments. We see that the sampling speed is improved by at least 2 orders by using GPU-based massively parallel environments compared with conventional CPUs.
 
 # Two Patterns
 
@@ -49,20 +49,18 @@ From the above figures, we used CPU and GPU based environments. We see that the 
 	</div>
 </a>  
 
-Pattern I: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into the solution set. There are three important functions for a gym-style environment:  
+__Pattern I__: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into the solution set. There are three important functions for a gym-style environment:  
 - reset(): Set the selected nodes as an empty set. 
 - step(): Select the node with maximum Q-value and then add it to the set.  
 - reward(): Calculate the objective values over all simulation environments.
 
-Pattern II: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy is a vector of probabilities__ of the nodes belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. 
-
-We introduce four important functions for a gym-style environment:  
-- reset(): Generate a random initial solution. 
-- step(): Search for better solutions based on the current solution. It has two sub-functions. 
+__Pattern II__: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy is a vector of probabilities__ of the nodes belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. We introduce four important functions for all parallel environments:  
+- reset(): Generate random initial solutions for all parallel environments. 
+- step(): Search for better solutions based on the current solutions. It has two sub-functions. 
   - sampling() is the sampling method.
-  - local_search() returns a better solution by flipping some bits. It can improve the quality of the  current solution in a local domain. 
+  - local_search() returns a better solution by flipping some bits. It can improve the quality of the current solution in a local domain. 
 - pick\_good\_xs(): Select the good solutions in all parallel environments, where each environment returns exactly one good solution with corresponding objective value.
-- obj(): Calculate the objective value.
+- obj(): Calculate the objective values.
 
 # Example (Graph Maxcut)
 
@@ -72,7 +70,7 @@ We introduce four important functions for a gym-style environment:
 	</div>
 </a> 
 
-Pattern I: In left part of of the above figure, the initial state is empty, i.e., no node is selected. Then we select node 1 with the maximum Q-value and add it to the state, thus the new state is [1]. The reward is 2.
+Pattern I: In left part of of the above figure, the initial state is empty, i.e., no node is selected. Then we select node 1 with the maximum Q-value and add it to the state, thus the new state is [1], and the reward is 2.
 
 Pattern II: In right part of the above figure, the current state is [2, 3], i.e., node 2 and 3 are selected, and the objective value is 2. The new state is [1, 3, 4], i.e., node 1, 3, and 4 are selected, and the objective value is 4. 
 
@@ -82,7 +80,7 @@ Pattern II: In right part of the above figure, the current state is [2, 3], i.e.
 
 - We use __vmap__ (one GPU) or __pmap__ (multiple GPUs) to push the map into PyTorch operations, effectively vectorizing those operations.
 
-For example, we calculate the objective values of states over all parallel environments with the following codes:
+For example, we calculate the objective values of states over all parallel environments by using the following codes:
 ```
 from torch import vmap
 batched_obj = vmap(objective)
@@ -90,8 +88,7 @@ objs = batched_obj(states)
 ```
 where "objective" is the calculation of the objective value for one state.  
 
-__Dimension of states and objective values:__
-The states over all parallel environments are stored as PyTorch tensors with the environments as the first dimension and the graph nodes as the second dimension. For example, for the graph with 100 nodes, and we use 1000 environments, and the dimension of states is 1000 * 100. Correspondingly, the dimension of the objective values over all parallel environments is 1000 * 1. 
+__Dimension of states and objective values:__ The states over all parallel environments are stored as PyTorch tensors with the environments as the first dimension and the graph nodes as the second dimension. For example, for the graph with 100 nodes, and we use 1000 environments, and the dimension of states is 1000 * 100. Correspondingly, the dimension of the objective values over all parallel environments is 1000 * 1. 
 
 
 
@@ -112,7 +109,7 @@ The states over all parallel environments are stored as PyTorch tensors with the
 
 Python>=3.6
 
-PyTorch=0.2 and 0.3
+PyTorch=0.2 or 0.3
 
 Numpy>=1.24
 
@@ -128,6 +125,12 @@ RLSolver
     └──env_l2a_maxcut.py
     └──env_l2a_TNCO.py
 └──methods
+    └──L2A (ours)
+    └──S2V-DQN
+    └──RUN-CSP
+    └──iSCO
+    └──PI-GNN
+    └──tsp_alg // TSP algorithms
     └──config.py
     └──genetic_algorithm.py
     └──greedy.py
@@ -138,25 +141,15 @@ RLSolver
     └──simulated_annealing.py
     └──util.py
     └──util_results.py
-    └──L2A (ours)
-    └──S2V-DQN
-    └──RUN-CSP
-    └──iSCO
-    └──PI-GNN
-    └──tsp_alg // TSP algorithms
 └──README.md
 ```
 
 ## Datasets
 Link: [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y)
 
-1) Graph
-   
-Most data is graph, such as graph maxcut, graph partitioning, TSP.
-
 - [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
-- __Syn__ is the synthetic data. The number of nodes is from 100 to 1000. The (partial) synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y).
+- __Syn__ is the synthetic data. The number of nodes is from 100 to 1000 which in three distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). Each dataset in generated graphs has 10 instances. The partial synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y).
 
 Take g14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
 
@@ -168,11 +161,7 @@ Take g14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
 
 1 12 1 # node 1 connects node 12, weight = 1
 
-2) Non-graph
 
-The data is not graph, such as the set cover problem, knapsack problem, and binary integer linear programming (BILP).
-
-  
 ## Results
 
 Link: [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y)
@@ -280,26 +269,26 @@ python methods/L2A/maxcut_end2end.py  # ours
 
 ## Results for Graph Maxcut
 
-In the following experiments, we used GPU during training by default. The best-known results are labed in bold.
+In the following experiments, we used GPU during training by default. The best-known results are labled in bold.
 
 1) Instance-wise (Gset)
 
 We use the instance-wise version of L2A, i.e., end to end, in the dataset [Gset](https://web.stanford.edu/~yyye/yyye/Gset/), which is opened by Stanford university. 
 
-| Graph | Nodes| Edges | BLS | DSDP    | KHLWG   | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         |iSCO     | MCPG     | Ours | Improvement |  
-|--- |------|----  |---        |-----    |-----    |--------|-------| ---           | ---        | ----  | ----     | ----| ----|
-|    |      |  |       |  |   ||Pattern I|         |         | Pattern I| Pattern II     | Pattern II| |
-|G14 | 800  | 4694 | __3064__  |         | 2922    | 3061   | 2943  |3037           | 4.28\%     |  3056 |__3064__  | __3064__ | +0\%|
-|G15 | 800  | 4661 | __3050__  | 2938    |__3050__ | 2928   | 2990  |3022           |4.37\%      |  3046 |__3050__  | __3050__ | +0\% | 
-|G22 | 2000 | 19990|__13359__  | 12960   |__13359__| 13028  | 13181 |13217          | 30.56\%    |  13289|__13359__ | __13359__ |  +0\% | 
-|G49 | 3000 | 6000 | __6000__  | __6000__|__6000__ |__6000__| 5918  |__6000__       |0           | 5940  |__6000__  | __6000__|  +0\% | 
-|G50 | 3000 | 6000 | __5880__  | __5880__|__5880__ |__5880__| 5820  |__5880__       |0.51\%           | 5880  |__5880__  | __5880__|  +0\% | 
-|G55 | 5000 | 12468| 10294     | 9960    | 10236   | 10116  | 10138 | 10115         | 17.09\%    | 10218 | 10296    |__10298__ |  +0.04\% | 
-|G70 | 10000| 9999 |9541       | 9456    | 9458    | -      | 9421  | 9579          |1.75\%      |  9442 | 9578     |__9586__ | +0.47\% | 
+| Graph | Nodes| Edges | BLS | DSDP    | KHLWG     | RUN-CSP| PI-GNN| Gurobi (1 h)  |Gap         | Obj bound |iSCO   | MCPG     | Ours | Improvement |  
+|--- |------|----  |---        |-----    |-----    |--------|-------| ---           | ---        | ----      | ----  | ----     | ---- | ----|
+|    |      |  |       |  |    |                            |Pattern I|         |                |           | Pattern I| Pattern II| Pattern II|   |
+|G14 | 800  | 4694 | __3064__  |         | 2922    | 3061   | 2943  |3037           | 4.28\%     |3167       |  3056 |__3064__  | __3064__ | +0\%|
+|G15 | 800  | 4661 | __3050__  | 2938    |__3050__ | 2928   | 2990  |3022           |4.37\%      |3151       |  3046 |__3050__  | __3050__ | +0\% | 
+|G22 | 2000 | 19990|__13359__  | 12960   |__13359__| 13028  | 13181 |13217          | 30.56\%    |17256      |  13289|__13359__ | __13359__ |  +0\% | 
+|G49 | 3000 | 6000 | __6000__  | __6000__|__6000__ |__6000__| 5918  |__6000__       |0           |6000       | 5940  |__6000__  | __6000__|  +0\% | 
+|G50 | 3000 | 6000 | __5880__  | __5880__|__5880__ |__5880__| 5820  |__5880__       |0.51\%      |5910       | __5880__  |__5880__  | __5880__|  +0\% | 
+|G55 | 5000 | 12468| 10294     | 9960    | 10236   | 10116  | 10138 | 10115         | 17.09\%    |11844      | 10218 | 10296    |__10298__ |  +0.04\% | 
+|G70 | 10000| 9999 |9541       | 9456    | 9458    | -      | 9421  | 9579          |1.75\%      |9747       |  9442 | 9578     |__9586__ | +0.47\% | 
 
 2) Distribution-wise (synthetic data)
 
-We use the distribution-wise version of L2A in the synthetic datasets in 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL), i.e., after training, we test the instances by inferring the neural networks. The distribution-wise version of L2A is __much much faster__ than the instance-wise methods, such as MCPG and iSCO, since we can obtain the results directly by inference. For graphs with n nodes, there are 10 datasets, and we calcualte the average of the obtained objective values. 
+We use the distribution-wise version of L2A in the synthetic datasets in 3 distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). That is, after training, we test the instances by inferring the neural networks. The distribution-wise version of L2A is __much much faster__ than the instance-wise methods (such as MCPG and iSCO), since we can obtain the results directly by inference. For graphs with $n ~ (100 \leq 1000)$ nodes, there are 10 datasets, and we calcualte the average of the obtained objective values. 
 
 Results on the BA distribution.
 |Nodes | Greedy | SDP  | SA       | GA     | Gurobi (1 h) | PI-GNN | iSCO   | MCPG   | Ours| 
