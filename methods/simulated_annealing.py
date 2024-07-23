@@ -7,22 +7,25 @@ import numpy as np
 import random
 import networkx as nx
 
-from util import (obj_maxcut,
-                  read_nxgraph,
-                  cover_all_edges,
-                  read_set_cover_data,
+from util import (calc_txt_files_with_prefix,
+                  calc_result_file_name,
+                  plot_fig
+                 )
+from util_read_data import (read_nxgraph,
+                            read_set_cover_data, )
+from util_result import (write_result3,
+                         write_result,
+                         write_result_set_cover
+                         )
+from util_obj import (
+                  obj_maxcut,
                   obj_graph_partitioning,
+                    cover_all_edges,
                   obj_minimum_vertex_cover,
                   obj_maximum_independent_set,
                   obj_set_cover,
                   obj_graph_coloring,
-                  write_result,
-                  calc_txt_files_with_prefix,
-                  write_result3,
-                  write_result_set_cover,
-                  calc_result_file_name,
-                  plot_fig
-                 )
+                      )
 from greedy import (greedy_maxcut,
                     greedy_graph_partitioning,
                     greedy_minimum_vertex_cover,

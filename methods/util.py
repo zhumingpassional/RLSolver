@@ -23,11 +23,7 @@ IndexList = List[List[int]]
 from config import GSET_DIR
 DataDir = GSET_DIR
 
-class MyGraph:
-    def __init__(self):
-        num_nodes = 0
-        num_edges = 0
-        graph = List[Tuple[int, int, int]]
+
 
 def plot_nxgraph(g: nx.Graph(), fig_filename='.result/fig.png'):
     import matplotlib.pyplot as plt
@@ -35,88 +31,7 @@ def plot_nxgraph(g: nx.Graph(), fig_filename='.result/fig.png'):
     plt.savefig(fig_filename)
     plt.show()
 
-# read graph file, e.g., gset_14.txt, as networkx.Graph
-# The nodes in file start from 1, but the nodes start from 0 in our codes.
-def read_nxgraph(filename: str) -> nx.Graph():
-    graph = nx.Graph()
-    with open(filename, 'r') as file:
-        # lines = []
-        line = file.readline()
-        is_first_line = True
-        while line is not None and line != '':
-            if '//' not in line:
-                if is_first_line:
-                    strings = line.split(" ")
-                    num_nodes = int(strings[0])
-                    num_edges = int(strings[1])
-                    nodes = list(range(num_nodes))
-                    graph.add_nodes_from(nodes)
-                    is_first_line = False
-                else:
-                    node1, node2, weight = line.split(" ")
-                    graph.add_edge(int(node1) - 1, int(node2) - 1, weight=weight)
-            line = file.readline()
-    return graph
 
-# read tsp file,latitude and longitude, horizontal and vertical coordinates
-def read_tsp(filename:str) -> nx.Graph():
-
-    graph = nx.Graph()
-
-    with open(filename,'r') as file:
-        num_nodes = int(file.readline().strip())
-        positions = np.array([list(map(float,line.split(" "))) for line in file if line.strip()])
-
-    for node_id,pos in enumerate(positions):
-        graph.add_node(node_id,pos=tuple(pos))
-
-    for i in range(num_nodes):
-        dists = np.sqrt(np.sum((positions[i] - positions[i+1:num_nodes]) ** 2,axis=1))
-        for j,dist in enumerate(dists,start=i + 1):
-            graph.add_edge(i,j,weight = dist)
-
-    return graph
-
-# def read_set_cover(filename: str):
-#     with open(filename, 'r') as file:
-#         # lines = []
-#         line = file.readline()
-#         item_matrix = []
-#         while line is not None and line != '':
-#             if 'p set' in line:
-#                 strings = line.split(" ")
-#                 num_items = int(strings[-2])
-#                 num_sets = int(strings[-1])
-#             elif 's' in line:
-#                 strings = line.split(" ")
-#                 items = [int(s) for s in strings[1:]]
-#                 item_matrix.append(items)
-#             else:
-#                 raise ValueError("error in read_set_cover")
-#             line = file.readline()
-#     return num_items, num_sets, item_matrix
-
-def read_knapsack_data(filename):
-    with open(filename, 'r') as file:
-        lines = file.readlines()
-        N, W = map(int, lines[0].split())
-        items = []
-        for line in lines[1:]:
-            weight, value = map(int, line.split())
-            items.append((weight, value))
-    return N, W, items
-
-
-def read_set_cover_data(filename):
-    with open(filename, 'r') as file:
-        first_line = file.readline()
-        total_elements, total_subsets = map(int, first_line.split())
-        subsets = []
-        for line in file:
-            subset = list(map(int, line.strip().split()))
-            subsets.append(subset)
-
-    return total_elements, total_subsets, subsets
 
 def transfer_nxgraph_to_adjacencymatrix(graph: nx.Graph):
     return nx.to_numpy_array(graph)
@@ -148,166 +63,6 @@ def transfer_weightmatrix_to_nxgraph(weightmatrix: List[List[int]], num_nodes: i
     for i, j, weight in weightmatrix:
         graph.add_edge(i, j, weight=weight)
     return graph
-
-# max total cuts
-def obj_maxcut(result: Union[Tensor, List[int], np.array], graph: nx.Graph):
-    num_nodes = len(result)
-    obj = 0
-    adj_matrix = transfer_nxgraph_to_adjacencymatrix(graph)
-    for i in range(num_nodes):
-        for j in range(i + 1, num_nodes):
-            if result[i] != result[j]:
-                obj += adj_matrix[(i, j)]
-    return obj
-
-# min total cuts
-def obj_graph_partitioning(solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
-    num_nodes = len(solution)
-    obj = 0
-    adj_matrix = transfer_nxgraph_to_adjacencymatrix(graph)
-    sum1 = 0
-    for i in range(num_nodes):
-        if solution[i] == 0:
-            sum1 += 1
-        for j in range(i + 1, num_nodes):
-            if solution[i] != solution[j]:
-                obj -= adj_matrix[(i, j)]
-    if sum1 != num_nodes / 2:
-        return -INF
-    return obj
-
-def cover_all_edges(solution: List[int], graph: nx.Graph):
-    if graph.number_of_nodes() == 0:
-        return False
-    cover_all = True
-    for node1, node2 in graph.edges:
-        if solution[node1] == 0 and solution[node2] == 0:
-            cover_all = False
-            break
-    return cover_all
-
-def obj_minimum_vertex_cover(solution: Union[Tensor, List[int], np.array], graph: nx.Graph, need_check_cover_all_edges=True):
-    num_nodes = len(solution)
-    obj = 0
-    for i in range(num_nodes):
-        if solution[i] == 1:
-            obj -= 1
-    if need_check_cover_all_edges:
-        if not cover_all_edges(solution, graph):
-                return -INF
-    return obj
-
-# make sure solution[i] = 0 or 1
-def obj_maximum_independent_set(solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
-    sol = set(solution)
-    # if len(solution) > 0:
-    #     assert len(sol) == 2
-    max_elem = max(sol)
-    min_elem = min(sol)
-    if max_elem == min_elem:
-        max_elem += 1
-    obj = 0
-    edges = list(graph.edges)
-    num_nodes = int(graph.number_of_nodes())
-    for i, j in edges:
-        if solution[i] == max_elem and solution[j] == max_elem:
-            return -INF
-    for i in range(num_nodes):
-        if solution[i] == max_elem:
-            obj += 1
-    return obj
-
-# the returned score, the higher, the better
-def obj_maximum_independent_set_SA(node: int, solution: Union[Tensor, List[int], np.array], graph: nx.Graph):
-    def adjacent_to_selected_nodes(node: int, solution: Union[Tensor, List[int], np.array]):
-        for i in range(len(solution)):
-            if solution[i] == 1:
-                min_node = min(node, i)
-                max_node = max(node, i)
-                if (min_node, max_node) in graph.edges():
-                    return True
-        return False
-    num_edges = graph.number_of_edges()
-    if solution[node] == 0:  # 0 -> 1
-        if adjacent_to_selected_nodes(node, solution):
-            score = -INF
-        else:
-            score = 1 - graph.degree(node) / num_edges
-    else:  # 1 -> 0
-        score = 1 + graph.degree(node) / num_edges
-    return score
-
-# the ratio of items that covered. 1.0 is the max returned value.
-def obj_set_cover_ratio(solution: Union[Tensor, List[int], np.array], num_items: int, item_matrix: List[List[int]]):
-    num_sets = len(solution)
-    covered_items = set()
-    for i in range(num_sets):
-        assert solution[i] in [0, 1]
-        if solution[i] == 1:
-            for j in range(len(item_matrix[i])):
-                covered_items.add(item_matrix[i][j])
-    num_covered = 0
-    items = set(np.array(range(num_items)) + 1)
-    for i in covered_items:
-        if i in items:
-            num_covered += 1
-    obj = float(num_covered) / float(num_items)
-    return obj
-
-# return negative value. the smaller abs of obj, the better.
-def obj_set_cover(solution: Union[Tensor, List[int], np.array], num_items: int, item_matrix: List[List[int]]):
-    num_sets = len(solution)
-    covered_items = set()
-    selected_sets = []
-    for i in range(num_sets):
-        assert solution[i] in [0, 1]
-        if solution[i] == 1:
-            selected_sets.append(i + 1)
-            for j in range(len(item_matrix[i])):
-                covered_items.add(item_matrix[i][j])
-    num_covered = 0
-    items = set(np.array(range(num_items)) + 1)
-    for i in covered_items:
-        if i in items:
-            num_covered += 1
-    if num_covered == num_items:
-        obj = -len(selected_sets)
-    else:
-        obj = -INF
-    return obj
-
-def obj_graph_coloring(solution: Union[Tensor, List[int], np.array], graph: nx.Graph) -> int:
-    assert None not in solution
-    assert len(solution) == graph.number_of_nodes()
-    for node1, node2 in graph.edges:
-        if solution[node1] == solution[node2]:
-            return -INF
-    colors = set()
-    for node in range(len(solution)):
-        color = solution[node]
-        colors.add(color)
-    num_colors = len(colors)
-    return -num_colors
-
-# write a tensor/list/np.array (dim: 1) to a txt file.
-# The nodes start from 0, and the label of classified set is 0 or 1 in our codes, but the nodes written to file start from 1, and the label is 1 or 2
-def write_result(result: Union[Tensor, List, np.array],
-                 filename: str = './result/result.txt',
-                 obj: Union[int, float] = None,
-                 running_duration: Union[int, float] = None):
-    # assert len(result.shape) == 1
-    # N = result.shape[0]
-    num_nodes = len(result)
-    directory = filename.split('/')[0]
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-    with open(filename, 'w', encoding="UTF-8") as file:
-        if obj is not None:
-            file.write(f'// obj: {obj}\n')
-        if running_duration is not None:
-            file.write(f'// running_duration: {running_duration}\n')
-        for node in range(num_nodes):
-            file.write(f'{node + 1} {int(result[node] + 1)}\n')
 
 
 # genete a graph, and output a symmetric_adjacency_matrix and networkx_graph. The graph will be written to a file.
@@ -804,7 +559,7 @@ def build_adjacency_matrix_auto(graph: GraphList, if_bidirectional: bool = False
             adjacency_matrix[n1, n0] = distance
     return adjacency_matrix
 
-def build_adjacency_indies_auto(graph: MyGraph, if_bidirectional: bool = False) -> (IndexList, IndexList):
+def build_adjacency_indies_auto(graph, if_bidirectional: bool = False) -> (IndexList, IndexList):
     """
     用二维列表list2d表示这个图：
     [
@@ -857,101 +612,38 @@ def convert_matrix_to_vector(matrix):
     vector = [row[i + 1:] for i, row in enumerate(matrix)]
     return th.hstack(vector)
 
-def write_result3(obj, running_duration, num_nodes, alg_name, solution, filename: str):
-    add_tail = '_' if running_duration is None else '_' + str(int(running_duration)) if 'data' in filename else None
-    new_filename = calc_result_file_name(filename, add_tail)
-    print("result filename: ", new_filename)
-    with open(new_filename, 'w', encoding="UTF-8") as new_file:
-        prefix = '// '
-        new_file.write(f"{prefix}obj: {obj}\n")
-        new_file.write(f"{prefix}running_duration: {running_duration}\n")
-        new_file.write(f"// num_nodes: {num_nodes}\n")
-        new_file.write(f"{prefix}alg_name: {alg_name}\n")
-        for i in range(len(solution)):
-            new_file.write(f"{i + 1} {solution[i] + 1}\n")
-
-def write_result_set_cover(obj, running_duration, num_items: int, num_sets: int, alg_name, filename: str):
-    add_tail = '_' + str(int(running_duration)) if 'data' in filename else None
-    new_filename = calc_result_file_name(filename, add_tail)
-    with open(new_filename, 'w', encoding="UTF-8") as new_file:
-        prefix = '// '
-        new_file.write(f"{prefix}obj: {obj}\n")
-        new_file.write(f"{prefix}running_duration: {running_duration}\n")
-        new_file.write(f"// num_sets: {num_sets}\n")
-        new_file.write(f"// num_items: {num_items}\n")
-        new_file.write(f"{prefix}alg_name: {alg_name}\n")
-
-
-# def run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0: Optional[bool], directory_data: str, prefixes: List[str])-> List[List[float]]:
-def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str, prefixes: List[str])-> List[List[float]]:
-    scoress = []
-    for prefix in prefixes:
-        files = calc_txt_files_with_prefix(directory_data, prefix)
-        files.sort()
-        for i in range(len(files)):
-            start_time = time.time()
-            filename = files[i]
-            print(f'The {i}-th file: {filename}')
-            if PROBLEM == Problem.set_cover:
-                from greedy import greedy_set_cover
-                num_items, num_sets, item_matrix = read_set_cover_data(filename)
-                score, solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
-                scoress.append(scores)
-                running_duration = time.time() - start_time
-                alg_name = 'greedy'
-                write_result_set_cover(score, running_duration, num_items, num_sets, alg_name, filename)
-            else:
-                graph = read_nxgraph(filename)
-                score, solution, scores = alg(num_steps, graph, filename)
-                scoress.append(scores)
-    return scoress
 
 
 
 
-def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: List[str])-> List[List[float]]:
-    scores = []
-    for prefix in prefixes:
-        files = calc_txt_files_with_prefix(directory_data, prefix)
-        files.sort()
-        for i in range(len(files)):
-            start_time = time.time()
-            filename = files[i]
-            print(f'The {i}-th file: {filename}')
-            score, solution = alg(filename)
-            scores.append(score)
-            print(f"score: {score}")
-            running_duration = time.time() - start_time
-            graph = read_nxgraph(filename)
-            num_nodes = int(graph.number_of_nodes())
-            write_result3(score, running_duration, num_nodes, alg_name, solution, filename)
-    return scores
-
+def read_solution(filename: str):
+    with open(filename, 'r') as file:
+        # lines = []
+        line = file.readline()
+        while True:
+            if '// num_nodes:' in line:
+                strings = line.split("// num_nodes:")
+                num_nodes = int(strings[1])
+                solution = [0] * num_nodes
+            if '//' not in line and len(line) >= 1:
+                strings = line.split(" ")
+                node = int(strings[0]) - 1
+                label = int(strings[1]) - 1
+                solution[node] = label
+            if len(line) == 0:
+                break
+            line = file.readline()
+    return solution
 
 
 if __name__ == '__main__':
     s = "// time_limit: ('TIME_LIMIT', <class 'float'>, 36.0, 0.0, inf, inf)"
     val = obtain_first_number(s)
 
-    read_txt = True
-    if read_txt:
-        graph1 = read_nxgraph('../data/gset/gset_14.txt')
-        graph2 = read_nxgraph('../data/syn_5_5.txt')
 
-    # result = Tensor([0, 1, 0, 1, 0, 1, 1])
-    # write_result(result)
-    # result = [0, 1, 0, 1, 0, 1, 1]
-    # write_result(result)
-    write_result_ = False
-    if write_result_:
-        result = [1, 0, 1, 0, 1]
-        write_result(result)
 
-    generate_read = False
-    if generate_read:
-        adj_matrix, graph3 = generate_write_adjacencymatrix_and_nxgraph(6, 8)
-        graph4 = read_nxgraph('data/syn_6_8.txt')
-        obj_maxcut(result, graph4)
+
+
 
     # generate synthetic data
     generate_data = False
@@ -988,9 +680,9 @@ if __name__ == '__main__':
     # transfer_write_solver_results(directory_result, prefixes, time_limits, from_extension, to_extension)
 
     if_plot = True
-    if(if_plot):
+    if if_plot:
         dir = '../result/syn_PL_gurobi'
-        prefixes = 'powerlaw_1400_'
+        prefixes = 'powerlaw_200_'
         running_durations = RUNNING_DURATIONS
         read_result_comments_multifiles(dir, prefixes, running_durations)
 
@@ -1005,21 +697,7 @@ if __name__ == '__main__':
         dir = '../data/syn_BA'
         generate_write_distribution(num_nodess, num_graphs, graph_type, dir)
 
-    if_test_read_set_cover = False
-    filename = '../data/set_cover/frb45-21-5.msc'
-    if if_test_read_set_cover:
-        num_items, num_sets, item_matrix = read_set_cover_data(filename)
-        print(f'num_items: {num_items}, num_sets: {num_sets}, item_matrix: {item_matrix}')
-        solution1 = [1] * num_sets
-        obj1 = obj_set_cover_ratio(solution1, num_items, item_matrix)
-        print(f'obj1: {obj1}')
-        solution2 = [1] * (num_sets // 2) + [0] * (num_sets - num_sets // 2)
-        obj2 = obj_set_cover_ratio(solution2, num_items, item_matrix)
-        print(f'obj2: {obj2}')
 
-        solution3 = [0] * num_sets
-        obj3 = obj_set_cover_ratio(solution3, num_items, item_matrix)
-        print(f'obj3: {obj3}')
 
 
 

@@ -5,9 +5,9 @@ import networkx as nx
 import numpy as np
 from typing import List, Union
 import random
-from util import read_nxgraph
-from util import obj_maxcut
-from util import write_result
+from util_read_data import read_nxgraph
+from util_obj import obj_maxcut
+from util_result import write_result
 from util import plot_fig
 
 import sys

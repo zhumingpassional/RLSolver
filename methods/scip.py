@@ -5,7 +5,7 @@ import os
 import time
 from typing import List
 import networkx as nx
-from util import read_nxgraph
+from util_read_data import read_nxgraph
 from util import calc_txt_files_with_prefix
 from util import calc_result_file_name
 from util import calc_avg_std_of_objs

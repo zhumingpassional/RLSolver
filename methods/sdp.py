@@ -5,9 +5,16 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg
-from util import obj_maxcut
-from util import read_nxgraph
 import os
+import time
+from typing import List
+
+from util_obj import obj_maxcut
+from util_read_data import read_nxgraph
+from util import (calc_txt_files_with_prefix,
+                  )
+from util_result import (write_result3,
+                         )
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 def draw_graph(G, colors, pos):
@@ -61,6 +68,25 @@ def sdp_maxcut(filename: str):
     print("obj: ", score, ",solution = " + str(solution))
     return score, solution
 
+def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: List[str])-> List[List[float]]:
+    scores = []
+    for prefix in prefixes:
+        files = calc_txt_files_with_prefix(directory_data, prefix)
+        files.sort()
+        for i in range(len(files)):
+            start_time = time.time()
+            filename = files[i]
+            print(f'The {i}-th file: {filename}')
+            score, solution = alg(filename)
+            scores.append(score)
+            print(f"score: {score}")
+            running_duration = time.time() - start_time
+            graph = read_nxgraph(filename)
+            num_nodes = int(graph.number_of_nodes())
+            write_result3(score, running_duration, num_nodes, alg_name, solution, filename)
+    return scores
+
+
 if __name__ == '__main__':
     # n = 5
     # graph = nx.Graph()
@@ -76,11 +102,10 @@ if __name__ == '__main__':
     filename = '../data/syn/syn_50_176.txt'
     sdp_maxcut(filename)
 
-    from util import run_sdp_over_multiple_files
     alg = sdp_maxcut
     alg_name = 'sdp'
     directory_data = '../data/syn_BA'
-    prefixes = ['barabasi_albert_300']
+    prefixes = ['barabasi_albert_100']
     scores = run_sdp_over_multiple_files(alg, alg_name, directory_data, prefixes)
     print(f"scores: {scores}")
 

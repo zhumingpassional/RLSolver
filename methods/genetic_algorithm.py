@@ -21,10 +21,15 @@ try:
 except ImportError:
     plt = None
 
-from util import (read_nxgraph,
-                  obj_maxcut,
-                  write_result3,
-                  calc_txt_files_with_prefix)
+from util import (calc_txt_files_with_prefix,
+                  )
+from util_read_data import (read_nxgraph,
+                            )
+from util_obj import (obj_maxcut,
+                        )
+from util_result import (write_result3,
+                         )
+
 
 # constants for tabuSearch
 P_iter = 100
