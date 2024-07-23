@@ -927,6 +927,24 @@ def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: Li
             write_result3(score, running_duration, num_nodes, alg_name, solution, filename)
     return scores
 
+def read_solution(filename: str):
+    with open(filename, 'r') as file:
+        # lines = []
+        line = file.readline()
+        while True:
+            if '// num_nodes:' in line:
+                strings = line.split("// num_nodes:")
+                num_nodes = int(strings[1])
+                solution = [0] * num_nodes
+            if '//' not in line and len(line) >= 1:
+                strings = line.split(" ")
+                node = int(strings[0]) - 1
+                label = int(strings[1]) - 1
+                solution[node] = label
+            if len(line) == 0:
+                break
+            line = file.readline()
+    return solution
 
 
 if __name__ == '__main__':
