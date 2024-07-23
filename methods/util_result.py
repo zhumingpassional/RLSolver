@@ -87,7 +87,7 @@ def read_result_comments(filename: str):
         while line is not None and line != '':
             if '//' in line:
                 if 'num_nodes:' in line:
-                    num_nodes = float(line.split('num_nodes:')[1])
+                    num_nodes = int(line.split('num_nodes:')[1])
                     break
                 if 'running_duration:' in line:
                     running_duration = obtain_first_number(line)
@@ -97,7 +97,7 @@ def read_result_comments(filename: str):
                     obj_bound = float(line.split('obj_bound:')[1])
 
             line = file.readline()
-    return int(num_nodes), ID, running_duration, obj, obj_bound
+    return num_nodes, ID, running_duration, obj, obj_bound
 
 def read_result_comments_multifiles2(dir: str, prefixes: str, max_ID: int):
     objs = {}
@@ -176,6 +176,47 @@ def obtain_first_number(s: str):
 
 
 
+def read_result_comments_multifiles(dir: str, prefixes: str, running_durations: List[int]):
+    res = {}
+    num_nodess = set()
+    # for prefix in prefixes:
+    files = calc_txt_files_with_prefix(dir, prefixes)
+    num_ids = NUM_IDS
+    for i in range(len(files)):
+        file = files[i]
+        num_nodes, ID, running_duration, obj, obj_bound = read_result_comments(file)
+        if running_duration not in running_durations:
+            continue
+        index = running_durations.index(running_duration)
+        num_nodess.add(num_nodes)
+        if str(num_nodes) not in res.keys():
+            res[str(num_nodes)] = [[None] * len(running_durations) for _ in range(num_ids)]
+        res[str(num_nodes)][ID][index] = obj
+            # res[str(num_nodes)] = {**res[str(num_nodes)], **tmp_dict}
+    for num_nodes_str in res.keys():
+        for ID in range(num_ids):
+            last_nonNone = None
+            for i in range(len(running_durations)):
+                if res[num_nodes_str][ID][i] is not None:
+                    last_nonNone = res[num_nodes_str][ID][i]
+                if res[num_nodes_str][ID][i] is None and last_nonNone is not None:
+                    res[num_nodes_str][ID][i] = last_nonNone
+
+    num_nodess = list(num_nodess)
+    num_nodess.sort()
+    for num_nodes in num_nodess:
+        objs = []
+        for i in range(len(running_durations)):
+            sum_obj = 0
+            for ID in range(num_ids):
+                if res[str(num_nodes)][ID][i] is not None:
+                    sum_obj += res[str(num_nodes)][ID][i]
+            obj = sum_obj / num_ids
+            objs.append(obj)
+        label = f"num_nodes={num_nodes}"
+        print(f"objs: {objs}, running_duration: {running_durations}, label: {label}")
+        plot_fig_over_durations(objs, running_durations, label)
+
 if __name__ == '__main__':
     # result = Tensor([0, 1, 0, 1, 0, 1, 1])
     # write_result(result)
@@ -194,6 +235,12 @@ if __name__ == '__main__':
     max_ID = 9
     objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, avg_running_durations, std_objs, std_obj_bounds, std_running_durations = read_result_comments_multifiles2(dir, prefixes, max_ID)
 
+    if_plot = True
+    if if_plot:
+        dir = '../result/syn_PL_gurobi'
+        prefixes = 'powerlaw_200_'
+        running_durations = RUNNING_DURATIONS
+        read_result_comments_multifiles(dir, prefixes, running_durations)
 
     print(avg_objs)
     print(obj_bounds)
