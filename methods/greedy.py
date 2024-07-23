@@ -7,22 +7,23 @@ from typing import Union, Optional
 import numpy as np
 import multiprocessing as mp
 import networkx as nx
-from util import (read_nxgraph,
-                  plot_fig,
+from util import (plot_fig,
                   plot_nxgraph,
                   transfer_nxgraph_to_weightmatrix,
-                  cover_all_edges,
-                  run_greedy_over_multiple_files,
+                  calc_txt_files_with_prefix,
+                )
+from util_read_data import (read_nxgraph,
+                            )
+from util_obj import (cover_all_edges,
                   obj_maxcut,
                   obj_graph_partitioning,
                   obj_minimum_vertex_cover,
                   obj_maximum_independent_set,
                   obj_set_cover_ratio,
                   obj_set_cover,
-                  obj_graph_coloring,
-                  write_result3,
-                )
-
+                  obj_graph_coloring,)
+from util_result import (write_result3,
+                         )
 from config import *
 
 def split_list(my_list: List[int], chunk_size: int):
@@ -358,6 +359,32 @@ def greedy_graph_coloring(num_steps: Optional[int], graph: nx.Graph) -> (int, Un
     curr_solution = solution
     scores = [curr_score]
     return curr_score, curr_solution, scores
+
+# def run_greedy_over_multiple_files(alg, alg_name, num_steps, set_init_0: Optional[bool], directory_data: str, prefixes: List[str])-> List[List[float]]:
+def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str, prefixes: List[str])-> List[List[float]]:
+    from util_read_data import (read_set_cover_data, read_nxgraph)
+    from util_result import write_result_set_cover
+    scoress = []
+    for prefix in prefixes:
+        files = calc_txt_files_with_prefix(directory_data, prefix)
+        files.sort()
+        for i in range(len(files)):
+            start_time = time.time()
+            filename = files[i]
+            print(f'The {i}-th file: {filename}')
+            if PROBLEM == Problem.set_cover:
+                from greedy import greedy_set_cover
+                num_items, num_sets, item_matrix = read_set_cover_data(filename)
+                score, solution, scores = greedy_set_cover(num_items, num_sets, item_matrix)
+                scoress.append(scores)
+                running_duration = time.time() - start_time
+                alg_name = 'greedy'
+                write_result_set_cover(score, running_duration, num_items, num_sets, alg_name, filename)
+            else:
+                graph = read_nxgraph(filename)
+                score, solution, scores = alg(num_steps, graph, filename)
+                scoress.append(scores)
+    return scoress
 
 if __name__ == '__main__':
     # read data
