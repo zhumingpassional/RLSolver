@@ -269,7 +269,7 @@ python methods/L2A/maxcut_end2end.py  # ours
 
 ## Results for Graph Maxcut
 
-In the following experiments, we used GPU during training by default. The best-known results are labled in bold.
+In the following experiments, we used GPU during training by default. The best-known results are labled in bold. The "obj bound" is the bound of the objective value, which is calculated by Gurobi, and any solution can not exceed this value. 
 
 1) Instance-wise (Gset)
 
