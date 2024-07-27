@@ -24,12 +24,12 @@ from config import GSET_DIR
 DataDir = GSET_DIR
 
 from util import (transfer_nxgraph_to_adjacencymatrix,
-                    generate_write_adjacencymatrix_and_nxgraph,
                   )
 
 from util_read_data import (read_nxgraph,
                             read_set_cover_data
                             )
+from util_generate import generate_write_adjacencymatrix_and_nxgraph
 # max total cuts
 def obj_maxcut(result: Union[Tensor, List[int], np.array], graph: nx.Graph):
     num_nodes = len(result)

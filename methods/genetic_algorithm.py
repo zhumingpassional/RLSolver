@@ -33,8 +33,8 @@ from util_result import (write_result3,
 
 # constants for tabuSearch
 P_iter = 100
-MaxIter = 100000
-gamma = 60
+MaxIter = 10000
+gamma = 65
 
 
 def generate_random(graph):
@@ -65,11 +65,11 @@ def generate_random_population(graph, pop_size):
 
 
 def tenure(iteration, maxT):
-    # Define the sequence of values for the tenure function
+    # define the sequence of values for the tenure function
     a = [maxT * bi for bi in [1, 2, 1, 4, 1, 2, 1, 8, 1, 2, 1, 4, 1, 2, 1]]
-    # Define the sequence of interval margins
+    # define the sequence of interval margins
     x = [1] + [x + 4 * maxT * bi for x, bi in zip([1] * 15, [1, 2, 1, 4, 1, 2, 1, 8, 1, 2, 1, 4, 1, 2, 1])]
-    # Find the interval to determine the tenure
+    # find the interval to determine the tenure
     interval = next(i for i, xi in enumerate(x) if xi > iteration) - 1
     return a[interval]
 
@@ -81,9 +81,9 @@ def compute_move_gains(graph, vector, tabu_list):
         neighbor_nodes = list(graph.neighbors(i))
         for j in neighbor_nodes:
             if vector[i] == vector[j]:
-                delta_v += 1
+                delta_v += float(graph[i][j]["weight"])
             else:
-                delta_v -= 1
+                delta_v -= float(graph[i][j]["weight"])
         move_gains.append(delta_v)
 
     return move_gains
@@ -93,18 +93,18 @@ def update_move_gains(node_flipped, move_gains, vector, graph):
     neighbors = list(graph.neighbors(node_flipped))
     for i in neighbors:
         if vector[i] == vector[node_flipped]:
-            move_gains[i] += 2
+            move_gains[i] += 2 * float(graph[i][node_flipped]["weight"])
         else:
-            move_gains[i] -= 2
+            move_gains[i] -= 2 * float(graph[i][node_flipped]["weight"])
     move_gains[node_flipped] = -move_gains[node_flipped]
     return move_gains
 
 
 def perturb(binary_vector):
-    # Randomly select gamma vertices to move
+    # randomly select gamma vertices to move
     vertices_to_move = random.sample(range(len(binary_vector)), gamma)
 
-    # Flip the subsets for the selected vertices
+    # flip the subsets for the selected vertices
     for vertex in vertices_to_move:
         binary_vector[vertex] = 1 - binary_vector[vertex]
 
@@ -112,20 +112,20 @@ def perturb(binary_vector):
 
 
 def tabu_search(initial_solution, graph):
-    # Initialize best solution and its score
+    # initialize best solution and its score
     best_solution = initial_solution
     best_score = obj_maxcut(initial_solution, graph)
     curr_solution = copy.deepcopy(initial_solution)
     curr_score = best_score
-    # Initialize iteration counter
+    # initialize iteration counter
     Iter = 0
     pit = 0
 
-    # Initialize tabu list and tabu tenure
+    # initialize tabu list and tabu tenure
     tabu_list = [0] * len(curr_solution)
     maxT = 150
 
-    # Compute move gains
+    # compute move gains
     move_gains = compute_move_gains(graph, curr_solution, tabu_list)
     while Iter < MaxIter:
         v = 0
@@ -135,25 +135,25 @@ def tabu_search(initial_solution, graph):
                 delta_v = move_gains[i]
                 v = i
 
-        # Move v from its original subset to the opposite set
+        # move v from its original subset to the opposite set
         curr_solution[v] = 1 - curr_solution[v]
         curr_score += delta_v
         # print("Current ",curr_score)
         # print("Actual ",obj_maxcut(curr_solution,graph))
-        # Update tabu list and move gains for each vertex v ∈ V
+        # update tabu list and move gains for each vertex v ∈ V
         tabu_list[v] = maxT + Iter
         move_gains = update_move_gains(v, move_gains, curr_solution, graph)
 
-        # Update best solution if current solution is better
+        # update best solution if current solution is better
         if curr_score > best_score:
             best_solution = copy.deepcopy(curr_solution)
             best_score = curr_score
             pit = 0
 
-        # Increment iteration counter
+        # increment iteration counter
         Iter += 1
         pit += 1
-        # Check if best solution hasn't improved after P_iter iterations
+        # check if best solution hasn't improved after P_iter iterations
         if pit == P_iter and curr_score <= best_score:
             pit = 0
             curr_solution = perturb(curr_solution)
@@ -163,19 +163,22 @@ def tabu_search(initial_solution, graph):
 
     return best_solution, best_score
 
+
+
 def cross_over(population, graph):
     selected_parents = random.sample(population, num_parents)
 
     child = []
-    for node in range(0,len(selected_parents[0])):
+    for node in range(0, len(selected_parents[0])):
         node_in_same_set = all(parent[node] == selected_parents[0][node] for parent in selected_parents)
 
         if node_in_same_set:
             child.append(selected_parents[0][node])
         else:
-            child.append(random.randint(0,1))
-    child, child_score = tabu_search(child,graph)
+            child.append(random.randint(0, 1))
+    child, child_score = tabu_search(child, graph)
     return child
+
 
 def genetic_maxcut(graph: nx.Graph(), filename):
     start_time = time.time()
@@ -184,18 +187,17 @@ def genetic_maxcut(graph: nx.Graph(), filename):
     print("Start Genetic Crossover")
     while c_iter < c_itMax:
         child = cross_over(population, graph)
-        if(child not in population):
-            child_score = obj_maxcut(child,graph)
+        if (child not in population):
+            child_score = obj_maxcut(child, graph)
 
-            print(c_iter + 1," Childs Score: ", child_score)
-    
+            print(c_iter + 1, " Childs Score: ", child_score)
+
             # Finding the min score in the list and replacing it with the child if smaller than child cut
             min_score_index = np.argmin(population_scores)
-            if(population_scores[min_score_index] < child_score):
+            if (population_scores[min_score_index] < child_score):
                 population_scores[min_score_index] = child_score
                 population[min_score_index] = child
             c_iter += 1
-        
 
     max_score_index = np.argmax(population_scores)
     obj = population_scores[max_score_index]
@@ -209,6 +211,27 @@ def genetic_maxcut(graph: nx.Graph(), filename):
     write_result3(obj, running_duration, num_nodes, alg_name, best_solution, filename)
 
     print("Genetic Search Complete")
+
+
+# Binary Vector:  [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0]
+# Score of Cut:  239.0
+#
+# if __name__ == '__main__':
+#     # Constants
+#     num_parents = 5
+#     c_itMax = 5
+#     # read data
+#     # graph = read_nxgraph('../data/syn/powerlaw_100_ID270.txt')
+#     # print("Genetic Search Start")
+#
+#     filename = '../data/syn/powerlaw_100_ID270.txt'
+#     graph = read_nxgraph(filename)
+#     genetic_maxcut(graph, filename)
+#
+#     # Cut checker
+#     # vector = [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1]
+#     # print(obj_maxcut(vector,graph))
+#     print("")
 
 def run_genetic_over_multiple_files(directory_data: str, prefixes: List[str])-> List[List[float]]:
     assert PROBLEM == Problem.maxcut
@@ -224,7 +247,7 @@ def run_genetic_over_multiple_files(directory_data: str, prefixes: List[str])-> 
             genetic_maxcut(graph, filename)
     return scoress
 
-    
+
 if __name__ == '__main__':
     # Constants
     num_parents = 5
@@ -244,8 +267,6 @@ if __name__ == '__main__':
         # directory_data = '../data/syn'
         prefixes = ['barabasi_albert_100_']
         run_genetic_over_multiple_files(directory_data, prefixes)
-
-
 
     # Cut checker
     # vector = [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1]
