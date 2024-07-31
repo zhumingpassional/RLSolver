@@ -140,6 +140,9 @@ RLSolver
     └──scip.py
     └──simulated_annealing.py
     └──util.py
+    └──util_generate.py
+    └──util_obj.py
+    └──util_read_data.py
     └──util_results.py
 └──README.md
 ```
