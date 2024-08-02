@@ -22,7 +22,7 @@ GraphList = List[Tuple[int, int, int]]  # 每条边两端点的索引以及边�
 IndexList = List[List[int]]  # 按索引顺序记录每个点的所有邻居节点 IndexList[Node0ID] = [Node1ID, ...]
 DataDir = '../data/syn_BA'  # 保存图最大割的txt文件的目录，txt数据以稀疏的方式记录了GraphList，可以重建图的邻接矩阵
 
-comment_train_NN = True
+comment_train_NN = False
 
 class SolverLocalSearch:
     def __init__(self, simulator, num_nodes: int):
