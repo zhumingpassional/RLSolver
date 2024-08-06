@@ -1,3 +1,4 @@
+import copy
 import os
 import torch
 import sys
@@ -6,10 +7,11 @@ from torch_geometric.data import Data
 # from graph_max_cut_simulator import SimulatorGraphMaxCut, load_graph_list
 import time
 import torch as th
-from typing import List, Tuple
+from typing import List, Tuple, Union
 # from graph_max_cut_simulator import SimulatorGraphMaxCut
 # from graph_max_cut_local_search import SolverLocalSearch
 import networkx as nx
+import numpy as np
 """
 pip install torch_geometric
 """
@@ -17,12 +19,60 @@ pip install torch_geometric
 GPU_ID = 0
 
 TEN = th.Tensor
+ARY = np.ndarray
 
 GraphList = List[Tuple[int, int, int]]  # 每条边两端点的索引以及边的权重 List[Tuple[Node0ID, Node1ID, WeightEdge]]
 IndexList = List[List[int]]  # 按索引顺序记录每个点的所有邻居节点 IndexList[Node0ID] = [Node1ID, ...]
 DataDir = '../data/syn_BA'  # 保存图最大割的txt文件的目录，txt数据以稀疏的方式记录了GraphList，可以重建图的邻接矩阵
+# DataDir = '../data/gset'  # 保存图最大割的txt文件的目录，txt数据以稀疏的方式记录了GraphList，可以重建图的邻接矩阵
 
-comment_train_NN = True
+
+test_sampling_speed = False
+
+class EncoderBase64:
+    def __init__(self, encode_len: int):
+        num_power = 6
+        self.encode_len = encode_len
+        self.string_len = -int(-(encode_len / num_power) // 1)  # ceil(num_nodes / num_power)
+
+        self.base_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_$"
+        self.base_num = len(self.base_digits)
+        assert self.base_num == 2 ** num_power
+
+    def bool_to_str(self, x_bool: Union[TEN, ARY]) -> str:
+        x_int = int(''.join([('1' if i else '0') for i in x_bool.tolist()]), 2)
+
+        '''bin_int_to_str'''
+        base_num = len(self.base_digits)
+        x_str = ""
+        while True:
+            remainder = x_int % base_num
+            x_str = self.base_digits[remainder] + x_str
+            x_int //= base_num
+            if x_int == 0:
+                break
+
+        if len(x_str) > 120:
+            x_str = '\n'.join([x_str[i:i + 120] for i in range(0, len(x_str), 120)])
+        if len(x_str) > 64:
+            x_str = f"\n{x_str}"
+        return x_str.zfill(self.string_len)
+
+    def str_to_bool(self, x_str: str) -> TEN:
+        x_b64 = x_str.replace('\n', '').replace(' ', '')
+
+        '''b64_str_to_int'''
+        x_int = 0
+        base_len = len(x_b64)
+        for i in range(base_len):
+            digit = self.base_digits.index(x_b64[i])
+            power = base_len - 1 - i
+            x_int += digit * (self.base_num ** power)
+
+        x_bin: str = bin(x_int)[2:]
+        x_bool = th.zeros(self.encode_len, dtype=th.bool)
+        x_bool[-len(x_bin):] = th.tensor([int(i) for i in x_bin], dtype=th.bool)
+        return x_bool
 
 class SolverLocalSearch:
     def __init__(self, simulator, num_nodes: int):
@@ -586,12 +636,14 @@ def run():
     num_ls = 8
     reset_epoch_num = 128
     total_mcmc_num = 2 ** 8
+    show_gap = 2 ** 4
+
     # path = 'data/gset_14.txt'
     # path = 'data/gset_15.txt'
     # path = 'data/gset_49.txt'
     # path = 'data/gset_50.txt'
     graph_type = ['ErdosRenyi', 'barabasi_albert', 'PowerLaw'][1]
-    num_nodes = 100
+    num_nodes = 1000
     graph_id = 0
     graph_name = f"{graph_type}_{num_nodes}_ID{graph_id}"
     path = f'temp_{graph_name}.txt'
@@ -630,14 +682,7 @@ def run():
     # total_mcmc_num = 768
     # path = 'data/gset_70.txt'  # GPU RAM 40GB
 
-    show_gap = 2 ** 4
 
-    if os.name == 'nt':
-        max_epoch_num = 2 ** 4
-        repeat_times = 1
-        reset_epoch_num = 32
-        total_mcmc_num = 10
-        show_gap = 2 ** 0
 
     '''init'''
     sim_name = path  # os.path.splitext(os.path.basename(path))[0]
@@ -670,8 +715,10 @@ def run():
     xs_bool = now_max_info.repeat(1, repeat_times)
 
     print('start loop')
+    rewardss = []
     sys.stdout.flush()  # add for slurm stdout
     for epoch in range(1, max_epoch_num + 1):
+        rewards = []
         net.to(device).reset_parameters()
         for j1 in range(reset_epoch_num // sample_epoch_num):
             start_time = time.time()
@@ -679,13 +726,14 @@ def run():
 
             temp_max, temp_max_info, value = sampler_func(
                 data, xs_sample, num_ls, total_mcmc_num, repeat_times, device)
-            if not comment_train_NN:
+            if not test_sampling_speed:
                 # update now_max
                 for i0 in range(total_mcmc_num):
                     if temp_max[i0] > now_max_res[i0]:
                         now_max_res[i0] = temp_max[i0]
                         now_max_info[:, i0] = temp_max_info[:, i0]
 
+                rewards.extend(copy.deepcopy(now_max_res))
                 # update if min is too small
                 now_max = max(now_max_res).item()
                 now_max_index = torch.argmax(now_max_res)
@@ -705,45 +753,50 @@ def run():
                 entropy = -(probs * probs.log2() + _probs * _probs.log2()).mean(dim=1)
                 obj_entropy = entropy.mean()
 
+
                 print(f"value {max(now_max_res).item():9.2f}  entropy {obj_entropy:9.3f}")
                 sys.stdout.flush()  # add for slurm stdout
 
-            running_duration = time.time() - start_time
-            # num_samples = xs_sample.shape[1]
-            num_samples = temp_max.shape[0]
-            num_samples_per_second = num_samples / running_duration
-            print("num_samples_per_second: ", num_samples_per_second)
+            if test_sampling_speed:
+                running_duration = time.time() - start_time
+                # num_samples = xs_sample.shape[1]
+                num_samples = temp_max.shape[0]
+                num_samples_per_second = num_samples / running_duration
+                print("num_samples_per_second: ", num_samples_per_second)
 
-            # for _ in range(sample_epoch_num):
-            #     xs_prob = net()
-            #     ret_loss_ls = get_return(xs_prob, start_samples, value, total_mcmc_num, repeat_times)
-            #
-            #     optimizer.zero_grad()
-            #     ret_loss_ls.backward()
-            #     torch.nn.utils.clip_grad_norm_(net.parameters(), 1)
-            #     optimizer.step()
-            # torch.cuda.empty_cache()
-            #
-            # if j1 % show_gap == 0:
-            #     total_max = now_max_res
-            #     best_sort = torch.argsort(now_max_res, descending=True)
-            #     total_best_info = torch.squeeze(now_max_info[:, best_sort[0]])
-            #
-            #     objective_value = max(total_max)
-            #     solution = total_best_info
-            #
-            #     encoder = EncoderBase64(encode_len=num_nodes)
-            #     x_str = encoder.bool_to_str(x_bool=solution)
-            #
-            #     print(f"epoch {epoch:6}  value {objective_value.item():8.2f}  {x_str}")
-            #     print_gpu_memory(device)
-            #
-            # if os.path.exists('./stop'):
-            #     break
+            for _ in range(sample_epoch_num):
+                xs_prob = net()
+                ret_loss_ls = get_return(xs_prob, start_samples, value, total_mcmc_num, repeat_times)
+
+                optimizer.zero_grad()
+                ret_loss_ls.backward()
+                torch.nn.utils.clip_grad_norm_(net.parameters(), 1)
+                optimizer.step()
+            torch.cuda.empty_cache()
+
+            if j1 % show_gap == 0:
+                total_max = now_max_res
+                best_sort = torch.argsort(now_max_res, descending=True)
+                total_best_info = torch.squeeze(now_max_info[:, best_sort[0]])
+
+                objective_value = max(total_max)
+                solution = total_best_info
+
+                encoder = EncoderBase64(encode_len=num_nodes)
+                x_str = encoder.bool_to_str(x_bool=solution)
+
+                print(f"epoch {epoch:6}  value {objective_value.item():8.2f}  {x_str}")
+                print_gpu_memory(device)
+
+            if os.path.exists('./stop'):
+                break
+        print("rewards", rewards)
+        rewardss.append(rewards)
         if os.path.exists('./stop'):
             break
 
         print()
+    print("rewardss: ", rewardss)
     if os.path.exists('./stop'):
         print(f"break: os.path.exists('./stop') {os.path.exists('./stop')}")
         sys.stdout.flush()  # add for slurm stdout
