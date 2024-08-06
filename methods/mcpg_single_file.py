@@ -1,3 +1,4 @@
+import copy
 import os
 import torch
 import sys
@@ -23,6 +24,8 @@ ARY = np.ndarray
 GraphList = List[Tuple[int, int, int]]  # 每条边两端点的索引以及边的权重 List[Tuple[Node0ID, Node1ID, WeightEdge]]
 IndexList = List[List[int]]  # 按索引顺序记录每个点的所有邻居节点 IndexList[Node0ID] = [Node1ID, ...]
 DataDir = '../data/syn_BA'  # 保存图最大割的txt文件的目录，txt数据以稀疏的方式记录了GraphList，可以重建图的邻接矩阵
+# DataDir = '../data/gset'  # 保存图最大割的txt文件的目录，txt数据以稀疏的方式记录了GraphList，可以重建图的邻接矩阵
+
 
 test_sampling_speed = False
 
@@ -633,12 +636,14 @@ def run():
     num_ls = 8
     reset_epoch_num = 128
     total_mcmc_num = 2 ** 8
+    show_gap = 2 ** 4
+
     # path = 'data/gset_14.txt'
     # path = 'data/gset_15.txt'
     # path = 'data/gset_49.txt'
     # path = 'data/gset_50.txt'
     graph_type = ['ErdosRenyi', 'barabasi_albert', 'PowerLaw'][1]
-    num_nodes = 100
+    num_nodes = 1000
     graph_id = 0
     graph_name = f"{graph_type}_{num_nodes}_ID{graph_id}"
     path = f'temp_{graph_name}.txt'
@@ -677,14 +682,7 @@ def run():
     # total_mcmc_num = 768
     # path = 'data/gset_70.txt'  # GPU RAM 40GB
 
-    show_gap = 2 ** 4
 
-    if os.name == 'nt':
-        max_epoch_num = 2 ** 4
-        repeat_times = 1
-        reset_epoch_num = 32
-        total_mcmc_num = 10
-        show_gap = 2 ** 0
 
     '''init'''
     sim_name = path  # os.path.splitext(os.path.basename(path))[0]
@@ -717,8 +715,10 @@ def run():
     xs_bool = now_max_info.repeat(1, repeat_times)
 
     print('start loop')
+    rewardss = []
     sys.stdout.flush()  # add for slurm stdout
     for epoch in range(1, max_epoch_num + 1):
+        rewards = []
         net.to(device).reset_parameters()
         for j1 in range(reset_epoch_num // sample_epoch_num):
             start_time = time.time()
@@ -733,6 +733,7 @@ def run():
                         now_max_res[i0] = temp_max[i0]
                         now_max_info[:, i0] = temp_max_info[:, i0]
 
+                rewards.extend(copy.deepcopy(now_max_res))
                 # update if min is too small
                 now_max = max(now_max_res).item()
                 now_max_index = torch.argmax(now_max_res)
@@ -751,6 +752,7 @@ def run():
                 _probs = 1 - probs
                 entropy = -(probs * probs.log2() + _probs * _probs.log2()).mean(dim=1)
                 obj_entropy = entropy.mean()
+
 
                 print(f"value {max(now_max_res).item():9.2f}  entropy {obj_entropy:9.3f}")
                 sys.stdout.flush()  # add for slurm stdout
@@ -788,10 +790,13 @@ def run():
 
             if os.path.exists('./stop'):
                 break
+        print("rewards", rewards)
+        rewardss.append(rewards)
         if os.path.exists('./stop'):
             break
 
         print()
+    print("rewardss: ", rewardss)
     if os.path.exists('./stop'):
         print(f"break: os.path.exists('./stop') {os.path.exists('./stop')}")
         sys.stdout.flush()  # add for slurm stdout
