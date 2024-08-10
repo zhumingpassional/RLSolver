@@ -109,7 +109,7 @@ __Dimension of states and objective values:__ The states over all parallel envir
 
 Python>=3.6
 
-PyTorch=0.2 or 0.3
+PyTorch=2.0.0
 
 Numpy>=1.24
 
