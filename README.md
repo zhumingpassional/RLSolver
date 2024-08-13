@@ -51,8 +51,8 @@ From the above figures, we used CPU and GPU based environments. We see that the 
 
 __Pattern I__: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into a node set. There are three important functions for a gym-style environment:  
 - reset(): Set the selected nodes as an empty set. 
-- step(): Select the node with maximum Q-value and then add it to the set.  
-- reward(): Calculate the objective values over all simulation environments.
+- step(): Select the node with the maximum Q-value and then add it to the set.  
+- reward(): Calculate the objective values over all parallel environments.
 
 __Pattern II__: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy is a vector of probabilities__ of the nodes belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. We introduce four important functions for all parallel environments:  
 - reset(): Generate random initial solutions for all parallel environments. 
