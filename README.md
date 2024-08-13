@@ -49,7 +49,7 @@ From the above figures, we used CPU and GPU based environments. We see that the 
 	</div>
 </a>  
 
-__Pattern I__: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into the solution set. There are three important functions for a gym-style environment:  
+__Pattern I__: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into a node set. There are three important functions for a gym-style environment:  
 - reset(): Set the selected nodes as an empty set. 
 - step(): Select the node with maximum Q-value and then add it to the set.  
 - reward(): Calculate the objective values over all simulation environments.
