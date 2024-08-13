@@ -107,11 +107,11 @@ __Dimension of states and objective values:__ The states over all parallel envir
 
 # Dependencies
 
-Python>=3.6
+Python>=3.7
 
 PyTorch=2.0.0
 
-Numpy>=1.24
+Numpy>=1.23
 
 ## File Structure
 
