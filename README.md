@@ -49,10 +49,10 @@ From the above figures, we used CPU and GPU based environments. We see that the 
 	</div>
 </a>  
 
-__Pattern I__: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into the solution set. There are three important functions for a gym-style environment:  
+__Pattern I__: RL-based heuristic formulates the CO problem as Markov decision process (MDP), and then use RL algorithms to select the node and add it into a node set. There are three important functions for a gym-style environment:  
 - reset(): Set the selected nodes as an empty set. 
-- step(): Select the node with maximum Q-value and then add it to the set.  
-- reward(): Calculate the objective values over all simulation environments.
+- step(): Select the node with the maximum Q-value and then add it to the set.  
+- reward(): Calculate the objective values over all parallel environments.
 
 __Pattern II__: policy-based methods first formulate the CO problem as a QUBO problem, and then learn a policy using say REINFORCE algorithm to minimize the Hamiltonian objective function. Here, the __policy is a vector of probabilities__ of the nodes belong to the set. For example, the policy for a graph with 3 nodes is [0, 0, 0.9] means that the probabilities of the first two nodes belong to the set are 0, and the probability of the third node belong to the set is 0.9. We introduce four important functions for all parallel environments:  
 - reset(): Generate random initial solutions for all parallel environments. 
@@ -107,11 +107,11 @@ __Dimension of states and objective values:__ The states over all parallel envir
 
 # Dependencies
 
-Python>=3.6
+Python>=3.7
 
-PyTorch=0.2 or 0.3
+PyTorch=2.0.0
 
-Numpy>=1.24
+Numpy>=1.23
 
 ## File Structure
 
@@ -148,12 +148,11 @@ RLSolver
 ```
 
 ## Datasets
-Link: [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y)
 
 - [Gset](https://web.stanford.edu/~yyye/yyye/Gset/) is opened by Standford university, and is stored in the "data" folder of this repo. The number of nodes is from 800 to 10000. 
   
-- __Syn__ is the synthetic data. The number of nodes is from 100 to 1000 which in three distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). Each dataset in generated graphs has 10 instances. The partial synthetic data is stored in the "data" folder of this repo. If users need all the synthetic data, please refer to [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y).
-
+- __Syn__ is the synthetic data. The number of nodes is from 100 to 1000 which in three distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). Each dataset in generated graphs has 10 instances. The partial synthetic data is stored in the "data" folder of this repo.
+- 
 Take g14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
 
 800 4694 # #nodes is 800, and #edges is 4694.
@@ -167,7 +166,6 @@ Take g14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
 
 ## Results
 
-Link: [Baidu Wangpan](https://pan.baidu.com/s/1Qg-VEMvrAB_cUpYLMBubiw) (CODE: gc8y)
 
 Results will be written to the file "result.txt" in the folder "result". Take graph maxcut as an example. The first column is the node, and the second column is the label of the set.
 
