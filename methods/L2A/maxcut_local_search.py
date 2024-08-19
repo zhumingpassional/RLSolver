@@ -16,7 +16,7 @@ TEN = th.Tensor
 
 
 class SolverLocalSearch:
-    def __init__(self, simulator: SimulatorGraphMaxCut, num_nodes: int):
+    def __init__(self, simulator: SimulatorMaxcut, num_nodes: int):
         self.simulator = simulator
         self.num_nodes = num_nodes
 
