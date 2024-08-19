@@ -1,7 +1,7 @@
 import torch as th
 from typing import List
 from enum import Enum, unique
-from L2A.graph_utils import GraphList, obtain_num_nodes
+# from L2A.graph_utils import GraphList, obtain_num_nodes
 import os
 
 @unique

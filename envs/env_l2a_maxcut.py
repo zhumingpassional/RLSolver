@@ -1,5 +1,7 @@
 import torch as th
-from methods.config import  GraphList
+import sys
+sys.path.append('..')
+from methods.L2A.graph_utils import  GraphList
 from methods.L2A.maxcut_simulator import SimulatorMaxcut
 from methods.L2A.maxcut_local_search import SolverLocalSearch
 
