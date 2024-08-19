@@ -41,7 +41,7 @@ class SimulatorMaxcut:
         self.sim_ids = th.zeros(len_sim_ids, dtype=int_type, device=device)[None, :]
         self.n0_num_n1 = th.tensor([n1s.shape[0] for n1s in n0_to_n1s], device=device)[None, :]
 
-    def obj(self, xs: TEN, if_sum: bool = True) -> TEN:
+    def calculate_obj_values(self, xs: TEN, if_sum: bool = True) -> TEN:
         num_sims = xs.shape[0]  # 并行维度，环境数量。xs, vs第一个维度， dim0 , 就是环境数量
         if num_sims != self.sim_ids.shape[0]:
             self.n0_ids = self.n0_ids[0].repeat(num_sims, 1)
@@ -55,7 +55,7 @@ class SimulatorMaxcut:
             values = values // 2
         return values
 
-    def obj_for_loop(self, xs: TEN, if_sum: bool = True) -> TEN:  # 代码简洁，但是计算效率低
+    def calculate_obj_values_for_loop(self, xs: TEN, if_sum: bool = True) -> TEN:  # 代码简洁，但是计算效率低
         num_sims, num_nodes = xs.shape
         values = th.zeros((num_sims, num_nodes), dtype=self.int_type, device=self.device)
         for node0 in range(num_nodes):
@@ -77,7 +77,7 @@ class SimulatorMaxcut:
     def local_search_inplace(self, good_xs: TEN, good_vs: TEN,
                              num_iters: int = 8, num_spin: int = 8, noise_std: float = 0.3):
 
-        vs_raw = self.obj_for_loop(good_xs, if_sum=False)
+        vs_raw = self.calculate_obj_values_for_loop(good_xs, if_sum=False)
         good_vs = vs_raw.sum(dim=1).long() if good_vs.shape == () else good_vs.long()
         ws = self.n0_num_n1 - (2 if self.if_bidirectional else 1) * vs_raw
         ws_std = ws.max(dim=0, keepdim=True)[0] - ws.min(dim=0, keepdim=True)[0]
@@ -92,7 +92,7 @@ class SimulatorMaxcut:
 
             xs = good_xs.clone()
             xs[spin_mask] = th.logical_not(xs[spin_mask])
-            vs = self.obj(xs)
+            vs = self.calculate_obj_values(xs)
 
             update_xs_by_vs(good_xs, good_vs, xs, vs, if_maximize=self.if_maximize)
 
@@ -100,7 +100,7 @@ class SimulatorMaxcut:
         for i in range(self.num_nodes):
             xs1 = good_xs.clone()
             xs1[:, i] = th.logical_not(xs1[:, i])
-            vs1 = self.obj(xs1)
+            vs1 = self.calculate_obj_values(xs1)
 
             update_xs_by_vs(good_xs, good_vs, xs1, vs1, if_maximize=self.if_maximize)
         return good_xs, good_vs

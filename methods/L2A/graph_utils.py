@@ -11,6 +11,7 @@ TEN = th.Tensor
 GraphList = List[Tuple[int, int, int]]  # 每条边两端点的索引以及边的权重 List[Tuple[Node0ID, Node1ID, WeightEdge]]
 IndexList = List[List[int]]  # 按索引顺序记录每个点的所有邻居节点 IndexList[Node0ID] = [Node1ID, ...]
 DataDir = '../../data/gset'  # 保存图最大割的txt文件的目录，txt数据以稀疏的方式记录了GraphList，可以重建图的邻接矩阵
+GraphTypes = ['BarabasiAlbert', 'ErdosRenyi', 'PowerLaw']
 
 '''load graph'''
 
@@ -87,7 +88,7 @@ def generate_graph_list(graph_type: str, num_nodes: int) -> GraphList:
 
 def load_graph_list(graph_name: str):
     import random
-    graph_types = ['ErdosRenyi', 'PowerLaw', 'BarabasiAlbert']
+    graph_types = GraphTypes
     graph_type = next((graph_type for graph_type in graph_types if graph_type in graph_name), None)  # 匹配 graph_type
 
     if os.path.exists(f"{DataDir}/{graph_name}.txt"):
