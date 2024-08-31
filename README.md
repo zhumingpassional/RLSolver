@@ -125,7 +125,7 @@ RLSolver
     └──env_l2a_maxcut.py
     └──env_l2a_TNCO.py
 └──methods
-    └──L2A (ours)
+    └──L2A (ours) // dREINFORCE
     └──S2V-DQN
     └──RUN-CSP
     └──iSCO
@@ -224,10 +224,6 @@ python methods/L2A/maxcut_end2end.py  # ours
   
 [code](https://github.com/zhumingpassional/RLSolver) 2023 NeurIPS Classical Simulation of Quantum Circuits: Parallel Environments and Benchmark
 
-[code](https://github.com/zhumingpassional/RLSolver) 2023 NeurIPS workshop K-Spin Ising Model for Combinatorial Optimizations over Graphs: A Reinforcement Learning Approach
-
-[code](https://github.com/AI4Finance-Foundation/ElegantRL) 2021 NeurIPS workshop ElegantRL-Podracer: Scalable and Elastic Library for Cloud-Native Deep Reinforcement Learning
-
 * RL/ML-based heuristic
   
 [code](https://github.com/Hanjun-Dai/graph_comb_opt) (greedy) 2017 NeurIPS Learning Combinatorial Optimization Algorithms over Graphs
@@ -261,11 +257,7 @@ python methods/L2A/maxcut_end2end.py  # ours
   - [Simulated annealing](https://github.com/zhumingpassional/RLSolver/blob/master/methods/simulated_annealing.py)
   - [Genetic algorithm](https://github.com/zhumingpassional/RLSolver/blob/master/methods/genetic_algorithm.py)
   - [Random walk](https://github.com/zhumingpassional/RLSolver/blob/master/methods/random_walk.py)
-  - Local search
-  - Beam search
-  - Tabu search
-  - Branch-and-bound
-  - Cutting plane
+
 
 
 ## Results for Graph Maxcut
