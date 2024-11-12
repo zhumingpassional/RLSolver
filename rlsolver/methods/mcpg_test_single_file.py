@@ -713,7 +713,7 @@ def print_gpu_memory(device):
 
 def run():
 
-    #path = '../data/gset/BA_1000_ID0.txt'
+    #path = '../data/gset/BA_100_ID0.txt'
     # path = 'data/gset_15.txt'
     # path = 'data/gset_49.txt'
     # path = 'data/gset_50.txt'
