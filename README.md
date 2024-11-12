@@ -11,7 +11,7 @@ RLSolver has three layers:
 
 <a target="\_blank">
 	<div align="center">
-		<img src=fig/RLSolver_framework.png width="80%"/>
+		<img src=rlsolver/RLSolver_framework.png width="80%"/>
 	</div>
 </a>  
 
@@ -28,14 +28,14 @@ Existing CPU-based environments have two significant disadvantages: 1) The numbe
 # Sampling Speed of GPU-based Massively Parallel Environments
 
 <p align="center">
-  <img src="fig/speed_up_maxcut1.png" width="43%">
+  <img src="rlsolver/speed_up_maxcut1.png" width="43%">
 &nbsp; &nbsp; &nbsp; &nbsp;
-  <img src="fig/speed_up_maxcut2.png" width="51%">
+  <img src="rlsolver/speed_up_maxcut2.png" width="51%">
 </p>
 
 <a target="\_blank">
 	<div align="center">
-		<img src=fig/sampling_efficiency_maxcut.png width="80%"/>
+		<img src=rlsolver/sampling_efficiency_maxcut.png width="80%"/>
 	</div>
 </a> 
 
@@ -45,7 +45,7 @@ From the above figures, we used CPU and GPU based environments. We see that the 
 
 <a target="\_blank">
 	<div align="center">
-		<img src=fig/objectives_epochs.png width="80%"/>
+		<img src=rlsolver/objectives_epochs.png width="80%"/>
 	</div>
 </a> 
 
@@ -55,7 +55,7 @@ GPU-based parallel environments can significantly improve the quality of solutio
 
 <a target="\_blank">
 	<div align="center">
-		<img src=fig/parallel_sims_pattern.png width="80%"/>
+		<img src=rlsolver/parallel_sims_pattern.png width="80%"/>
 	</div>
 </a>  
 
@@ -76,7 +76,7 @@ __Pattern II__: policy-based methods first formulate the CO problem as a QUBO pr
 
 <a target="\_blank">
 	<div align="center">
-		<img src=fig/parallel_sims_maxcut.png width="80%"/>
+		<img src=rlsolver/parallel_sims_maxcut.png width="80%"/>
 	</div>
 </a> 
 
