@@ -1,5 +1,5 @@
 alg_name: column_generation
-running_duration: 3.254345417022705
+running_duration: 0.5011804103851318
 dist: 59
 dists: [59]
 demands: [150]
