@@ -7,9 +7,9 @@ from typing import List
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
 from rlsolver.methods.eco_s2v.util import test_network, load_graph_set_from_txt
 from rlsolver.methods.eco_s2v.src.envs.util import (SingleGraphGenerator,
-                                                    RewardSignal, ExtraAction,
-                                                    OptimisationTarget, SpinBasis,
-                                                    DEFAULT_OBSERVABLES, Observable)
+                                                             RewardSignal, ExtraAction,
+                                                             OptimisationTarget, SpinBasis,
+                                                             DEFAULT_OBSERVABLES,Observable)
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.util_result import write_graph_result
 from rlsolver.methods.eco_s2v.config.config import *
@@ -18,6 +18,7 @@ from rlsolver.methods.util import calc_txt_files_with_prefixes
 
 def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, device, network_fn, network_args,
                   env_args, batched, max_batch_size):
+    step_factor = 1
     graph_dict = os.path.join(graph_save_loc, graph_name).replace("\\", "/")
     graphs_test = load_graph_set_from_txt(graph_dict)
 
@@ -27,7 +28,7 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
 
     test_env = ising_env.make("SpinSystem",
                               SingleGraphGenerator(graphs_test[0]),
-                              graphs_test[0].shape[0] * 1,  # step_factor is 1 here
+                              graphs_test[0].shape[0] * step_factor,  # step_factor is 1 here
                               **env_args)
 
     torch.device(device)
@@ -47,7 +48,7 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
     # TEST NETWORK ON VALIDATION GRAPHS
     ####################################################
     start_time = time.time()
-    results, results_raw, history = test_network(network, env_args, graphs_test, device, 1, n_attempts=50,
+    results, results_raw, history = test_network(network, env_args, graphs_test, device, step_factor, n_attempts=50,
                                                  # step_factor is 1
                                                  return_raw=True, return_history=True,
                                                  batched=batched, max_batch_size=max_batch_size)
@@ -61,8 +62,6 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
                                  ["results", "results_raw", "history"]):
         if label == "results":
             result = (res['sol'][0] + 1) / 2
-            for i in range(len(result)):
-                result[i] = round(result[i])  # set the value as int
             obj = res['cut'][0]
             num_nodes = len(result)
             write_graph_result(obj, run_duration, num_nodes, 'eco-dqn', result, graph_dict, plus1=False)
@@ -76,8 +75,11 @@ def run(save_loc="BA_40spin/eco",
         network_save_path=None,
         batched=True,
         max_batch_size=None,
+        just_test=True,
         max_parallel_jobs=4,
-        prefixes=INFERENCE_PREFIXES):
+        prefixes=PREFIXES,
+        if_greedy=False):
+
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
 
     data_folder = os.path.join(save_loc)
@@ -100,7 +102,7 @@ def run(save_loc="BA_40spin/eco",
     # SET UP ENVIRONMENTAL AND VARIABLES
     ####################################################
 
-    if ALG_NAME == 'eco':
+    if ALGNAME == 'eco':
         env_args = {'observables': DEFAULT_OBSERVABLES,
                     'reward_signal': RewardSignal.BLS,
                     'extra_action': ExtraAction.NONE,
@@ -110,9 +112,10 @@ def run(save_loc="BA_40spin/eco",
                     'memory_length': None,
                     'horizon_length': None,
                     'stag_punishment': None,
-                    'basin_reward': 1. / NUM_TRAIN_NODES,
-                    'reversible_spins': True}
-    if ALG_NAME == 's2v':
+                    'basin_reward': 1. / NODES,
+                    'reversible_spins': True,
+                    'if_greedy':if_greedy}
+    if ALGNAME == 's2v':
         env_args = {'observables': [Observable.SPIN_STATE],
                     'reward_signal': RewardSignal.DENSE,
                     'extra_action': ExtraAction.NONE,
@@ -138,7 +141,7 @@ def run(save_loc="BA_40spin/eco",
     else:
         file_names = os.listdir(graph_save_loc)
 
-    device = str(INFERENCE_DEVICE)
+    device = str(TESTDEVICE)
 
     # 使用并行处理，设置最大并行进程数
     with ProcessPoolExecutor(max_workers=max_parallel_jobs) as executor:
@@ -153,6 +156,7 @@ def run(save_loc="BA_40spin/eco",
             future.result()
 
 
+
 if __name__ == "__main__":
-    prefixes = INFERENCE_PREFIXES
-    run(max_parallel_jobs=3, prefixes=prefixes)
+    prefixes = PREFIXES
+    run(max_parallel_jobs=1, prefixes=prefixes)
