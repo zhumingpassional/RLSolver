@@ -7,15 +7,15 @@ import torch.multiprocessing as mp
 from numba import jit, float64, int64
 
 from rlsolver.methods.eco_s2v.src.envs.util import (EdgeType,
-                                                    RewardSignal,
-                                                    ExtraAction,
-                                                    OptimisationTarget,
-                                                    Observable,
-                                                    SpinBasis,
-                                                    DEFAULT_OBSERVABLES,
-                                                    GraphGenerator,
-                                                    RandomGraphGenerator,
-                                                    HistoryBuffer)
+                                                             RewardSignal,
+                                                             ExtraAction,
+                                                             OptimisationTarget,
+                                                             Observable,
+                                                             SpinBasis,
+                                                             DEFAULT_OBSERVABLES,
+                                                             GraphGenerator,
+                                                             RandomGraphGenerator,
+                                                             HistoryBuffer)
 
 # A container for get_result function below. Works just like tuple, but prettier.
 ActionResult = namedtuple("action_result", ("snapshot", "observation", "reward", "is_done", "info"))
@@ -41,7 +41,8 @@ class SpinSystemFactory(object):
             basin_reward=None,  # None means no reward for reaching a local minima.
             reversible_spins=True,  # Whether the spins can be flipped more than once (i.e. True-->Georgian MDP).
             init_snap=None,
-            seed=None):
+            seed=None,
+            if_greedy=False):
 
         if graph_generator.biased:
             return SpinSystemBiased(graph_generator, max_steps,
