@@ -549,7 +549,7 @@ class DQN:
 
             actions = self.predict(torch.FloatTensor(np.array(obs_batch)).to(self.device),
                                    testing_in_reversible_spin_env)
-
+            actions = np.array([actions])
             obs_batch = []
 
             i = 0
