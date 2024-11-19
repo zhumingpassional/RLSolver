@@ -18,6 +18,7 @@ from rlsolver.methods.util import calc_txt_files_with_prefixes
 
 def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, device, network_fn, network_args,
                   env_args, batched, max_batch_size):
+    step_factor = 1
     graph_dict = os.path.join(graph_save_loc, graph_name).replace("\\", "/")
     graphs_test = load_graph_set_from_txt(graph_dict)
 
@@ -27,7 +28,7 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
 
     test_env = ising_env.make("SpinSystem",
                               SingleGraphGenerator(graphs_test[0]),
-                              graphs_test[0].shape[0] * 1,  # step_factor is 1 here
+                              graphs_test[0].shape[0] * step_factor,  # step_factor is 1 here
                               **env_args)
 
     torch.device(device)
@@ -47,7 +48,7 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
     # TEST NETWORK ON VALIDATION GRAPHS
     ####################################################
     start_time = time.time()
-    results, results_raw, history = test_network(network, env_args, graphs_test, device, 1, n_attempts=50,
+    results, results_raw, history = test_network(network, env_args, graphs_test, device, step_factor, n_attempts=50,
                                                  # step_factor is 1
                                                  return_raw=True, return_history=True,
                                                  batched=batched, max_batch_size=max_batch_size)
@@ -61,11 +62,10 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
                                  ["results", "results_raw", "history"]):
         if label == "results":
             result = (res['sol'][0] + 1) / 2
-            for i in range(len(result)):
-                result[i] = round(result[i])  # set the value as int
+            result = result.astype(int)
             obj = res['cut'][0]
             num_nodes = len(result)
-            write_graph_result(obj, run_duration, num_nodes, 'eco-dqn', result, graph_dict, plus1=False)
+            write_graph_result(obj, run_duration, num_nodes, 'eco-dqn', result, graph_dict, plus1=True)
 
         save_path = os.path.join(data_folder, fname).replace("\\", "/")
         # res.to_pickle(save_path)
@@ -77,7 +77,8 @@ def run(save_loc="BA_40spin/eco",
         batched=True,
         max_batch_size=None,
         max_parallel_jobs=4,
-        prefixes=INFERENCE_PREFIXES):
+        prefixes=INFERENCE_PREFIXES,
+        if_greedy=False):
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
 
     data_folder = os.path.join(save_loc)
@@ -111,7 +112,8 @@ def run(save_loc="BA_40spin/eco",
                     'horizon_length': None,
                     'stag_punishment': None,
                     'basin_reward': 1. / NUM_TRAIN_NODES,
-                    'reversible_spins': True}
+                    'reversible_spins': True,
+                    'if_greedy':if_greedy}
     if ALG_NAME == 's2v':
         env_args = {'observables': [Observable.SPIN_STATE],
                     'reward_signal': RewardSignal.DENSE,

@@ -22,7 +22,7 @@ def main(_):
     start_time = time.time()
     energy = torch.tensor(0,device=DEVICE,dtype=torch.float)
     for step in tqdm.tqdm(range(0, sampler.chain_length)):
-        path_length = 10*torch.ones(BATCH_SIZE,device=DEVICE,dtype=torch.long)
+        path_length = torch.clamp(torch.poisson(mu),min = 1,max=sampler.max_num_nodes).long()
         temperature = sampler.init_temperature - step / sampler.chain_length * (
                     sampler.init_temperature - sampler.final_temperature)
         sample, new_energy, acc = sampler.step(sample, path_length, temperature)

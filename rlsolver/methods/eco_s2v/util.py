@@ -35,7 +35,7 @@ def test_network(network, env_args, graphs_test, device=None, step_factor=1, bat
 def __test_network_batched(network, env_args, graphs_test, device=None, step_factor=1,
                            n_attempts=50, return_raw=False, return_history=False, max_batch_size=None):
     if device is None:
-        device = "cuda:7" if torch.cuda.is_available() else "cpu"
+        device = INFERENCE_DEVICE
     torch.device(device)
 
     # HELPER FUNCTION FOR NETWORK TESTING
@@ -92,16 +92,17 @@ def __test_network_batched(network, env_args, graphs_test, device=None, step_fac
                                   SingleGraphGenerator(test_graph),
                                   n_steps,
                                   **env_args)
-        print("Running greedy solver with +1 initialisation of spins...", end="...")
-        # Calculate the greedy cut with all spins initialised to +1
-        greedy_env = deepcopy(test_env)
-        greedy_env.reset(spins=np.array([1] * test_graph.shape[0]))
+        if env_args['if_greedy']:
+            print("Running greedy solver with +1 initialisation of spins...", end="...")
+            # Calculate the greedy cut with all spins initialised to +1
+            greedy_env = deepcopy(test_env)
+            greedy_env.reset(spins=np.array([1] * test_graph.shape[0]))
 
-        greedy_agent = Greedy(greedy_env)
-        greedy_agent.solve()
+            greedy_agent = Greedy(greedy_env)
+            greedy_agent.solve()
 
-        greedy_single_cut = greedy_env.get_best_cut()
-        greedy_single_spins = greedy_env.best_spins
+            greedy_single_cut = greedy_env.get_best_cut()
+            greedy_single_spins = greedy_env.best_spins
 
         print("done.")
 
@@ -194,14 +195,15 @@ def __test_network_batched(network, env_args, graphs_test, device=None, step_fac
             t_total += (time.time() - t_start)
             i_batch += 1
             print("Finished agent testing batch {}.".format(i_batch))
-            if env_args["reversible_spins"]:
-                print("Running greedy solver with {} random initialisations of spins for batch {}...".format(batch_size,                                                                                      i_batch), end="...")
-                for env in greedy_envs:
-                    Greedy(env).solve()
-                    cut = env.get_best_cut()
-                    greedy_cuts_batch.append(cut)
-                    greedy_spins_batch.append(env.best_spins)
-                print("done.")
+            if env_args['if_greedy']:
+                if env_args["reversible_spins"]:
+                    print("Running greedy solver with {} random initialisations of spins for batch {}...".format(batch_size,                                                                                      i_batch), end="...")
+                    for env in greedy_envs:
+                        Greedy(env).solve()
+                        cut = env.get_best_cut()
+                        greedy_cuts_batch.append(cut)
+                        greedy_spins_batch.append(env.best_spins)
+                    print("done.")
             if return_history:
                 actions_history += actions_history_batch
                 rewards_history += rewards_history_batch
@@ -210,8 +212,9 @@ def __test_network_batched(network, env_args, graphs_test, device=None, step_fac
             init_spins += init_spins_batch
             best_spins += best_spins_batch
             if env_args["reversible_spins"]:
-                greedy_cuts += greedy_cuts_batch
-                greedy_spins += greedy_spins_batch
+                if env_args["if_greedy"]:
+                    greedy_cuts += greedy_cuts_batch
+                    greedy_spins += greedy_spins_batch
             # print("\tGraph {}, par. steps: {}, comp: {}/{}".format(j, k, i_comp, batch_size),
             #       end="\r" if n_spins<100 else "")
 
@@ -220,45 +223,65 @@ def __test_network_batched(network, env_args, graphs_test, device=None, step_fac
         sol = best_spins[i_best]
 
         mean_cut = np.mean(best_cuts)
-        if env_args["reversible_spins"]:
-            idx_best_greedy = np.argmax(greedy_cuts)
-            greedy_random_cut = greedy_cuts[idx_best_greedy]
-            greedy_random_spins = greedy_spins[idx_best_greedy]
-            greedy_random_mean_cut = np.mean(greedy_cuts)
+        if env_args['if_greedy']:
+            if env_args["reversible_spins"]:
+                idx_best_greedy = np.argmax(greedy_cuts)
+                greedy_random_cut = greedy_cuts[idx_best_greedy]
+                greedy_random_spins = greedy_spins[idx_best_greedy]
+                greedy_random_mean_cut = np.mean(greedy_cuts)
+            else:
+                greedy_random_cut = greedy_single_cut
+                greedy_random_spins = greedy_single_spins
+                greedy_random_mean_cut = greedy_single_cut
+            print(
+                'Graph {}, best(mean) cut: {}({}), greedy cut (rand init / +1 init) : {} / {}.  ({} attempts in {}s)\t\t\t'.format(
+                    j, best_cut, mean_cut, greedy_random_cut, greedy_single_cut, n_attempts, np.round(t_total, 2)))
         else:
-            greedy_random_cut = greedy_single_cut
-            greedy_random_spins = greedy_single_spins
-            greedy_random_mean_cut = greedy_single_cut
-        print(
-            'Graph {}, best(mean) cut: {}({}), greedy cut (rand init / +1 init) : {} / {}.  ({} attempts in {}s)\t\t\t'.format(
-                j, best_cut, mean_cut, greedy_random_cut, greedy_single_cut, n_attempts, np.round(t_total, 2)))
+            print(
+                'Graph {}, best(mean) cut: {}({}),   ({} attempts in {}s)\t\t\t'.format(
+                    j, best_cut, mean_cut, n_attempts, np.round(t_total, 2)))
 
-        results.append([best_cut, sol,
-                        mean_cut,
-                        greedy_single_cut, greedy_single_spins,
-                        greedy_random_cut, greedy_random_spins,
-                        greedy_random_mean_cut,
-                        t_total / (n_attempts)])
+        if env_args['if_greedy']:
+
+            results.append([best_cut, sol,
+                            mean_cut,
+                            greedy_single_cut, greedy_single_spins,
+                            greedy_random_cut, greedy_random_spins,
+                            greedy_random_mean_cut,
+                            t_total / (n_attempts)])
+            results_raw.append([init_spins,
+                                best_cuts, best_spins,
+                                greedy_cuts, greedy_spins])
+        else:
+            results.append([best_cut, sol,
+                            mean_cut,
+                            t_total / (n_attempts)])
 
         results_raw.append([init_spins,
-                            best_cuts, best_spins,
-                            greedy_cuts, greedy_spins])
+                            best_cuts, best_spins])
 
         if return_history:
             history.append([np.array(actions_history).T.tolist(),
                             np.array(scores_history).T.tolist(),
                             np.array(rewards_history).T.tolist()])
+    if env_args['if_greedy']:
+        results = pd.DataFrame(data=results, columns=["cut", "sol",
+                                                      "mean cut",
+                                                      "greedy (+1 init) cut", "greedy (+1 init) sol",
+                                                      "greedy (rand init) cut", "greedy (rand init) sol",
+                                                      "greedy (rand init) mean cut",
+                                                      "time"])
 
-    results = pd.DataFrame(data=results, columns=["cut", "sol",
-                                                  "mean cut",
-                                                  "greedy (+1 init) cut", "greedy (+1 init) sol",
-                                                  "greedy (rand init) cut", "greedy (rand init) sol",
-                                                  "greedy (rand init) mean cut",
-                                                  "time"])
+        results_raw = pd.DataFrame(data=results_raw, columns=["init spins",
+                                                              "cuts", "sols",
+                                                              "greedy cuts", "greedy sols"])
+    else:
+        results = pd.DataFrame(data=results, columns=["cut", "sol",
+                                                      "mean cut",
+                                                      "time"])
 
-    results_raw = pd.DataFrame(data=results_raw, columns=["init spins",
-                                                          "cuts", "sols",
-                                                          "greedy cuts", "greedy sols"])
+        results_raw = pd.DataFrame(data=results_raw, columns=["init spins",
+                                                              "cuts", "sols", ])
 
     if return_history:
         history = pd.DataFrame(data=history, columns=["actions", "scores", "rewards"])
