@@ -319,10 +319,13 @@ def print_gpu_memory(device):
 def mcpg(filename: str):
     print(f"filename: {filename}")
 
+    device = calc_device(GPU_ID)
+    print(f"device: {device}")
+
     '''init'''
     sim_name = filename  # os.path.splitext(os.path.basename(path))[0]
     data, num_nodes = maxcut_dataloader(filename)
-    device = calc_device(GPU_ID)
+
 
     change_times = int(num_nodes / 10)  # transition times for metropolis sampling
 
