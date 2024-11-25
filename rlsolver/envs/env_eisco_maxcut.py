@@ -2,6 +2,7 @@ import torch
 from rlsolver.methods.iSCO.config.maxcut_config import *
 from rlsolver.methods.iSCO.util import math_util
 
+
 class iSCO:
     def __init__(self, params_dict):
         self.batch_size = BATCH_SIZE
@@ -26,7 +27,7 @@ class iSCO:
         ll_x2y = trajectory['ll_x2y']
         ll_y, ll_y2x = self.ll_y2x(
             trajectory, y, temperature)
-        log_acc = torch.clamp(ll_y + ll_y2x - ll_x - ll_x2y,max=0.0)
+        log_acc = torch.clamp(ll_y + ll_y2x - ll_x - ll_x2y, max=0.0)
         y = self.select_sample(log_acc, x, y)
 
         return y, ll_y * temperature, log_acc.exp()
@@ -45,7 +46,7 @@ class iSCO:
         return ll_x, y, trajectory
 
     def get_local_dist(self, sample, temperature):
-        energy_x,grad_x = self.tensor_core_energy(sample,temperature)
+        energy_x, grad_x = self.tensor_core_energy(sample, temperature)
         grad_x = grad_x.detach()
         energy_x = energy_x.detach()
         with torch.no_grad():
@@ -74,16 +75,16 @@ class iSCO:
 
         return y
 
-    def tensor_core_energy(self,sample,temperature):
+    def tensor_core_energy(self, sample, temperature):
         x = sample.clone().detach().requires_grad_(True)
         delta_x = x * 2 - 1
         XA = torch.matmul(delta_x, (self.adj_matrix))
-        energy_x =  -0.25 * (XA * delta_x).sum(dim=1)
+        energy_x = -0.25 * (XA * delta_x).sum(dim=1)
         grad_x = torch.autograd.grad(energy_x, x, grad_outputs=torch.ones_like(energy_x), retain_graph=False,
                                      create_graph=False)[0]
-        energy_x,grad_x = (energy_x.to(torch.float))/temperature,(grad_x.to(torch.float))/temperature
-        return energy_x,grad_x
+        energy_x, grad_x = (energy_x.to(torch.float)) / temperature, (grad_x.to(torch.float)) / temperature
+        return energy_x, grad_x
 
-    def check_tensor(self,tensor):
+    def check_tensor(self, tensor):
         if torch.isinf(tensor).any():
             raise ValueError(" contains inf values!")
