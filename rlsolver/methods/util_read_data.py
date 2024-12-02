@@ -249,6 +249,20 @@ def update_xs_by_vs(xs0: TEN, vs0: TEN, xs1: TEN, vs1: TEN, if_maximize: bool) -
     vs0[good_is] = vs1[good_is]
     return good_is.shape[0]
 
+def pick_xs_by_vs(xs: TEN, vs: TEN, num_repeats: int, if_maximize: bool) -> (TEN, TEN):
+    # update good_xs: use .view() instead of .reshape() for saving GPU memory
+    num_nodes = xs.shape[1]
+    num_sims = xs.shape[0] // num_repeats
+
+    xs_view = xs.view(num_repeats, num_sims, num_nodes)
+    vs_view = vs.view(num_repeats, num_sims)
+    ids = vs_view.argmax(dim=0) if if_maximize else vs_view.argmin(dim=0)
+
+    sim_ids = th.arange(num_sims, device=xs.device)
+    good_xs = xs_view[ids, sim_ids]
+    good_vs = vs_view[ids, sim_ids]
+    return good_xs, good_vs
+
 # def read_set_cover(filename: str):
 #     with open(filename, 'r') as file:
 #         # lines = []

@@ -1,99 +1,229 @@
-import torch as th
+import os
 import sys
-sys.path.append('..')
-from rlsolver.methods.L2A.graph_utils import  GraphList
-from rlsolver.methods.L2A.maxcut_simulator import SimulatorMaxcut
-from rlsolver.methods.L2A.maxcut_local_search import SolverLocalSearch
+cur_path = os.path.dirname(os.path.abspath(__file__))
+rlsolver_path = os.path.join(cur_path, '../../../rlsolver')
+sys.path.append(os.path.dirname(rlsolver_path))
+
+import time
+import torch as th
+
+from rlsolver.methods.util_read_data import load_graph_list, GraphList
+from rlsolver.methods.util_read_data import build_adjacency_bool, build_adjacency_indies, obtain_num_nodes, update_xs_by_vs
+from rlsolver.methods.util import gpu_info_str, evolutionary_replacement
 
 TEN = th.Tensor
 
 
-def metropolis_hastings_sampling(probs: TEN, start_xs: TEN, num_repeats: int, num_iters: int = -1) -> TEN:
-    """随机平稳采样 是 metropolis-hastings sampling is:
-    - 在状态转移链上 using transition kernel in Markov Chain
-    - 使用随机采样估计 Monte Carlo sampling
-    - 依赖接受概率去达成细致平稳条件 with accept ratio to satisfy detailed balance condition
-    的采样方法。
-
-    工程实现上:
-    - 让它从多个随机的起始位置 start_xs 开始
-    - 每个起始位置建立多个副本 repeat
-    - 循环多次 for _ in range
-    - 直到接受的样本数量超过阈值 count >= 再停止
-
-    这种采样方法允许不同的区域能够以平稳的概率采集到符合采样概率的样本，确保样本数量比例符合期望。
-    具体而言，每个区域内采集到的样本数与该区域所占的平稳分布概率成正比。
-    """
-    # metropolis-hastings sampling: Monte Carlo sampling using transition kernel in Markov Chain with accept ratio
-    xs = start_xs.repeat(num_repeats, 1)  # 并行，，
-    ps = probs.repeat(num_repeats, 1)
-
-    num, dim = xs.shape
-    device = xs.device
-    num_iters = int(dim // 4) if num_iters == -1 else num_iters  # 希望至少有1/4的节点的采样结果被接受
-
-    count = 0
-    for _ in range(4):  # 迭代4轮后，即便被拒绝的节点很多，也不再迭代了。
-        ids = th.randperm(dim, device=device)  # 按随机的顺序，均匀地选择节点进行采样。避免不同节点被采样的次数不同。
-        for i in range(dim):
-            idx = ids[i]
-            chosen_p0 = ps[:, idx]
-            chosen_xs = xs[:, idx]
-            chosen_ps = th.where(chosen_xs, chosen_p0, 1 - chosen_p0)
-
-            accept_rates = (1 - chosen_ps) / chosen_ps
-            accept_masks = th.rand(num, device=device).lt(accept_rates)
-            xs[:, idx] = th.where(accept_masks, th.logical_not(chosen_xs), chosen_xs)
-
-            count += accept_masks.sum()
-            if count >= num * num_iters:
-                break
-        if count >= num * num_iters:
-            break
-    return xs
-
-
-class MCMC_Maxcut:
-    def __init__(self, num_nodes: int, num_sims: int, num_repeats: int, num_searches: int,
-                 graph_list: GraphList = (), device=th.device('cpu')):
-        self.num_nodes = num_nodes
-        self.num_sims = num_sims
-        self.num_repeats = num_repeats
-        self.num_searches = num_searches
+class SimulatorGraphMaxCut:
+    def __init__(self, sim_name: str = 'max_cut', graph_list: GraphList = (),
+                 device=th.device('cpu'), if_bidirectional: bool = False):
         self.device = device
-        self.sim_ids = th.arange(num_sims, device=device)
+        self.sim_name = sim_name
+        self.int_type = int_type = th.long
+        self.if_maximize = True
+        self.if_bidirectional = if_bidirectional
 
-        # build in reset
-        self.simulator = SimulatorMaxcut(graph_list=graph_list, device=self.device)  # 初始值
-        self.searcher = SolverLocalSearch(simulator=self.simulator, num_nodes=self.num_nodes)
+        '''load graph'''
+        graph_list: GraphList = graph_list if graph_list else load_graph_list(graph_name=sim_name)
 
-    # 如果end to end, graph_list为空元组。如果distribution, 抽样赋值
-    def reset(self, graph_list: GraphList = ()):
-        self.simulator = SimulatorMaxcut(graph_list=graph_list, device=self.device)
-        self.searcher = SolverLocalSearch(simulator=self.simulator, num_nodes=self.num_nodes)
-        self.searcher.reset(xs=self.simulator.generate_xs_randomly(num_sims=self.num_sims))
+        '''建立邻接矩阵'''
+        # self.adjacency_matrix = build_adjacency_matrix(graph_list=graph_list, if_bidirectional=True).to(device)
+        self.adjacency_bool = build_adjacency_bool(graph_list=graph_list, if_bidirectional=True).to(device)
 
-        good_xs = self.searcher.good_xs
-        good_vs = self.searcher.good_vs
+        '''建立邻接索引'''
+        n0_to_n1s, n0_to_dts = build_adjacency_indies(graph_list=graph_list, if_bidirectional=if_bidirectional)
+        n0_to_n1s = [t.to(int_type).to(device) for t in n0_to_n1s]
+        self.num_nodes = obtain_num_nodes(graph_list)
+        self.num_edges = len(graph_list)
+        self.adjacency_indies = n0_to_n1s
+
+        '''基于邻接索引，建立基于边edge的索引张量：(n0_ids, n1_ids)是所有边(第0个, 第1个)端点的索引'''
+        n0_to_n0s = [(th.zeros_like(n1s) + i) for i, n1s in enumerate(n0_to_n1s)]
+        self.n0_ids = th.hstack(n0_to_n0s)[None, :]
+        self.n1_ids = th.hstack(n0_to_n1s)[None, :]
+        len_sim_ids = self.num_edges * (2 if if_bidirectional else 1)
+        self.sim_ids = th.zeros(len_sim_ids, dtype=int_type, device=device)[None, :]
+        self.n0_num_n1 = th.tensor([n1s.shape[0] for n1s in n0_to_n1s], device=device)[None, :]
+
+    def calculate_obj_values(self, xs: TEN, if_sum: bool = True) -> TEN:
+        num_sims = xs.shape[0]  # 并行维度，环境数量。xs, vs第一个维度， dim0 , 就是环境数量
+        if num_sims != self.sim_ids.shape[0]:
+            self.n0_ids = self.n0_ids[0].repeat(num_sims, 1)
+            self.n1_ids = self.n1_ids[0].repeat(num_sims, 1)
+            self.sim_ids = self.sim_ids[0:1] + th.arange(num_sims, dtype=self.int_type, device=self.device)[:, None]
+
+        values = xs[self.sim_ids, self.n0_ids] ^ xs[self.sim_ids, self.n1_ids]
+        if if_sum:
+            values = values.sum(1)
+        if self.if_bidirectional:
+            values = values // 2
+        return values
+
+    def calculate_obj_values_for_loop(self, xs: TEN, if_sum: bool = True) -> TEN:  # 代码简洁，但是计算效率低
+        num_sims, num_nodes = xs.shape
+        values = th.zeros((num_sims, num_nodes), dtype=self.int_type, device=self.device)
+        for node0 in range(num_nodes):
+            node1s = self.adjacency_indies[node0]
+            if node1s.shape[0] > 0:
+                values[:, node0] = (xs[:, node0, None] ^ xs[:, node1s]).sum(dim=1)
+
+        if if_sum:
+            values = values.sum(dim=1)
+        if self.if_bidirectional:
+            values = values.float() / 2
+        return values
+
+    def generate_xs_randomly(self, num_sims):
+        xs = th.randint(0, 2, size=(num_sims, self.num_nodes), dtype=th.bool, device=self.device)
+        xs[:, 0] = 0
+        return xs
+
+    def local_search_inplace(self, good_xs: TEN, good_vs: TEN,
+                             num_iters: int = 8, num_spin: int = 8, noise_std: float = 0.3):
+
+        vs_raw = self.calculate_obj_values_for_loop(good_xs, if_sum=False)
+        good_vs = vs_raw.sum(dim=1).long() if good_vs.shape == () else good_vs.long()
+        ws = self.n0_num_n1 - (2 if self.if_bidirectional else 1) * vs_raw
+        ws_std = ws.max(dim=0, keepdim=True)[0] - ws.min(dim=0, keepdim=True)[0]
+        rd_std = ws_std.float() * noise_std
+        spin_rand = ws + th.randn_like(ws, dtype=th.float32) * rd_std
+        thresh = th.kthvalue(spin_rand, k=self.num_nodes - num_spin, dim=1)[0][:, None]
+
+        for _ in range(num_iters):
+            '''flip randomly with ws(weights)'''
+            spin_rand = ws + th.randn_like(ws, dtype=th.float32) * rd_std
+            spin_mask = spin_rand.gt(thresh)
+
+            xs = good_xs.clone()
+            xs[spin_mask] = th.logical_not(xs[spin_mask])
+            vs = self.calculate_obj_values(xs)
+
+            update_xs_by_vs(good_xs, good_vs, xs, vs, if_maximize=self.if_maximize)
+
+        '''addition'''
+        for i in range(self.num_nodes):
+            xs1 = good_xs.clone()
+            xs1[:, i] = th.logical_not(xs1[:, i])
+            vs1 = self.calculate_obj_values(xs1)
+
+            update_xs_by_vs(good_xs, good_vs, xs1, vs1, if_maximize=self.if_maximize)
         return good_xs, good_vs
 
-    # probs: 策略网络输出值
-    # start_xs： 上一轮step的输出的解中，并行环境输出的最好的解
-    def step(self, start_xs: TEN, probs: TEN) -> (TEN, TEN):
-        xs = metropolis_hastings_sampling(probs=probs, start_xs=start_xs, num_repeats=self.num_repeats, num_iters=-1)
-        vs = self.searcher.reset(xs)
-        for _ in range(self.num_searches):
-            # 再用local search, searcher 是local search
-            xs, vs, num_update = self.searcher.random_search(num_iters=8)
-        return xs, vs
 
-    # 好的解的数量是sim数量，一个环境出一个好的解
-    def pick_good_xs(self, full_xs, full_vs) -> (TEN, TEN):
-        # update good_xs: use .view() instead of .reshape() for saving GPU memory
-        xs_view = full_xs.view(self.num_repeats, self.num_sims, self.num_nodes)
-        vs_view = full_vs.view(self.num_repeats, self.num_sims)
-        ids = vs_view.argmax(dim=0)
+'''check'''
 
-        good_xs = xs_view[ids, self.sim_ids]
-        good_vs = vs_view[ids, self.sim_ids]
-        return good_xs, good_vs
+
+def find_best_num_sims():
+    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+
+    calculate_obj_func = 'calculate_obj_values'
+    graph_name = 'gset_14'
+    num_sims = 2 ** 16
+    num_iter = 2 ** 6
+    # calculate_obj_func = 'calculate_obj_values_for_loop'
+    # graph_name = 'gset_14'
+    # num_sims = 2 ** 13
+    # num_iter = 2 ** 9
+
+    if os.name == 'nt':
+        graph_name = 'powerlaw_64'
+        num_sims = 2 ** 4
+        num_iter = 2 ** 3
+
+    graph = load_graph_list(graph_name=graph_name)
+    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph_list=graph, device=device, if_bidirectional=False)
+
+    print('find the best num_sims')
+    from math import ceil
+    for j in (1, 1, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24, 32):
+        _num_sims = int(num_sims * j)
+        _num_iter = ceil(num_iter * num_sims / _num_sims)
+
+        timer = time.time()
+        for i in range(_num_iter):
+            xs = simulator.generate_xs_randomly(num_sims=_num_sims)
+            vs = getattr(simulator, calculate_obj_func)(xs=xs)
+            assert isinstance(vs, TEN)
+            # print(f"| {i}  max_obj_value {vs.max().item()}")
+        print(f"_num_iter {_num_iter:8}  "
+              f"_num_sims {_num_sims:8}  "
+              f"UsedTime {time.time() - timer:9.3f}  "
+              f"GPU {gpu_info_str(device)}")
+
+
+def check_simulator():
+    gpu_id = -1
+    num_sims = 16
+    num_nodes = 24
+    graph_name = f'powerlaw_{num_nodes}'
+
+    graph = load_graph_list(graph_name=graph_name)
+    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+    simulator = SimulatorGraphMaxCut(sim_name=graph_name, graph_list=graph, device=device)
+
+    for i in range(8):
+        xs = simulator.generate_xs_randomly(num_sims=num_sims)
+        obj = simulator.calculate_obj_values(xs=xs)
+        print(f"| {i}  max_obj_value {obj.max().item()}")
+    pass
+
+
+def check_local_search():
+    gpu_id = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    device = th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+
+    graph_type = 'gset_14'
+    graph_list = load_graph_list(graph_name=graph_type)
+    num_nodes = obtain_num_nodes(graph_list)
+
+    show_gap = 4
+
+    num_sims = 2 ** 8
+    num_iters = 2 ** 8
+    reset_gap = 2 ** 6
+    save_dir = f"./{graph_type}_{num_nodes}"
+
+    if os.name == 'nt':
+        num_sims = 2 ** 2
+        num_iters = 2 ** 5
+
+    '''simulator'''
+    sim = SimulatorGraphMaxCut(graph_list=graph_list, device=device, if_bidirectional=True)
+    if_maximize = sim.if_maximize
+
+    '''evaluator'''
+    good_xs = sim.generate_xs_randomly(num_sims=num_sims)
+    good_vs = sim.calculate_obj_values(xs=good_xs)
+    from rlsolver.methods.util_evaluator import Evaluator
+    evaluator = Evaluator(save_dir=save_dir, num_bits=num_nodes, if_maximize=if_maximize,
+                          x=good_xs[0], v=good_vs[0].item(), )
+
+    for i in range(num_iters):
+        evolutionary_replacement(good_xs, good_vs, low_k=2, if_maximize=if_maximize)
+
+        for _ in range(4):
+            sim.local_search_inplace(good_xs, good_vs)
+
+        if_show_x = evaluator.record2(i=i, vs=good_vs, xs=good_xs)
+        if (i + 1) % show_gap == 0 or if_show_x:
+            show_str = f"| cut_value {good_vs.float().mean():8.2f} < {good_vs.max():6}"
+            evaluator.logging_print(show_str=show_str, if_show_x=if_show_x)
+            sys.stdout.flush()
+
+        if (i + 1) % reset_gap == 0:
+            print(f"| reset {gpu_info_str(device=device)} "
+                  f"| up_rate {evaluator.best_v / evaluator.first_v - 1.:8.5f}")
+            sys.stdout.flush()
+
+            good_xs = sim.generate_xs_randomly(num_sims=num_sims)
+            good_vs = sim.calculate_obj_values(xs=good_xs)
+
+    print(f"\nbest_x.shape {evaluator.best_x.shape}"
+          f"\nbest_v {evaluator.best_v}"
+          f"\nbest_x_str {evaluator.best_x_str}")
+
+
+if __name__ == '__main__':
+    check_simulator()
+    # check_local_search()
