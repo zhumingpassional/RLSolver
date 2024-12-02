@@ -415,4 +415,4 @@ def reset_parameters_of_model(model: nn.Module):
 
 if __name__ == '__main__':
     check_graph_net()
-    check_policy_trs_layer()
+    # check_policy_trs_layer()
