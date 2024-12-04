@@ -15,6 +15,8 @@ from rlsolver.methods.util_result import write_graph_result
 from rlsolver.methods.eco_s2v.config.config import *
 from rlsolver.methods.util import calc_txt_files_with_prefixes
 
+from rlsolver.methods.eco_s2v.config.config import INFERENCE_DEVICE
+
 
 def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, device, network_fn, network_args,
                   env_args, batched, max_batch_size):
@@ -142,18 +144,22 @@ def run(save_loc="BA_40spin/eco",
         file_names = os.listdir(graph_save_loc)
 
     device = str(INFERENCE_DEVICE)
+    if device == 'cpu':
+        # 使用并行处理，设置最大并行进程数
+        with ProcessPoolExecutor(max_workers=max_parallel_jobs) as executor:
+            futures = [
+                executor.submit(process_graph, graph_name, graph_save_loc, data_folder, network_save_path,
+                                device, network_fn, network_args, env_args, batched, max_batch_size)
+                for graph_name in file_names
+            ]
 
-    # 使用并行处理，设置最大并行进程数
-    with ProcessPoolExecutor(max_workers=max_parallel_jobs) as executor:
-        futures = [
-            executor.submit(process_graph, graph_name, graph_save_loc, data_folder, network_save_path,
-                            device, network_fn, network_args, env_args, batched, max_batch_size)
-            for graph_name in file_names
-        ]
+            # 等待所有任务完成
+            for future in futures:
+                future.result()
+    else:
+        process_graph(graph_name, graph_save_loc, data_folder, network_save_path,
+                                device, network_fn, network_args, env_args, batched, max_batch_size)
 
-        # 等待所有任务完成
-        for future in futures:
-            future.result()
 
 
 if __name__ == "__main__":
