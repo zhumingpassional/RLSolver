@@ -9,7 +9,7 @@ import numpy as np
 from typing import List, Union, Tuple, Optional
 from torch import Tensor
 from rlsolver.methods.util_read_data import read_nxgraph
-from rlsolver.methods.L2A.evaluator import EncoderBase64
+from rlsolver.methods.util_evaluator import EncoderBase64
 from rlsolver.methods.util_obj import obj_maxcut
 from rlsolver.methods.util import (calc_result_file_name,
                             calc_txt_files_with_prefixes

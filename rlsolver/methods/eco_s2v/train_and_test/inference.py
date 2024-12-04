@@ -125,7 +125,8 @@ def run(save_loc="BA_40spin/eco",
                     'horizon_length': None,
                     'stag_punishment': None,
                     'basin_reward': None,
-                    'reversible_spins': False}
+                    'reversible_spins': False,
+                    'if_greedy':if_greedy}
 
     if prefixes:
         file_names = calc_txt_files_with_prefixes(graph_save_loc, prefixes)
