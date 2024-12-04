@@ -34,7 +34,7 @@ DATA_DIR = "../../data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = "../../result"
 
 TRAIN_DEVICE = calc_device(GPU_ID)
-INFERENCE_DEVICE = calc_device(-1)
+INFERENCE_DEVICE = calc_device(GPU_ID)
 if GRAPH_TYPE == GraphType.BA:
     if NUM_TRAIN_NODES == 20:
         NB_STEPS = 2500000
