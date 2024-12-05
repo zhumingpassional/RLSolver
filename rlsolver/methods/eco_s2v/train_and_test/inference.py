@@ -157,8 +157,9 @@ def run(save_loc="BA_40spin/eco",
             for future in futures:
                 future.result()
     else:
-        process_graph(graph_name, graph_save_loc, data_folder, network_save_path,
-                                device, network_fn, network_args, env_args, batched, max_batch_size)
+        for graph_name in file_names:
+            process_graph(graph_name, graph_save_loc, data_folder, network_save_path,
+                          device, network_fn, network_args, env_args, batched, max_batch_size)
 
 
 
