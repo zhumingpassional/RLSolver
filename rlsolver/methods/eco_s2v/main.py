@@ -5,9 +5,9 @@ cur_path = os.path.dirname(os.path.abspath(__file__))
 rlsolver_path = os.path.join(cur_path, '../../../rlsolver')
 sys.path.append(os.path.dirname(rlsolver_path))
 from rlsolver.methods.eco_s2v.config.config import *
-from rlsolver.methods.eco_s2v.train_and_test import (train_eco,
-                                                     train_s2v,
-                                                     inference)
+from rlsolver.methods.eco_s2v.train_and_inference import (train_eco,
+                                                          train_s2v,
+                                                          inference)
 
 # 这也是test中保存结果的地方
 # save_loc=f"../../result/{GRAPH_TYPE}_{NODES}spin_eco"
