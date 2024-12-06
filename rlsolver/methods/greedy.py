@@ -320,7 +320,6 @@ def run_greedy_over_multiple_files(alg, alg_name, num_steps, directory_data: str
     from util_result import write_result_set_cover
     scoress = []
     files = calc_txt_files_with_prefixes(directory_data, prefixes)
-    files.sort()
     for i in range(len(files)):
         start_time = time.time()
         filename = files[i]

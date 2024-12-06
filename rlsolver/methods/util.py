@@ -181,6 +181,7 @@ def calc_txt_files_with_prefixes(directory: str, prefixes: List[str]):
         for prefix in prefixes:
             if file.startswith(prefix):
                 res.append(directory + '/' + file)
+    res.sort()
     return res
 
 def calc_files_with_prefix_suffix(directory: str, prefix: str, suffix: str, extension: str = '.txt'):

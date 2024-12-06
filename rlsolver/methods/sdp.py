@@ -65,7 +65,6 @@ def sdp_maxcut(filename: str):
 def run_sdp_over_multiple_files(alg, alg_name, directory_data: str, prefixes: List[str])-> List[List[float]]:
     scores = []
     files = calc_txt_files_with_prefixes(directory_data, prefixes)
-    files.sort()
     for i in range(len(files)):
         start_time = time.time()
         filename = files[i]

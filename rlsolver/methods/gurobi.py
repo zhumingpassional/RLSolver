@@ -587,7 +587,6 @@ def run_using_gurobi(filename: str, init_x=None, time_limit: int = None, plot_fi
 
 def run_gurobi_over_multiple_files(prefixes: List[str], time_limits: List[int], directory_data: str):
     files = calc_txt_files_with_prefixes(directory_data, prefixes)
-    files.sort()
     for i in range(len(files)):
         filename = files[i]
         print(f'Start the {i}-th file: {filename}')
