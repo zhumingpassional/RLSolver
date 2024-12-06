@@ -447,7 +447,6 @@ def mcpg(filename: str):
 
 def mcpg_multifiles(directory_data: str, prefixes: List[str]):
     files = calc_txt_files_with_prefixes(directory_data, prefixes)
-    files.sort()
     for i in range(len(files)):
         start_time = time.time()
         filename = files[i]

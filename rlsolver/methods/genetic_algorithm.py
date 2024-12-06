@@ -215,7 +215,6 @@ def run_genetic_over_multiple_files(directory_data: str, prefixes: List[str])-> 
     assert PROBLEM == Problem.maxcut
     scoress = []
     files = calc_txt_files_with_prefixes(directory_data, prefixes)
-    files.sort()
     for i in range(len(files)):
         filename = files[i]
         print(f'Start the {i}-th file: {filename}')

@@ -11,6 +11,7 @@ from rlsolver.methods.eco_s2v.src.envs.util import (SingleGraphGenerator,
                                                     OptimisationTarget, SpinBasis,
                                                     DEFAULT_OBSERVABLES, Observable)
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
+from rlsolver.methods.util_read_data import read_nxgraphs
 from rlsolver.methods.util_result import write_graph_result
 from rlsolver.methods.eco_s2v.config.config import *
 from rlsolver.methods.util import calc_txt_files_with_prefixes
@@ -132,14 +133,15 @@ def run(save_loc="BA_40spin/eco",
 
     if prefixes:
         file_names = calc_txt_files_with_prefixes(graph_save_loc, prefixes)
-        # 对文件列表进行排序
-        sorted_file_names = []
-        for prefix in prefixes:
-            for file in file_names:
-                graph_name = os.path.basename(file)
-                if graph_name.startswith(prefix) and file not in sorted_file_names:
-                    sorted_file_names.append(file)
-        file_names = sorted_file_names
+        # # 对文件列表进行排序
+        # sorted_file_names = []
+        # for prefix in prefixes:
+        #     for file in file_names:
+        #         graph_name = os.path.basename(file)
+        #         if graph_name.startswith(prefix) and file not in sorted_file_names:
+        #             sorted_file_names.append(file)
+        # file_names = sorted_file_names
+        # file_names = read_nxgraphs(graph_save_loc, prefixes)
     else:
         file_names = os.listdir(graph_save_loc)
 

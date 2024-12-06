@@ -19,6 +19,9 @@ IndexList = List[List[int]]  # 按索引顺序记录每个点的所有邻居节�
 
 GraphTypes = ['BarabasiAlbert', 'ErdosRenyi', 'PowerLaw']
 TEN = th.Tensor
+
+from rlsolver.methods.util import calc_txt_files_with_prefixes
+
 # read graph file, e.g., gset_14.txt, as networkx.Graph
 # The nodes in file start from 1, but the nodes start from 0 in our codes.
 def read_nxgraph(filename: str) -> nx.Graph():
@@ -42,6 +45,14 @@ def read_nxgraph(filename: str) -> nx.Graph():
             line = file.readline()
     return graph
 
+def read_nxgraphs(directory: str, prefixes: List[str]) -> List[nx.Graph()]:
+    graphs = []
+    files = calc_txt_files_with_prefixes(directory, prefixes)
+    for i in range(len(files)):
+        filename = files[i]
+        graph = read_nxgraph(filename)
+        graphs.append(graph)
+    return graphs
 
 def read_graphlist(filename: str) -> GraphList:
     with open(filename, 'r') as file:
