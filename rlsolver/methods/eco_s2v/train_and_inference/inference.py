@@ -68,7 +68,7 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
             result = result.astype(int)
             obj = res['cut'][0]
             num_nodes = len(result)
-            write_graph_result(obj, run_duration, num_nodes, 'eco-dqn', result, graph_dict, plus1=True)
+            write_graph_result(obj, run_duration, num_nodes, ALG_NAME, result, graph_dict, plus1=True)
 
         save_path = os.path.join(data_folder, fname).replace("\\", "/")
         # res.to_pickle(save_path)
