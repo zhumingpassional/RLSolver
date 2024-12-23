@@ -49,7 +49,8 @@ def write_graph_result(obj: Union[float, int], running_duration: int,
             else:
                 sol.append(1)
         solution = sol
-    add_tail = '_' if running_duration is None else '_' + str(int(running_duration)) if 'data' in filename else None
+    add_tail = '_' if running_duration is None else '_' + str(int(running_duration)) \
+        if 'data' in filename else None
     new_filename = calc_result_file_name(filename, add_tail)
 
     # if new_filename exists, rename new_filename
@@ -159,7 +160,8 @@ def read_graph_result_comments_multifiles2(dir: str, prefixes: List[str], max_ID
         avg_running_durations[key] = np.average(value)
         std_running_durations[key] = np.std(value)
 
-    return objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, avg_running_durations, std_objs, std_obj_bounds, std_running_durations
+    return objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, \
+           avg_running_durations, std_objs, std_obj_bounds, std_running_durations
 
 
 # def calc_txt_files_with_prefix(directory: str, prefix: str):
@@ -209,13 +211,15 @@ if __name__ == '__main__':
         dir = '../result'
         prefixes = ['BA_']
         max_ID = 10  # exclusive
-        objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, avg_running_durations, std_objs, std_obj_bounds, std_running_durations = read_graph_result_comments_multifiles2(
-            dir, prefixes, max_ID)
+        objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, \
+        avg_running_durations, std_objs, std_obj_bounds, std_running_durations \
+            = read_graph_result_comments_multifiles2(dir, prefixes, max_ID)
 
     test_frist_30 = False
     if test_frist_30:
         dir = '../result'
         prefixes = ['BA_']
         max_ID = 30  # exclusive
-        objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, avg_running_durations, std_objs, std_obj_bounds, std_running_durations = read_graph_result_comments_multifiles2(
-            dir, prefixes, max_ID)
+        objs, obj_bounds, running_durations, avg_objs, avg_obj_bounds, \
+        avg_running_durations, std_objs, std_obj_bounds, std_running_durations \
+            = read_graph_result_comments_multifiles2(dir, prefixes, max_ID)
