@@ -19,7 +19,7 @@ def extract_data_from_file(file_path):
                 data["obj_bound"] = float(line.split()[-1])
     return data
 
-def process_folder(result_folder_path, total_result_folder, include_time=False, comparison_method=None, output_order=None):
+def process_folder(result_folder_path, total_result_folder, include_time=False, comparison_method=None, output_order=None, maxProblem=True):
     categories_with_ID=set()
     categories_without_ID=set()
 
@@ -29,7 +29,7 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
          all_txts = os.listdir(dirs)
          for txt_ in all_txts:
             if 'ID' in txt_.upper():
-                categories_with_ID.add('_'.join(txt_.split('_')[:-2]))
+                categories_with_ID.add(('_'.join(txt_.split('_')[:-2])+'_'))
             else:
                 categories_without_ID.add(txt_.split('_')[0])
     categories = categories_with_ID.union(categories_without_ID)
@@ -59,6 +59,10 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
 
                     file_path = os.path.join(dirs, txt_)
                     data = extract_data_from_file(file_path)
+
+                    if graph_id in summary_data and f'{method_name}' in summary_data[graph_id]:
+                        if not((summary_data[graph_id][f'{method_name}'] > data['obj']) ^ maxProblem):
+                            continue
                     if data['gap'] is not None:
                         method_with_gap.append(method_name)
                         summary_data[graph_id][f'{method_name}'] = data['obj']
@@ -70,8 +74,8 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
                         summary_data[graph_id][method_name] = data['obj']
                         if include_time:
                             summary_data[graph_id][f'{method_name}_Time'] = time_taken
-        
-                if txt_.endswith('.txt') and category in txt_ and category in categories_without_ID:
+
+                elif txt_.endswith('.txt') and category in txt_ and category in categories_without_ID:
                     parts = txt_.split('_')
                     time_taken = float(parts[-1].split('.')[0]) if include_time else None
                     graph_id = parts[:-1]
@@ -84,17 +88,21 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
 
                     file_path = os.path.join(dirs, txt_)
                     data = extract_data_from_file(file_path)
-                    if data['gap'] is not None:
-                        method_with_gap.append(method_name)
-                        summary_data[graph_id][f'{method_name}'] = data['obj']
-                        summary_data[graph_id][f'{method_name}_Gap'] = data['gap']
-                        summary_data[graph_id][f'{method_name}_Bound'] = data['obj_bound']
-                        if include_time:
-                            summary_data[graph_id][f'{method_name}_Time'] = time_taken
-                    else:
-                        summary_data[graph_id][method_name] = data['obj']
-                        if include_time:
-                            summary_data[graph_id][f'{method_name}_Time'] = time_taken
+                    if data['obj'] is not None:
+                        if graph_id in summary_data and f'{method_name}' in summary_data[graph_id]:
+                            if not((summary_data[graph_id][f'{method_name}'] > data['obj']) ^ maxProblem):
+                                continue
+                        if data['gap'] is not None:
+                            method_with_gap.append(method_name)
+                            summary_data[graph_id][f'{method_name}'] = data['obj']
+                            summary_data[graph_id][f'{method_name}_Gap'] = data['gap']
+                            summary_data[graph_id][f'{method_name}_Bound'] = data['obj_bound']
+                            if include_time:
+                                summary_data[graph_id][f'{method_name}_Time'] = time_taken
+                        else:
+                            summary_data[graph_id][method_name] = data['obj']
+                            if include_time:
+                                summary_data[graph_id][f'{method_name}_Time'] = time_taken
             summary_data = dict(sorted(summary_data.items(), key=lambda x: int(''.join(filter(str.isdigit, x[0])))))
 
         output_folder = os.path.join(total_result_folder, f"{category.split('_')[0]}_results")
@@ -103,8 +111,6 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
 
         if category in categories_without_ID:
             df = pd.DataFrame.from_dict(summary_data, orient='index')
-            df.index.name = 'Graph'
-            df = df.sort_index()
 
             if comparison_method and comparison_method in df.columns:
                 # 插入目标函数比较值行
@@ -169,9 +175,6 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
             df.to_csv(os.path.join(output_folder, f'{category}_summary.csv'))
         else:
             df = pd.DataFrame.from_dict(summary_data, orient='index')
-            # df.index.name = 'ID'
-
-            # df = df.sort_index()
 
             df.loc['Average'] = df.mean()  # 添加平均值行
 
@@ -196,7 +199,7 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
                         diff_row[col] = (comparison_values[col] - comparison_values[comparison_method]) / \
                                         comparison_values[comparison_method]
                 df.loc[f'Obj_Comparison_{comparison_method}'] = pd.Series(diff_row)
-                
+
             if output_order:
                 ordered_columns = []
                 for method in output_order:
@@ -211,18 +214,24 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
                 ordered_columns += [col for col in df.columns if col not in ordered_columns]
                 df = df[ordered_columns]
 
-            df.to_csv(os.path.join(output_folder, f'{category}_summary.csv'))
+            df.to_csv(os.path.join(output_folder, f'{category}summary.csv'))
+
+class Config():
+    def __init__(self):
+        self.result_folder_path = r'./result'# 替换为实际路径
+        self.total_result_folder = r'./output'# 替换为要存放结果的路径
+        self.include_time = True # 设置是否统计时间
+        self.comparison_method = "GA"# 设置对比的方法名称
+        self.output_order = ["GUROBI_QUBO","GUROBIMILP","ECO-DQN","GA","GREEDY","S2V"]# 设置表格列的输出顺序
+        self.maxProblem = True#若同一个数据集同一个方法有多个结果，是否保留最大值
 
 if __name__ == "__main__":
-    result_folder_path = r'./result'  # 替换为实际路径
-    total_result_folder = r'./output'  # 替换为要存放结果的路径
+    config = Config()
+    if os.path.exists(config.total_result_folder):
+        shutil.rmtree(config.total_result_folder)  # 如果存在旧的结果文件夹，先删除
+    os.makedirs(config.total_result_folder)
 
-    include_time = True  # 设置是否统计时间
-    comparison_method = "GUROBI_QUBO"  # 设置对比的方法名称
-    output_order = ["GUROBI_QUBO","GUROBIMILP","ECO-DQN","GA","GREEDY","S2V"]  # 设置表格列的输出顺序
-
-    if os.path.exists(total_result_folder):
-        shutil.rmtree(total_result_folder)  # 如果存在旧的结果文件夹，先删除
-    os.makedirs(total_result_folder)
-
-    process_folder(result_folder_path, total_result_folder, include_time=include_time, comparison_method=comparison_method, output_order=output_order)
+    maxProblem = True
+    process_folder(config.result_folder_path, config.total_result_folder, 
+                   include_time=config.include_time, comparison_method=config.comparison_method, 
+                   output_order=config.output_order, maxProblem=config.maxProblem)
