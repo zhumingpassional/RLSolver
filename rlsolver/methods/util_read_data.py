@@ -45,7 +45,7 @@ def read_nxgraph(filename: str) -> nx.Graph():
             line = file.readline()
     return graph
 
-def read_nxgraphs(directory: str, prefixes: List[str]) -> List[nx.Graph()]:
+def read_nxgraphs(directory: str, prefixes: List[str]) -> List[nx.Graph]:
     graphs = []
     files = calc_txt_files_with_prefixes(directory, prefixes)
     for i in range(len(files)):

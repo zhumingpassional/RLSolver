@@ -21,6 +21,8 @@ from rlsolver.methods.eco_s2v.config.config import INFERENCE_DEVICE
 
 def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, device, network_fn, network_args,
                   env_args, batched, max_batch_size):
+    start_time = time.time()
+
     step_factor = 1
     graph_dict = os.path.join(graph_save_loc, graph_name).replace("\\", "/")
     graphs_test = load_graph_set_from_txt(graph_dict)
@@ -50,7 +52,6 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
     ####################################################
     # TEST NETWORK ON VALIDATION GRAPHS
     ####################################################
-    start_time = time.time()
     results, results_raw, history = test_network(network, env_args, graphs_test, device, step_factor, n_attempts=50,
                                                  # step_factor is 1
                                                  return_raw=True, return_history=True,
