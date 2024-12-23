@@ -177,11 +177,10 @@ def plot_fig_over_durations(objs: List[int], durations: List[int], label: str):
 def calc_txt_files_with_prefixes(directory: str, prefixes: List[str]):
     res = []
     files = os.listdir(directory)
-    for file in files:
-        for prefix in prefixes:
+    for prefix in prefixes:
+        for file in files:
             if file.startswith(prefix):
                 res.append(directory + '/' + file)
-    res.sort()
     return res
 
 def calc_files_with_prefix_suffix(directory: str, prefix: str, suffix: str, extension: str = '.txt'):
