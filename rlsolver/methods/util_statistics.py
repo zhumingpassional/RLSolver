@@ -42,7 +42,7 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
                 method_name = '_'.join(method_name)
             else: 
                 method_name = method_name[0]
-            method_name = method_name.upper()
+            method_name = method_name
 
             dirs = result_folder_path +'/'+dir
             all_txts = os.listdir(dirs)
@@ -53,7 +53,7 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
                     parts = txt_.split('_')
                     time_taken = float(parts[-1].split('.')[0]) if include_time else None
 
-                    graph_id = parts[-2][2:]
+                    graph_id = parts[-2]
                     if graph_id not in summary_data:
                         summary_data[graph_id] = {}
 
