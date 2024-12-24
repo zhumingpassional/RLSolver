@@ -42,7 +42,7 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
                 method_name = '_'.join(method_name)
             else: 
                 method_name = method_name[0]
-            method_name = method_name.upper()
+            method_name = method_name
 
             dirs = result_folder_path +'/'+dir
             all_txts = os.listdir(dirs)
@@ -53,7 +53,7 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
                     parts = txt_.split('_')
                     time_taken = float(parts[-1].split('.')[0]) if include_time else None
 
-                    graph_id = parts[-2][2:]
+                    graph_id = parts[-2]
                     if graph_id not in summary_data:
                         summary_data[graph_id] = {}
 
@@ -128,7 +128,7 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
                                 else:
                                     comparison_values[col] = None
                         comparison_df = pd.DataFrame(comparison_values,
-                                                     index=[f"{graph_id}_Comparison_{comparison_method}"])
+                                                     index=[f"{graph_id}_Obj_Comparison_{comparison_method}"])
                         comparison_rows.append(comparison_df)
 
                 for comparison_df in comparison_rows:
@@ -217,21 +217,19 @@ def process_folder(result_folder_path, total_result_folder, include_time=False, 
             df.to_csv(os.path.join(output_folder, f'{category}summary.csv'))
 
 class Config():
-    def __init__(self):
-        self.result_folder_path = r'./result'# 替换为实际路径
-        self.total_result_folder = r'./output'# 替换为要存放结果的路径
-        self.include_time = True # 设置是否统计时间
-        self.comparison_method = "GA"# 设置对比的方法名称
-        self.output_order = ["GUROBI_QUBO","GUROBIMILP","ECO-DQN","GA","GREEDY","S2V"]# 设置表格列的输出顺序
-        self.maxProblem = True#若同一个数据集同一个方法有多个结果，是否保留最大值
+        result_folder_path = r'./result'# 替换为实际路径
+        total_result_folder = r'./output'# 替换为要存放结果的路径
+        include_time = True # 设置是否统计时间
+        comparison_method = "gurobi_QUBO"# 设置对比的方法名称
+        output_order = ["gurobi_QUBO","gurobiMILP","eco-dqn","GA","greedy","s2v"]# 设置表格列的输出顺序
+        maxProblem = True#若同一个数据集同一个方法有多个结果，是否保留最大值
 
 if __name__ == "__main__":
-    config = Config()
-    if os.path.exists(config.total_result_folder):
-        shutil.rmtree(config.total_result_folder)  # 如果存在旧的结果文件夹，先删除
-    os.makedirs(config.total_result_folder)
+    if os.path.exists(Config.total_result_folder):
+        shutil.rmtree(Config.total_result_folder)  # 如果存在旧的结果文件夹，先删除
+    os.makedirs(Config.total_result_folder)
 
     maxProblem = True
-    process_folder(config.result_folder_path, config.total_result_folder, 
-                   include_time=config.include_time, comparison_method=config.comparison_method, 
-                   output_order=config.output_order, maxProblem=config.maxProblem)
+    process_folder(Config.result_folder_path, Config.total_result_folder, 
+                   include_time=Config.include_time, comparison_method=Config.comparison_method, 
+                   output_order=Config.output_order, maxProblem=Config.maxProblem)
