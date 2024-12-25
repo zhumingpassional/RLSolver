@@ -69,7 +69,7 @@ def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, de
             result = result.astype(int)
             obj = res['cut'][0]
             num_nodes = len(result)
-            write_graph_result(obj, run_duration, num_nodes, ALG_NAME, result, graph_dict, plus1=True)
+            write_graph_result(obj, run_duration, num_nodes, ALG.value, result, graph_dict, plus1=True)
 
         save_path = os.path.join(data_folder, fname).replace("\\", "/")
         # res.to_pickle(save_path)
@@ -105,7 +105,7 @@ def run(save_loc="BA_40spin/eco",
     # SET UP ENVIRONMENTAL AND VARIABLES
     ####################################################
 
-    if ALG_NAME == 'eco':
+    if ALG == Alg.eco:
         env_args = {'observables': DEFAULT_OBSERVABLES,
                     'reward_signal': RewardSignal.BLS,
                     'extra_action': ExtraAction.NONE,
@@ -118,7 +118,7 @@ def run(save_loc="BA_40spin/eco",
                     'basin_reward': 1. / NUM_TRAIN_NODES,
                     'reversible_spins': True,
                     'if_greedy':if_greedy}
-    if ALG_NAME == 's2v':
+    if ALG == Alg.s2v:
         env_args = {'observables': [Observable.SPIN_STATE],
                     'reward_signal': RewardSignal.DENSE,
                     'extra_action': ExtraAction.NONE,

@@ -22,12 +22,16 @@ NUM_TRAINED_NODES_IN_INFERENCE = 20
 def calc_device(gpu_id: int):
     return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
+from enum import Enum
 
-ALG_NAME = "eco"
-assert ALG_NAME in ["eco", "s2v"]
+class Alg(Enum):
+    eco = "eco"
+    s2v = "s2v"
+
+ALG = Alg.eco
 
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
-NETWORK_SAVE_PATH = "pretrained_agent/" + ALG_NAME + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
+NETWORK_SAVE_PATH = "pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
 
 # GRAPH_SAVE_LOC = "../../data/syn_BA"
 DATA_DIR = "../../data/syn_" + GRAPH_TYPE.value

@@ -15,10 +15,10 @@ train_network = False
 inference_network = True
 
 if train_network:
-    if ALG_NAME == "eco":
+    if ALG == Alg.eco:
         from rlsolver.methods.eco_s2v.train_and_inference.train_eco import run
         run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
-    elif ALG_NAME == "s2v":
+    elif ALG == Alg.s2v:
         from rlsolver.methods.eco_s2v.train_and_inference.train_s2v import run
         run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
     else:
