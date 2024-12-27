@@ -27,6 +27,7 @@ from enum import Enum
 class Alg(Enum):
     eco = "eco"
     s2v = "s2v"
+    eco_torch = 'eco_torch'
 
 ALG = Alg.eco
 
