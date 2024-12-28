@@ -11,12 +11,10 @@ import sys
 sys.path.append('..')
 from torch_geometric.data import Data
 from rlsolver.methods.util_evaluator import EncoderBase64
-from rlsolver.envs.env_l2a_maxcut import SimulatorGraphMaxCut, load_graph_list
+from rlsolver.envs.env_mcpg_maxcut import SimulatorMaxcut
 from rlsolver.methods.util import calc_txt_files_with_prefixes
 import time
 from rlsolver.envs.LocalSearch import LocalSearch
-from rlsolver.methods.util_read_data import (read_nxgraph, read_graphlist
-                            )
 from rlsolver.methods.util_result import write_graph_result
 """
 pip install torch_geometric
@@ -334,8 +332,6 @@ def mcpg(filename: str):
     optimizer = torch.optim.Adam(net.parameters(), lr=8e-2)
 
     '''addition'''
-    from rlsolver.envs.env_mcpg_maxcut import SimulatorMaxcut
-    from rlsolver.envs.LocalSearch import LocalSearch
     sim = SimulatorMaxcut(sim_name=sim_name, device=device)
     local_search = LocalSearch(simulator=sim, num_nodes=num_nodes)
 
