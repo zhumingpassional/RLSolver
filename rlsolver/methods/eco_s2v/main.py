@@ -17,17 +17,23 @@ inference_network = True
 if train_network:
     if ALG == Alg.eco:
         from rlsolver.methods.eco_s2v.train_and_inference.train_eco import run
-        run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
     elif ALG == Alg.s2v:
         from rlsolver.methods.eco_s2v.train_and_inference.train_s2v import run
-        run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
     elif ALG == Alg.eco_torch:
         from rlsolver.methods.eco_s2v.train_and_inference.train_eco_torch import run
-        run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
+    elif ALG == Alg.eeco:
+        from rlsolver.methods.eco_s2v.train_and_inference.train_eeco import run
     else:
         raise ValueError('Algorithm not recognized')
+    run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
+
 
 if inference_network:
-    from rlsolver.methods.eco_s2v.train_and_inference.inference import run
-    run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR, network_save_path=NETWORK_SAVE_PATH,
-                  batched=True, max_batch_size=None, max_parallel_jobs=2, prefixes=INFERENCE_PREFIXES)
+    if ALG == Alg.eeco:
+        from rlsolver.methods.eco_s2v.train_and_inference.inference_eeco import run
+        run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR, network_save_path=NETWORK_SAVE_PATH,
+                      batched=True, max_batch_size=None, max_parallel_jobs=2, prefixes=INFERENCE_PREFIXES)
+    else:
+        from rlsolver.methods.eco_s2v.train_and_inference.inference import run
+        run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR, network_save_path=NETWORK_SAVE_PATH,
+            batched=True, max_batch_size=None, max_parallel_jobs=2, prefixes=INFERENCE_PREFIXES)

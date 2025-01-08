@@ -3,18 +3,17 @@ import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
-# from numba.cuda.cudadrv.nvrtc import NVRTC
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
 from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir, load_graph_set_from_folder
-from rlsolver.methods.eco_s2v.src.agents.dqn.torch_dqn import DQN
+from rlsolver.methods.eco_s2v.src.agents.dqn.eeco_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
-from rlsolver.methods.eco_s2v.src.envs.torch_util import (SetGraphGenerator,
+from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
                                                     RandomBarabasiAlbertGraphGenerator, RandomErdosRenyiGraphGenerator,
                                                     EdgeType, RewardSignal, ExtraAction,
                                                     OptimisationTarget, SpinBasis,
                                                     DEFAULT_OBSERVABLES)
-from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
+from rlsolver.methods.eco_s2v.src.networks.mpnn import EECO_MPNN as MPNN
 from rlsolver.methods.eco_s2v.config.config import *
 import torch
 
@@ -49,7 +48,8 @@ def run(save_loc, graph_save_loc):
                 'stag_punishment': None,
                 # 'basin_reward':1./200,
                 'basin_reward': 1. / NUM_TRAIN_NODES,
-                'reversible_spins': True}
+                'reversible_spins': True,
+                }
 
     ####################################################
     # SET UP TRAINING AND TEST GRAPHS
@@ -59,19 +59,22 @@ def run(save_loc, graph_save_loc):
 
     if GRAPH_TYPE == GraphType.ER:
         train_graph_generator = RandomErdosRenyiGraphGenerator(n_spins=n_spins_train, p_connection=0.15,
-                                                               edge_type=EdgeType.DISCRETE)
+                                                               edge_type=EdgeType.DISCRETE,n_graphs=NUM_TRAIN_GRAPHS)
     if GRAPH_TYPE == GraphType.BA:
         train_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
-                                                                   edge_type=EdgeType.DISCRETE)
+                                                                   edge_type=EdgeType.DISCRETE,n_graphs=NUM_TRAIN_GRAPHS)
 
     ####
     # Pre-generated test graphs
     ####
     graphs_test = load_graph_set_from_folder(graph_save_loc)
-    graphs_test = [torch.tensor(m,dtype=torch.float,device=TRAIN_DEVICE) for m in graphs_test]
-    n_tests = len(graphs_test)
+    if len(graphs_test) == 1:
+        graphs_test = torch.tensor(graphs_test[0], dtype=torch.float, device=TRAIN_DEVICE).unsqueeze(0)
+    else:
+        graphs_test = torch.stack([torch.tensor(m, dtype=torch.float, device=TRAIN_DEVICE) for m in graphs_test],dim=0)
+    n_tests = graphs_test.shape[0]
 
-    test_graph_generator = SetGraphGenerator(graphs_test, ordered=True)
+    test_graph_generator = SetGraphGenerator(graphs_test)
 
     ####################################################
     # SET UP TRAINING AND TEST ENVIRONMENTS
@@ -80,13 +83,17 @@ def run(save_loc, graph_save_loc):
     train_envs = [ising_env.make("SpinSystem",
                                  train_graph_generator,
                                  int(n_spins_train * step_fact),
-                                 **env_args)]
+                                 **env_args,device = TRAIN_DEVICE,
+                                 n_sims = NUM_TRAIN_SIMS,
+                                 n_graphs = NUM_TRAIN_GRAPHS)]
 
-    n_spins_test = train_graph_generator.get().shape[0]
+    n_spins_test = train_graph_generator.get().shape[1]
     test_envs = [ising_env.make("SpinSystem",
                                 test_graph_generator,
                                 int(n_spins_test * step_fact),
-                                **env_args)]
+                                **env_args,device = TRAIN_DEVICE,
+                                 n_sims = NUM_INFERENCE_SIMS,
+                                 n_graphs = n_tests)]
 
     ####################################################
     # SET UP FOLDERS FOR SAVING DATA
@@ -125,10 +132,10 @@ def run(save_loc, graph_save_loc):
                 double_dqn=True,
                 clip_Q_targets=False,
 
-                replay_start_size=REPLAY_START_SIZE,
-                replay_buffer_size=REPLAY_BUFFER_SIZE,  # 20000
+                replay_start_size=int(round(500/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS))),
+                replay_buffer_size=int(round(5000/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS))),  # 20000
                 gamma=gamma,  # 1
-                update_target_frequency=FINAL_EXPLORATION_STEP,  # 500
+                update_target_frequency=int(round(1000/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS))),  # 500
 
                 update_learning_rate=False,
                 initial_learning_rate=1e-4,
@@ -137,8 +144,8 @@ def run(save_loc, graph_save_loc):
                 final_learning_rate=1e-4,
                 final_learning_rate_step=200000,
 
-                update_frequency=32,  # 1
-                minibatch_size=64,  # 128
+                update_frequency=int(32/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS)),  # 1
+                minibatch_size=int(64/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS)),  # 128
                 max_grad_norm=None,
                 weight_decay=0,
 
@@ -152,14 +159,14 @@ def run(save_loc, graph_save_loc):
                 loss="mse",
 
                 # save_network_frequency=400000,
-                save_network_frequency=SAVE_NETWORK_FREQUENCY,
+                save_network_frequency=int(round(SAVE_NETWORK_FREQUENCY/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS))),
                 network_save_path=network_save_path,
 
                 evaluate=True,
-                test_envs=None,
+                test_envs=test_envs,
                 test_episodes=n_tests,
                 # test_frequency=50000,  # 10000
-                test_frequency=10000,  # 10000
+                test_frequency=1000,  # 10000
                 test_save_path=test_save_path,
                 test_metric=TestMetric.MAX_CUT,
 
