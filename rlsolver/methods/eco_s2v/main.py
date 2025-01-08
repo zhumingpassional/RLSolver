@@ -21,6 +21,9 @@ if train_network:
     elif ALG == Alg.s2v:
         from rlsolver.methods.eco_s2v.train_and_inference.train_s2v import run
         run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
+    elif ALG == Alg.eco_torch:
+        from rlsolver.methods.eco_s2v.train_and_inference.train_eco_torch import run
+        run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
     else:
         raise ValueError('Algorithm not recognized')
 
