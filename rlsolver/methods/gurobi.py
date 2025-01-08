@@ -1,3 +1,4 @@
+import math
 import sys
 import os
 import numpy as np
@@ -608,8 +609,10 @@ if __name__ == '__main__':
         filename = '../data/syn_BA/BA_100_ID0.txt'
         time_limits = GUROBI_TIME_LIMITS
 
-        from L2A.maxcut_simulator import SimulatorMaxcut, load_graph_list
-        from L2A.evaluator import *
+        from rlsolver.methods.util_evaluator import EncoderBase64
+        from rlsolver.envs.env_mcpg_maxcut import SimulatorMaxcut, load_graph_list
+        from util_evaluator import X_G14
+        # from L2A.evaluator import *
 
         graph_name = 'gset_14'
 
