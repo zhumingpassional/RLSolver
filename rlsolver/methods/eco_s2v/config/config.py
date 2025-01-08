@@ -1,15 +1,17 @@
 import torch as th
 from torch.cuda import graph
+from rlsolver.methods.config import GraphType
+
+GRAPH_TYPE = GraphType.BA
 
 GPU_ID = 0
 
 NUM_TRAIN_NODES = 100
+NUM_TRAIN_GRAPHS = 2 ** 1
+NUM_TRAIN_SIMS = 2 ** 1
 
-from rlsolver.methods.config import GraphType
-# GRAPH_TYPE = 'BA'
-GRAPH_TYPE = GraphType.BA
-
-
+NUM_INFERENCE_SIMS = 2 ** 3
+NUM_INFERENCE_GRAPHS = 2 ** 0
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000]
 # NUM_INFERENCE_NODES = [100]
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
@@ -18,18 +20,22 @@ NUM_TRAINED_NODES_IN_INFERENCE = 20
 #             "BA_1000_", "BA_1100_", "BA_1200_", "BA_2000_", "BA_3000_", "BA_4000_",
 #             "BA_5000_"]  # Replace with your desired prefixes
 
-
-def calc_device(gpu_id: int):
-    return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
-
 from enum import Enum
 
 class Alg(Enum):
     eco = "eco"
     s2v = "s2v"
     eco_torch = 'eco_torch'
+    eeco = 'eeco'
 
 ALG = Alg.eco
+
+
+
+def calc_device(gpu_id: int):
+    return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
+
+
 
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
 NETWORK_SAVE_PATH = "pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"

@@ -3,6 +3,90 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class EECO_MPNN(nn.Module):
+    def __init__(self,
+                 n_obs_in=7,
+                 n_layers=3,
+                 n_features=64,
+                 tied_weights=False,
+                 n_hid_readout=[], ):
+
+        super().__init__()
+
+        self.n_obs_in = n_obs_in
+        self.n_layers = n_layers
+        self.n_features = n_features
+        self.tied_weights = tied_weights
+
+        self.node_init_embedding_layer = nn.Sequential(
+            nn.Linear(n_obs_in, n_features, bias=False),
+            nn.ReLU()
+        )
+
+        self.edge_embedding_layer = EdgeAndNodeEmbeddingLayer(n_obs_in, n_features)
+
+        if self.tied_weights:
+            self.update_node_embedding_layer = UpdateNodeEmbeddingLayer(n_features)
+        else:
+            self.update_node_embedding_layer = nn.ModuleList(
+                [UpdateNodeEmbeddingLayer(n_features) for _ in range(self.n_layers)])
+
+        self.readout_layer = ReadoutLayer(n_features, n_hid_readout)
+
+    @torch.no_grad()
+    def get_normalisation(self, adj):
+        norm = torch.sum((adj != 0), dim=1).unsqueeze(-1)
+        norm[norm == 0] = 1
+        return norm.float()
+
+    def forward(self, obs_in):
+        """
+        新输入 obs 的形状: (batch_size, n_graphs, n_envs, 27, 20)
+        对应 (B, G, E, N, F)
+        """
+        obs = obs_in.clone()
+        if obs.dim() == 4:
+            obs = obs.unsqueeze(0)
+        B, G, E, N, F = obs.shape  # batch_size, n_graphs, n_envs, 27, 20
+        obs = obs.view(B * G * E, N, F)
+
+        obs = obs.transpose(-1, -2)
+
+        # node_features: 取前 self.n_obs_in (=7) 个channel作为节点特征
+        node_features = obs[:, :, :self.n_obs_in]  # (B', F, N) -> 切片到 (B', 7, N)
+        # adjacency: 取剩下的 channel 作为 adjacency
+        adj = obs[:, :, self.n_obs_in:]  # (B', F, N) -> (B', F-7, N)
+
+        # 计算邻接矩阵的归一化系数
+        norm = self.get_normalisation(adj)
+
+        # 初始节点嵌入 & 边的嵌入
+        init_node_embeddings = self.node_init_embedding_layer(node_features)
+        edge_embeddings = self.edge_embedding_layer(node_features, adj, norm)
+
+        # 多次迭代更新节点嵌入
+        current_node_embeddings = init_node_embeddings
+        if self.tied_weights:
+            for _ in range(self.n_layers):
+                current_node_embeddings = self.update_node_embedding_layer(
+                    current_node_embeddings, edge_embeddings, norm, adj
+                )
+        else:
+            for i in range(self.n_layers):
+                current_node_embeddings = self.update_node_embedding_layer[i](
+                    current_node_embeddings, edge_embeddings, norm, adj
+                )
+
+        # 读出层
+        out = self.readout_layer(current_node_embeddings)
+        # 此时 out.shape 大概率是 (B' = B*G*E, N, 1) 或 (B' = B*G*E, N)
+
+        # ========== Step 3: (可选) 还原到 (B, G, E, N, *) ==========
+        out = out.view(B, G, E, -1)
+        out = out.squeeze(0)
+        return out
+
+
 class MPNN(nn.Module):
     def __init__(self,
                  n_obs_in=7,
