@@ -20,6 +20,43 @@ from rlsolver.methods.eco_s2v.config.config import *
 # TESTING ON GRAPHS
 ####################################################
 
+def eeco_test_network(network, test_env, device=None):
+
+    @torch.no_grad()
+    def predict(network, states, acting_in_reversible_spin_env=None):
+
+        qs = network(states)
+
+        if acting_in_reversible_spin_env:
+            if qs.dim() == 1:
+                actions = qs.argmax().item()
+            else:
+                actions = qs.argmax(-1, True)
+            return actions
+        # else:
+        #     if qs.dim() == 1:
+        #         x = (states[0, :] == self.allowed_action_state).nonzero()
+        #         actions = x[qs[x].argmax().item()].item()
+        #     else:
+        #         disallowed_actions_mask = (states[:, :, 0] != self.allowed_action_state)
+        #         qs_allowed = qs.masked_fill(disallowed_actions_mask, -10000)
+        #         actions = qs_allowed.argmax(1, True).squeeze(1)
+        #     return actions
+
+    done = torch.zeros((test_env.n_graphs, test_env.n_sims), dtype=torch.bool, device=test_env.device)
+    obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(1).repeat(1, test_env.n_sims, 1, 1)), dim=-2)
+    actions = predict(network,obs,test_env.reversible_spins).squeeze(-1)
+
+    while not done[0, 0]:
+        obs, rew, done, info = test_env.step(actions)
+        actions = predict(network,obs,test_env.reversible_spins).squeeze(-1)
+
+    test_scores = test_env.get_best_cut()
+    obj,obj_indices = torch.max(test_scores,dim=1)
+    env_indices = torch.arange(test_env.n_graphs,dtype=torch.long,device=test_env.device)
+    result = test_env.state[env_indices,obj_indices,0]
+    return obj,result
+
 def test_network(network, env_args, graphs_test, device=None, step_factor=1, batched=True,
                  n_attempts=50, return_raw=False, return_history=False, max_batch_size=None):
     if batched:
