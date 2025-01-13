@@ -4,6 +4,7 @@ import random
 import threading
 from collections import namedtuple
 from enum import Enum
+from rlsolver.methods.eco_s2v.config.config import *
 
 import numpy as np
 import torch
@@ -46,8 +47,13 @@ class ReplayBuffer:
         if self.next_batch_process is not None:
             # Don't add to the buffer when sampling from it.
             self.next_batch_process.join()
-        self._memory[self._position] = Transition(*args)
-        self._position = (self._position + 1) % self._capacity
+        if ALG == Alg.eeco:
+            for i in range(len(args[0])):
+                self._memory[self._position] = Transition(args[0][i],args[1][i],args[2][i],args[3][i],args[4][i],)
+                self._position = (self._position + 1) % self._capacity
+        else:
+            self._memory[self._position] = Transition(*args)
+            self._position = (self._position + 1) % self._capacity
 
     def _prepare_sample(self, batch_size, device=None):
         self.next_batch_size = batch_size

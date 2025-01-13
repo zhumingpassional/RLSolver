@@ -6,12 +6,11 @@ GRAPH_TYPE = GraphType.BA
 
 GPU_ID = 0
 
-NUM_TRAIN_NODES = 100
-NUM_TRAIN_GRAPHS = 2 ** 1
-NUM_TRAIN_SIMS = 2 ** 1
+NUM_TRAIN_NODES = 200
+NUM_TRAIN_SIMS = 2 ** 3
 
 NUM_INFERENCE_SIMS = 2 ** 3
-NUM_INFERENCE_GRAPHS = 2 ** 0
+NUM_INFERENCE_GRAPHS = 2 ** 3
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000]
 # NUM_INFERENCE_NODES = [100]
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
@@ -28,7 +27,7 @@ class Alg(Enum):
     eco_torch = 'eco_torch'
     eeco = 'eeco'
 
-ALG = Alg.eco
+ALG = Alg.eeco
 
 
 
@@ -38,11 +37,11 @@ def calc_device(gpu_id: int):
 
 
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
-NETWORK_SAVE_PATH = "pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
-
-# GRAPH_SAVE_LOC = "../../data/syn_BA"
-DATA_DIR = "../../data/syn_" + GRAPH_TYPE.value
-RESULT_DIR = "../../result"
+# NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
+NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/result/network80000.pth"
+DATA_DIR = "rlsolver/data/syn_BA"
+# DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
+RESULT_DIR = "RLSolver-master/rlsolver/result"
 
 TRAIN_DEVICE = calc_device(GPU_ID)
 INFERENCE_DEVICE = calc_device(GPU_ID)

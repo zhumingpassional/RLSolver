@@ -13,7 +13,7 @@ from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
                                                     EdgeType, RewardSignal, ExtraAction,
                                                     OptimisationTarget, SpinBasis,
                                                     DEFAULT_OBSERVABLES)
-from rlsolver.methods.eco_s2v.src.networks.mpnn import EECO_MPNN as MPNN
+from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.eco_s2v.config.config import *
 import torch
 
@@ -54,15 +54,15 @@ def run(save_loc, graph_save_loc):
     ####################################################
     # SET UP TRAINING AND TEST GRAPHS
     ####################################################
-
+    start = time.time()
     n_spins_train = NUM_TRAIN_NODES
 
     if GRAPH_TYPE == GraphType.ER:
         train_graph_generator = RandomErdosRenyiGraphGenerator(n_spins=n_spins_train, p_connection=0.15,
-                                                               edge_type=EdgeType.DISCRETE,n_graphs=NUM_TRAIN_GRAPHS)
+                                                               edge_type=EdgeType.DISCRETE,n_graphs=NUM_SIMS)
     if GRAPH_TYPE == GraphType.BA:
         train_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
-                                                                   edge_type=EdgeType.DISCRETE,n_graphs=NUM_TRAIN_GRAPHS)
+                                                                   edge_type=EdgeType.DISCRETE,n_sims=NUM_TRAIN_SIMS)
 
     ####
     # Pre-generated test graphs
@@ -84,27 +84,20 @@ def run(save_loc, graph_save_loc):
                                  train_graph_generator,
                                  int(n_spins_train * step_fact),
                                  **env_args,device = TRAIN_DEVICE,
-                                 n_sims = NUM_TRAIN_SIMS,
-                                 n_graphs = NUM_TRAIN_GRAPHS)]
+                                 n_sims = NUM_TRAIN_SIMS)]
 
-    n_spins_test = train_graph_generator.get().shape[1]
+    n_spins_test = test_graph_generator.get().shape[1]
     test_envs = [ising_env.make("SpinSystem",
                                 test_graph_generator,
                                 int(n_spins_test * step_fact),
                                 **env_args,device = TRAIN_DEVICE,
-                                 n_sims = NUM_INFERENCE_SIMS,
-                                 n_graphs = n_tests)]
-
-    ####################################################
-    # SET UP FOLDERS FOR SAVING DATA
-    ####################################################
-
-    # data_folder = os.path.join(save_loc, 'data')
-    # network_folder = os.path.join(save_loc, 'network')
-
-    # mk_dir(data_folder)
-    # mk_dir(network_folder)
-    # print(data_folder)
+                                 n_sims = n_tests)]
+    # start = time.time()
+    # for i in range(100000):
+    #     state_next, reward, done, _ = test_envs[0].step(torch.randint(0, 200, (n_tests,), device=TRAIN_DEVICE,dtype=torch.long))
+    #     if done[0]:
+    #         test_envs[0].reset()
+    # print(time.time() - start)
     pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_"
     network_save_path = pre_fix + "network.pth"
     test_save_path = pre_fix + "test_scores.pkl"
@@ -113,7 +106,7 @@ def run(save_loc, graph_save_loc):
     ####################################################
     # SET UP AGENT
     ####################################################
-
+    
     nb_steps = NB_STEPS
 
     network_fn = lambda: MPNN(n_obs_in=train_envs[0].observation_space.shape[1],
@@ -132,10 +125,10 @@ def run(save_loc, graph_save_loc):
                 double_dqn=True,
                 clip_Q_targets=False,
 
-                replay_start_size=int(round(500/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS))),
-                replay_buffer_size=int(round(5000/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS))),  # 20000
+                replay_start_size=int(round(REPLAY_START_SIZE/(NUM_TRAIN_SIMS))),
+                replay_buffer_size=REPLAY_BUFFER_SIZE,  # 20000
                 gamma=gamma,  # 1
-                update_target_frequency=int(round(1000/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS))),  # 500
+                update_target_frequency=int(round(UPDATE_TARGET_FREQUENCY/(NUM_TRAIN_SIMS))),  # 500
 
                 update_learning_rate=False,
                 initial_learning_rate=1e-4,
@@ -144,8 +137,10 @@ def run(save_loc, graph_save_loc):
                 final_learning_rate=1e-4,
                 final_learning_rate_step=200000,
 
-                update_frequency=int(32/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS)),  # 1
-                minibatch_size=int(64/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS)),  # 128
+                # update_frequency=int(32/(NUM_TRAIN_SIMS)),  # 1
+                update_frequency=1,  # 1
+
+                minibatch_size=64,  # 128
                 max_grad_norm=None,
                 weight_decay=0,
 
@@ -159,14 +154,14 @@ def run(save_loc, graph_save_loc):
                 loss="mse",
 
                 # save_network_frequency=400000,
-                save_network_frequency=int(round(SAVE_NETWORK_FREQUENCY/(NUM_TRAIN_GRAPHS*NUM_TRAIN_SIMS))),
+                save_network_frequency=int(round(SAVE_NETWORK_FREQUENCY/(NUM_TRAIN_SIMS))),
                 network_save_path=network_save_path,
 
                 evaluate=True,
                 test_envs=test_envs,
                 test_episodes=n_tests,
                 # test_frequency=50000,  # 10000
-                test_frequency=1000,  # 10000
+                test_frequency=10000,  # 10000
                 test_save_path=test_save_path,
                 test_metric=TestMetric.MAX_CUT,
 
@@ -178,10 +173,7 @@ def run(save_loc, graph_save_loc):
     #############
     # TRAIN AGENT
     #############
-    start = time.time()
-    agent.learn(timesteps=nb_steps, verbose=True)
-    # 训完之后会输出时间
-    print(time.time() - start)
+    agent.learn(timesteps=nb_steps, start_time=start,verbose=True)
 
     agent.save()
 

@@ -253,14 +253,14 @@ class DQN:
     def get_random_replay_buffer(self):
         return random.sample(self.replay_buffers.items(), k=1)[0][1]
 
-    def learn(self, timesteps, verbose=False):
+    def learn(self, timesteps, start_time = None,verbose=False):
 
         if self.logging:
             logger = Logger()
 
         # Initialise the state
         state = self.env.reset()
-        score = torch.zeros((self.env.n_graphs, self.env.n_sims), device=self.device, dtype=torch.float)
+        score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
         losses_eps = []
         t1 = time.time()
 
@@ -294,23 +294,23 @@ class DQN:
             # Store transition in replay buffer
             self.replay_buffer.add(state, action, reward, state_next, done)
 
-            if done[0, 0]:
+            if done[0]:
                 # Reinitialise the state
                 if verbose:
                     loss_str = "{:.2e}".format(np.mean(losses_eps)) if is_training_ready else "N/A"
                     print("timestep : {}, episode time: {}, score : {}, mean loss: {}, time : {} s".format(
                         (timestep + 1),
                         self.env.current_step,
-                        torch.mean(torch.round(score * 1000) / 1000),
+                        torch.mean(score),
                         loss_str,
                         round(time.time() - t1, 3)))
 
                 if self.logging:
-                    logger.add_scalar('Episode_score', score, timestep)
+                    logger.add_scalar('Episode_score', torch.mean(score), time.time()-start_time)
                 self.env, self.acting_in_reversible_spin_env = self.get_random_env()
                 self.replay_buffer = self.get_replay_buffer_for_env(self.env)
                 state = torch.as_tensor(self.env.reset())
-                score = torch.zeros((self.env.n_graphs, self.env.n_sims), device=self.device, dtype=torch.float)
+                score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
                 losses_eps = []
                 t1 = time.time()
 
@@ -364,8 +364,8 @@ class DQN:
                     path_ext += '.pth'
                 self.save(path_main + path_ext)
 
-        if self.logging:
-            logger.save()
+            if self.logging and (timestep + 1) % self.save_network_frequency == 0:
+                logger.save()
 
         path = self.test_save_path
         if os.path.splitext(path)[-1] == '':
@@ -395,9 +395,9 @@ class DQN:
             # Calculate target Q
             with torch.no_grad():
                 if self.double_dqn:
-                    network_output = self.network(states_next.float())
+                    network_output = self.network(states_next.clone())
                     greedy_actions = network_output.argmax(-1, True)
-                    target_network_output = self.target_network(states_next.float())
+                    target_network_output = self.target_network(states_next.clone())
                     q_value_target = target_network_output.gather(-1, greedy_actions)
                 else:
                     q_value_target = self.target_network(states_next.float()).max(1, True)[0]
@@ -445,14 +445,14 @@ class DQN:
         if is_training_ready and random.uniform(0, 1) >= self.epsilon:
             # 使用 PyTorch 进行 Q 函数预测
             with torch.no_grad():  # 关闭梯度计算
-                action = self.predict(state).squeeze(-1)  # 假设 self.predict 返回的 action
+                action = self.predict(state.clone()).squeeze(-1)  # 假设 self.predict 返回的 action
         else:
             if self.acting_in_reversible_spin_env:
                 # 在可逆环境中，随机选择动作
                 # action = np.random.randint(0, self.env.action_space.n)
                 action = torch.randint(0, self.env.action_space.n,
-                                       (self.env.n_sims * self.env.n_graphs,), device=self.device,
-                                       dtype=torch.long).view(self.env.n_graphs, self.env.n_sims)
+                                       (self.env.n_sims,), device=self.device,
+                                       dtype=torch.long)
             else:
                 # 从尚未翻转的 spin 中随机选择一个
                 state_tensor = torch.tensor(state, dtype=torch.float32)  # 转换为 PyTorch Tensor
@@ -517,16 +517,16 @@ class DQN:
         test_env = deepcopy(self.test_envs[0])
 
         # self.predict(obs).squeeze(-1)
-        done = torch.zeros((test_env.n_graphs, test_env.n_sims), dtype=torch.bool, device=test_env.device)
+        done = torch.zeros((test_env.n_sims), dtype=torch.bool, device=test_env.device)
         actions = self.predict(obs).squeeze(-1)
 
-        while not done[0, 0]:
+        while not done[0]:
             obs, rew, done, info = test_env.step(actions)
             actions = self.predict(obs).squeeze(-1)
 
             if self.test_metric == TestMetric.CUMULATIVE_REWARD:
                 test_scores += rew
-            if done[0, 0]:
+            if done[0]:
                 if self.test_metric == TestMetric.BEST_ENERGY:
                     test_scores = test_env.best_energy
                 elif self.test_metric == TestMetric.ENERGY_ERROR:
