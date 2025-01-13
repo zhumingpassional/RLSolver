@@ -37,10 +37,8 @@ def calc_device(gpu_id: int):
 
 
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
-# NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
-NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/result/network80000.pth"
-DATA_DIR = "rlsolver/data/syn_BA"
-# DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
+NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
+DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = "RLSolver-master/rlsolver/result"
 
 TRAIN_DEVICE = calc_device(GPU_ID)
