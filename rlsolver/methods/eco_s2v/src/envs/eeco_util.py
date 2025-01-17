@@ -59,11 +59,11 @@ DEFAULT_OBSERVABLES = [Observable.SPIN_STATE,
 
 class GraphGenerator(ABC):
 
-    def __init__(self, n_spins, edge_type, biased=False,n_graphs=2**3):
+    def __init__(self, n_spins, edge_type, biased=False,n_sims=2**3):
         self.n_spins = n_spins
         self.edge_type = edge_type
         self.biased = biased
-        self.n_graphs = n_graphs
+        self.n_sims = n_sims
 
     def pad_matrix(self, matrix):
         dim = matrix.shape[0]
@@ -166,8 +166,8 @@ class RandomErdosRenyiGraphGenerator(GraphGenerator):
 
 class RandomBarabasiAlbertGraphGenerator(GraphGenerator):
 
-    def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_graphs=2**3):
-        super().__init__(n_spins, edge_type, False,n_graphs)
+    def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=2**3):
+        super().__init__(n_spins, edge_type, False,n_sims)
 
         self.m_insertion_edges = m_insertion_edges
         self.device = TRAIN_DEVICE
@@ -181,7 +181,7 @@ class RandomBarabasiAlbertGraphGenerator(GraphGenerator):
             self.get_connection_mask = get_connection_mask
         elif self.edge_type == EdgeType.RANDOM:
             def get_connection_mask():
-                mask = 2. * torch.randint(0, 2, (self.n_graphs, n_spins, n_spins), dtype=torch.float32,device=self.device) - 1
+                mask = 2. * torch.randint(0, 2, (self.n_sims, n_spins, n_spins), dtype=torch.float32,device=self.device) - 1
                 mask = torch.tril(mask, diagonal=0) + torch.triu(mask.transpose(1, 2), diagonal=1)
                 return mask
             self.get_connection_mask = get_connection_mask
@@ -189,13 +189,14 @@ class RandomBarabasiAlbertGraphGenerator(GraphGenerator):
             raise NotImplementedError()
 
     def get(self, with_padding=False):
-        adj = torch.empty((self.n_graphs,self.n_spins,self.n_spins),device=self.device,dtype=torch.float)
-        for i in range(self.n_graphs):
+        adj = torch.empty((self.n_sims,self.n_spins,self.n_spins),device=self.device,dtype=torch.float)
+        for i in range(self.n_sims):
             g = nx.barabasi_albert_graph(self.n_spins, self.m_insertion_edges)
+            # g = nx.erdos_renyi_graph(self.n_spins, p)
+
             adj[i] = torch.tensor(nx.to_numpy_array(g), dtype=torch.float32,device=self.device).fill_diagonal_(0)
 
         adj = adj*self.get_connection_mask()
-        # No self-connections (this modifies adj in-place).
         return self.pad_matrix(adj) if with_padding else adj
 
 class RandomRegularGraphGenerator(GraphGenerator):
@@ -395,125 +396,36 @@ class PerturbedGraphGenerator(GraphGenerator):
 
         return self.pad_matrix(m) if with_padding else m
 
-# class HistoryBuffer():
-#     def __init__(self):
-#         self.buffer = {}
-#         self.current_action_hist = set([])
-#         self.current_action_hist_len = 0
-#
-#     def update(self, action):
-#         new_action_hist = self.current_action_hist.copy()
-#         if action in self.current_action_hist:
-#             new_action_hist.remove(action)
-#             self.current_action_hist_len -= 1
-#         else:
-#             new_action_hist.add(action)
-#             self.current_action_hist_len += 1
-#
-#         try:
-#             list_of_states = self.buffer[self.current_action_hist_len]
-#             if new_action_hist in list_of_states:
-#                 self.current_action_hist = new_action_hist
-#                 return False
-#         except KeyError:
-#             list_of_states = []
-#
-#         list_of_states.append(new_action_hist)
-#         self.current_action_hist = new_action_hist
-#         self.buffer[self.current_action_hist_len] = list_of_states
-#         return True
+class HistoryBuffer():
+    def __init__(self,n_sims):
+        self.n_sims = n_sims
+        self.buffer = [{} for _ in range(self.n_sims)]
+        self.current_action_hist = [set() for _ in range(self.n_sims)]  # 针对 n 个环境，每个环境有一个集合
+        self.current_action_hist_len = [0] * self.n_sims  # 每个环境的历史长度
 
+    def update(self, actions):
+        updated = torch.zeros(self.n_sims, dtype=torch.bool)  # 用于记录哪些环境的状态被更新
+        for env_idx, action in enumerate(actions):  # 遍历每个环境
+            new_action_hist = self.current_action_hist[env_idx].copy()
+            if action in self.current_action_hist[env_idx]:
+                new_action_hist.remove(action)
+                self.current_action_hist_len[env_idx] -= 1
+            else:
+                new_action_hist.add(action)
+                self.current_action_hist_len[env_idx] += 1
 
-class HistoryBuffer:
-    def __init__(self,n_sims,n_graphs):
-        """
-        env_shape: (N1, N2) 表示有 N1 x N2 个环境。
+            try:
+                list_of_states = self.buffer[env_idx][self.current_action_hist_len[env_idx]]
+                if new_action_hist in list_of_states:
+                    self.current_action_hist[env_idx] = new_action_hist
+                    continue  # 如果新状态已存在，直接跳过更新
+            except KeyError:
+                list_of_states = []
 
-        self.buffers[i][j]: 一个字典，用来存储不同 "动作集合大小" -> "已出现过的 frozenset 集合"。
-        self.current_action_hists[i][j]: 当前 (i, j) 环境已收集的动作集合 (set)。
-        self.current_action_hist_lens[i][j]: 上述动作集合大小 (int)。
-        """
-        self.env_shape = n_graphs,n_sims
-        N1, N2 = self.env_shape
+            # 更新 buffer 和 current_action_hist
+            list_of_states.append(new_action_hist)
+            self.current_action_hist[env_idx] = new_action_hist
+            self.buffer[env_idx][self.current_action_hist_len[env_idx]] = list_of_states
+            updated[env_idx] = True  # 标记该环境状态已更新
 
-        # buffers[i][j] = { hist_len: set_of_frozensets }
-        self.buffers = [
-            [dict() for _ in range(N2)]
-            for _ in range(N1)
-        ]
-
-        # 当前每个环境的动作集合与长度
-        self.current_action_hists = [
-            [set() for _ in range(N2)]
-            for _ in range(N1)
-        ]
-        self.current_action_hist_lens = [
-            [0 for _ in range(N2)]
-            for _ in range(N1)
-        ]
-
-    def update(self, actions: torch.Tensor):
-        """
-        actions: 形状 (N1, N2)
-          - actions[i, j] 是第 (i, j) 个环境在本次 step 的动作(标量或单元素)。
-
-        返回：一个与 actions 同形状的布尔张量 (N1, N2)，
-             表示该步更新后，每个环境是否出现了“新的动作集合状态”（True 表示新出现）。
-        """
-        # 检查传入的 actions 形状是否与 env_shape 对应
-        N1, N2 = self.env_shape
-        assert actions.shape == (N1, N2), (
-            f"actions 的形状 {actions.shape} 不符合 env_shape {self.env_shape}"
-        )
-
-        # 用于存储所有环境的返回结果 (True/False)
-        # 这里用 torch.bool 张量来保存
-        new_state_flags = torch.zeros((N1, N2), dtype=torch.bool)
-        actions_list = actions.tolist()
-        # 遍历所有二维环境
-        for i in range(N1):
-            for j in range(N2):
-                # 取出第 (i, j) 个环境的动作
-                # 若是标量，actions[i,j] 可能是一个 0-dim tensor，因此 .item() 取出 Python 数值
-                env_action = actions_list[i][j]
-
-                # 拷贝旧的动作集合
-                new_action_hist = self.current_action_hists[i][j].copy()
-                env_action_hist_len = self.current_action_hist_lens[i][j]
-
-                # 如果这个动作已在集合中，则移除，否则添加
-                if env_action in new_action_hist:
-                    new_action_hist.remove(env_action)
-                    env_action_hist_len -= 1
-                else:
-                    new_action_hist.add(env_action)
-                    env_action_hist_len += 1
-
-                # 转成 frozenset 用于可哈希存储
-                f_new_action_hist = frozenset(new_action_hist)
-
-                # 从 buffer 中检查该大小下是否已出现过这个 frozenset
-                try:
-                    set_of_states = self.buffers[i][j][env_action_hist_len]
-                    if f_new_action_hist in set_of_states:
-                        # 已出现过，new_state_flags[i, j] = False
-                        # 只要更新 current_action_hist / lens 就行
-                        self.current_action_hists[i][j] = new_action_hist
-                        self.current_action_hist_lens[i][j] = env_action_hist_len
-                        continue  # 跳过后续逻辑
-                except KeyError:
-                    # 如果还没有对应大小的记录，则初始化
-                    set_of_states = set()
-
-                # 如果能走到这里，说明是新的动作集合状态
-                set_of_states.add(f_new_action_hist)
-                self.buffers[i][j][env_action_hist_len] = set_of_states
-
-                # 更新当前动作集合
-                self.current_action_hists[i][j] = new_action_hist
-                self.current_action_hist_lens[i][j] = env_action_hist_len
-
-                # 标记 True
-                new_state_flags[i, j] = True
-
-        return new_state_flags
+        return updated

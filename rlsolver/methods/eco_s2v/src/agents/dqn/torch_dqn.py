@@ -133,7 +133,9 @@ class DQN:
 
         # Other
         logging=True,
-        seed=None
+        seed=None,
+        test_sampling_speed = False,
+        logger_save_path = None        
     ):
 
         self.double_dqn = double_dqn
@@ -162,6 +164,8 @@ class DQN:
         self.final_exploration_step = final_exploration_step
         self.adam_epsilon = adam_epsilon
         self.logging = logging
+        self.test_sampling_speed = test_sampling_speed
+        self.logger_save_path = logger_save_path
         if callable(loss):
             self.loss = loss
         else:
@@ -249,10 +253,13 @@ class DQN:
     def get_random_replay_buffer(self):
         return random.sample(self.replay_buffers.items(), k=1)[0][1]
 
-    def learn(self, timesteps, verbose=False):
-
+    def learn(self, timesteps, start_time = None, verbose=False):
+        total_time = 0
         if self.logging:
-            logger = Logger()
+            logger = Logger(save_path=self.logger_save_path
+                            ,seed=self.seed,update_frequency = self.update_frequency,
+                            update_target_frequency=self.update_target_frequency)
+
 
         # Initialise the state
         state = self.env.reset()
@@ -272,6 +279,7 @@ class DQN:
                     print('\nAll buffers have {} transitions stored - training is starting!\n'.format(
                         self.replay_start_size))
                     is_training_ready=True
+                    training_ready_step = timestep
 
             # Choose action
             action = self.act(state.to(self.device).float(), is_training_ready=is_training_ready)
@@ -306,8 +314,6 @@ class DQN:
                          loss_str,
                          round(time.time() - t1, 3)))
 
-                if self.logging:
-                    logger.add_scalar('Episode_score', score, timestep)
                 self.env, self.acting_in_reversible_spin_env = self.get_random_env()
                 self.replay_buffer = self.get_replay_buffer_for_env(self.env)
                 state = torch.as_tensor(self.env.reset())
@@ -317,29 +323,31 @@ class DQN:
 
             else:
                 state = state_next
+            if not self.test_sampling_speed:
+                if is_training_ready:
 
-            if is_training_ready:
+                    # Update the main network
+                    if timestep % self.update_frequency == 0:
 
-                # Update the main network
-                if timestep % self.update_frequency == 0:
+                        # Sample a batch of transitions
+                        transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
 
-                    # Sample a batch of transitions
-                    transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
+                        # Train on selected batch
+                        loss = self.train_step(transitions)
+                        losses.append([timestep,loss])
+                        losses_eps.append(loss)
 
-                    # Train on selected batch
-                    loss = self.train_step(transitions)
-                    losses.append([timestep,loss])
-                    losses_eps.append(loss)
+                        if self.logging:
+                            logger.add_scalar('Loss', loss, timestep)
 
-                    if self.logging:
-                        logger.add_scalar('Loss', loss, timestep)
-
-                # Periodically update target network
-                if timestep % self.update_target_frequency == 0:
-                    self.target_network.load_state_dict(self.network.state_dict())
+                    # Periodically update target network
+                    if timestep % self.update_target_frequency == 0:
+                        self.target_network.load_state_dict(self.network.state_dict())
 
             if (timestep+1) % self.test_frequency == 0 and self.evaluate and is_training_ready:
+                total_time += time.time() - start_time
                 test_score = self.evaluate_agent()
+                start_time = time.time()
                 print('\nTest score: {}\n'.format(torch.round(test_score * 1000) / 1000))
                 if self.test_metric in [TestMetric.FINAL_CUT,TestMetric.MAX_CUT,TestMetric.CUMULATIVE_REWARD]:
                     best_network = all([test_score > score for t,score in test_scores])
@@ -347,7 +355,10 @@ class DQN:
                     best_network = all([test_score < score for t, score in test_scores])
                 else:
                     raise NotImplementedError("{} is not a recognised TestMetric".format(self.test_metric))
-
+                
+                if self.logging:
+                    logger.add_scalar('Episode_score', test_score, (total_time,timestep-training_ready_step))
+                
                 if best_network:
                     path = self.network_save_path
                     path_main, path_ext = os.path.splitext(path)
@@ -358,31 +369,17 @@ class DQN:
 
                 test_scores.append([timestep+1,test_score])
 
-            if (timestep + 1) % self.save_network_frequency == 0 and is_training_ready:
+            if (timestep + 1) % self.save_network_frequency == 0 and is_training_ready and not self.test_sampling_speed:
+                total_time += time.time() - start_time
                 path = self.network_save_path
                 path_main, path_ext = os.path.splitext(path)
                 path_main += str(timestep+1)
                 if path_ext == '':
                     path_ext += '.pth'
                 self.save(path_main+path_ext)
-
-        if self.logging:
-            logger.save()
-
-        path = self.test_save_path
-        if os.path.splitext(path)[-1] == '':
-            path += '.pkl'
-
-        with open(path, 'wb+') as output:
-            pickle.dump(np.array(test_scores), output, pickle.HIGHEST_PROTOCOL)
-            if verbose:
-                print('test_scores saved to {}'.format(path))
-
-        with open(self.losses_save_path, 'wb+') as output:
-            pickle.dump(np.array(losses), output, pickle.HIGHEST_PROTOCOL)
-            if verbose:
-                print('losses saved to {}'.format(self.losses_save_path))
-
+                if self.logging:
+                    logger.save()
+                start_time = time.time()
 
     @torch.no_grad()
     def __only_bad_actions_allowed(self, state, network):

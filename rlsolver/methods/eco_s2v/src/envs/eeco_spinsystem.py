@@ -45,7 +45,6 @@ class SpinSystemFactory(object):
             seed=None,
             device=None,
             n_sims=None,
-            n_graphs=None,
             if_greedy=False):
 
         if graph_generator.biased:
@@ -59,7 +58,7 @@ class SpinSystemFactory(object):
                                       observables, reward_signal, extra_action, optimisation_target, spin_basis,
                                       norm_rewards, memory_length, horizon_length, stag_punishment, basin_reward,
                                       reversible_spins,
-                                      init_snap, seed, device, n_sims, n_graphs)
+                                      init_snap, seed, device, n_sims)
 
 
 class SpinSystemBase(ABC):
@@ -103,8 +102,7 @@ class SpinSystemBase(ABC):
                  init_snap=None,
                  seed=None,
                  device=None,
-                 n_sims=None,
-                 n_graphs=None):
+                 n_sims=None):
         '''
         Init method.
 
@@ -124,23 +122,12 @@ class SpinSystemBase(ABC):
         # Ensure first observable is the spin state.
         # This allows us to access the spins as self.state[0,:self.n_spins.]
         assert observables[0] == Observable.SPIN_STATE, "First observable must be Observation.SPIN_STATE."
-        self.n_graphs = n_graphs
         self.n_sims = n_sims
         self.observables = list(enumerate(observables))
         self.device = device
         self.extra_action = extra_action
 
-        if graph_generator != None:
-            assert isinstance(graph_generator,
-                              GraphGenerator), "graph_generator must be a GraphGenerator implementation."
-            self.gg = graph_generator
-        else:
-            # provide a default graph generator if one is not passed
-            self.gg = RandomGraphGenerator(n_spins=20,
-                                           edge_type=EdgeType.DISCRETE,
-                                           biased=False,
-                                           extra_action=(extra_action != extra_action.NONE))
-
+        self.gg = graph_generator
         self.n_spins = self.gg.n_spins  # Total number of spins in episode
         self.max_steps = max_steps  # Number of actions before reset
 
@@ -178,7 +165,7 @@ class SpinSystemBase(ABC):
             self.init_score = self.score
 
         self.best_score = self.score.clone()
-        self.best_spins = self.state[:, :, 0, :].clone()
+        self.best_spins = self.state[ :, 0, :].clone()
 
         if init_snap != None:
             self.load_snapshot(init_snap)
@@ -196,18 +183,16 @@ class SpinSystemBase(ABC):
             self.matrix = self.gg.get()
         self._reset_graph_observables()
 
-        spinsOne = torch.ones(self.n_graphs, self.n_sims, self.n_spins, device=self.device)
+        spinsOne = torch.ones(self.n_sims, self.n_spins, device=self.device)
         local_rewards_available = self._get_immeditate_cuts_avaialable(spinsOne, self.matrix)
-        if torch.any(torch.eq(torch.sum(torch.abs(local_rewards_available[:, 0, :].squeeze(1)), dim=1), 0)):
+        if torch.any(torch.eq(torch.sum(torch.abs(local_rewards_available), dim=-1), 0)):
             # We've generated an empty graph, this is pointless, try again.
             self.reset()
         else:  # max_local_reward_available存的是得分最大点的值
-            self.max_local_reward_available_ = torch.max(local_rewards_available[:, 0, :].squeeze(1), dim=1).values
+            self.max_local_reward_available_ = torch.max(local_rewards_available, dim=-1).values
             if (self.max_local_reward_available_ == 0).any():
                 self.reset()
-            self.max_local_reward_available = self.max_local_reward_available_.unsqueeze(1).unsqueeze(2).expand(-1,
-                                                                                                                self.n_sims,
-                                                                                                                self.n_spins)
+            self.max_local_reward_available = self.max_local_reward_available_.unsqueeze(1).expand(-1,self.n_spins)
         self.state = self._reset_state(spins)
         self.score = self.calculate_score()
 
@@ -216,20 +201,20 @@ class SpinSystemBase(ABC):
 
         self.best_score = self.score.clone()
         self.best_obs_score = self.score.clone()
-        self.best_spins = self.state[:, :, 0, :self.n_spins].clone()
-        self.best_obs_spins = self.state[:, :, 0, :self.n_spins].clone()
+        self.best_spins = self.state[:, 0, :self.n_spins].clone()
+        self.best_obs_spins = self.state[:, 0, :self.n_spins].clone()
 
         if self.memory_length is not None:
-            self.score_memory = torch.full((self.n_graphs, self.n_sims, self.memory_length,), self.best_score,
+            self.score_memory = torch.full((self.n_sims, self.memory_length,), self.best_score,
                                            device=self.device)
-            self.spins_memory = torch.full((self.n_graphs, self.n_sims, self.memory_length, self.best_spins.shape[0]),
+            self.spins_memory = torch.full((self.n_sims, self.memory_length, self.best_spins.shape[0]),
                                            self.best_spins, device=self.device)
             self.idx_memory = 1
 
         self._reset_graph_observables()
 
         if self.stag_punishment is not None or self.basin_reward is not None:
-            self.history_buffer = HistoryBuffer(n_graphs=self.n_graphs, n_sims=self.n_sims)
+            self.history_buffer = HistoryBuffer(n_sims=self.n_sims)
 
         return self.get_observation()
 
@@ -251,13 +236,13 @@ class SpinSystemBase(ABC):
                 self.bias_obs = self.bias
 
     def _reset_state(self, spins=None):
-        state = torch.zeros(self.n_graphs, self.n_sims, self.observation_space.shape[1], self.n_actions,
+        state = torch.zeros(self.n_sims, self.observation_space.shape[1], self.n_actions,
                             device=self.device)
 
         if spins is None:
             if self.reversible_spins:
                 # For reversible spins, initialise randomly to {+1,-1}.
-                state[:, :, 0, :self.n_spins] = 2 * torch.randint(0, 2, (self.n_graphs, self.n_sims, self.n_spins,),
+                state[ :, 0, :self.n_spins] = 2 * torch.randint(0, 2, (self.n_sims, self.n_spins,),
                                                                   device=self.device, dtype=torch.float) - 1
             else:
                 # For irreversible spins, initialise all to +1 (i.e. allowed to be flipped).
@@ -267,19 +252,19 @@ class SpinSystemBase(ABC):
 
         # If any observables other than "immediate energy available" require setting to values other than
         # 0 at this stage, we should use a 'for k,v in enumerate(self.observables)' loop.
-        immeditate_rewards_avaialable = self._get_immeditate_cuts_avaialable(state[:, :, 0, :self.n_spins], self.matrix)
+        immeditate_rewards_avaialable = self._get_immeditate_cuts_avaialable(state[ :, 0, :self.n_spins], self.matrix)
         for idx, obs in self.observables:
             if obs == Observable.IMMEDIATE_REWARD_AVAILABLE:
-                state[:, :, idx, :self.n_spins] = immeditate_rewards_avaialable / self.max_local_reward_available
+                state[ :, idx, :self.n_spins] = immeditate_rewards_avaialable / self.max_local_reward_available
             elif obs == Observable.NUMBER_OF_GREEDY_ACTIONS_AVAILABLE:
-                state[:, :, idx, :self.n_spins] = (
+                state[ :, idx, :self.n_spins] = (
                             1 - torch.sum(immeditate_rewards_avaialable <= 0, dim=-1).float() / self.n_spins).unsqueeze(
                     -1)
 
         return state
 
     def _get_spins(self, basis=SpinBasis.SIGNED):
-        spins = self.state[:, :, 0, :self.n_spins]
+        spins = self.state[ :, 0, :self.n_spins]
 
         if basis == SpinBasis.SIGNED:
             pass
@@ -347,12 +332,10 @@ class SpinSystemBase(ABC):
         np.random.seed(seed)
 
     def step(self, action):
-        done = torch.zeros((self.n_graphs, self.n_sims), device=self.device, dtype=torch.bool)
-        rew = 0  # Default reward to zero.
+        done = torch.zeros((self.n_sims), device=self.device, dtype=torch.bool)
+        rew = torch.zeros((self.n_sims), device=self.device, dtype=torch.float)  # Default reward to zero.
         randomised_spins = False
         self.current_step += 1
-        if (self.max_local_reward_available == 0).any():
-            print("Zero division error!")
 
         if self.current_step > self.max_steps:
             print("The environment has already returned done. Stop it!")
@@ -378,18 +361,18 @@ class SpinSystemBase(ABC):
                 self.score = new_score.clone()
         else:
             # Perform the action and calculate the score change.
-            env_indices = torch.arange(self.state.size(0)).unsqueeze(1)  # (8, 1)
-            batch_indices = torch.arange(self.state.size(1)).unsqueeze(0)
-            new_state[env_indices, batch_indices, 0, action] = -self.state[env_indices, batch_indices, 0, action]
+            sim_indices = torch.arange(self.state.size(0)) 
+            new_state[sim_indices, 0, action] = -self.state[sim_indices, 0, action]
             if self.gg.biased:
-                delta_score = self._calculate_score_change(new_state[:, :, 0, :self.n_spins], self.matrix, self.bias,
+                delta_score = self._calculate_score_change(new_state[ :, 0, :self.n_spins], self.matrix, self.bias,
                                                            action)
             else:
-                spins_score = self._get_immeditate_cuts_avaialable(new_state[:, :, 0, :self.n_spins], self.matrix)
+                spins_score = self._get_immeditate_cuts_avaialable(new_state[ :, 0, :self.n_spins], self.matrix)
                 # delta_score = spins_score[action.unsqueeze(-1)]
-                delta_score = -torch.gather(spins_score, dim=2, index=action.unsqueeze(-1)).squeeze(-1)
+                delta_score = -spins_score[sim_indices,action]
+                # delta_score = -torch.gather(spins_score, dim=2, index=action.unsqueeze(-1)).squeeze(-1)
                 # delta_score = self._calculate_score_change(new_state[:,:,0, :self.n_spins], self.matrix, action)
-            # score_new = self.calculate_score(new_state[:,:,0, :self.n_spins])
+            # score_new = self.calculate_score(new_state[:,0, :self.n_spins])
             self.score += delta_score
 
         #############################################################################################
@@ -434,7 +417,7 @@ class SpinSystemBase(ABC):
             rew[~visiting_new_state] -= self.stag_punishment
 
         if self.basin_reward is not None:
-            all_negative_mask = torch.all(immeditate_rewards_avaialable <= 0, dim=2)
+            all_negative_mask = torch.all(immeditate_rewards_avaialable <= 0, dim=-1)
             # 这里 all_negative_mask 的形状是 (N1, N2)，bool
             # 第二步：将 all_negative_mask 和 visiting_new_state 结合，得到真正需要奖励的环境
             mask = all_negative_mask & visiting_new_state
@@ -444,8 +427,8 @@ class SpinSystemBase(ABC):
         # 更新best_score和best_spins
         update_mask = self.score > self.best_score
         self.best_score = torch.where(update_mask, self.score, self.best_score)
-        self.best_spins = torch.where(update_mask.unsqueeze(-1).expand(-1, -1, self.n_spins),
-                                      self.state[:, :, 0, :self.n_spins], self.best_spins)
+        self.best_spins = torch.where(update_mask.unsqueeze(-1).expand( -1, self.n_spins),
+                                      self.state[ :, 0, :self.n_spins], self.best_spins)
 
         # 处理有限记忆长度的情况
         if self.memory_length is not None:
@@ -470,24 +453,23 @@ class SpinSystemBase(ABC):
 
             ### Local observables ###
             if observable == Observable.IMMEDIATE_REWARD_AVAILABLE:
-                a = immeditate_rewards_avaialable / self.max_local_reward_available
-                self.state[:, :, idx, :self.n_spins] = a
+                self.state[ :, idx, :self.n_spins] = immeditate_rewards_avaialable / self.max_local_reward_available
 
             elif observable == Observable.TIME_SINCE_FLIP:
-                self.state[:, :, idx, :] += (1. / self.max_steps)
+                self.state[ :, idx, :] += (1. / self.max_steps)
                 if randomised_spins:
-                    self.state[:, :, idx, :] = self.state[:, :, idx, :] * (random_actions > 0).to(
+                    self.state[ :, idx, :] = self.state[ :, idx, :] * (random_actions > 0).to(
                         torch.float32)  # 使用 .to(torch.float32) 使其为浮点数
                 else:
-                    self.state[:, :, idx, action] = 0
+                    self.state[sim_indices, idx, action] = 0
 
             ### Global observables ###
             elif observable == Observable.EPISODE_TIME:
-                self.state[:, :, idx, :] += (1. / self.max_steps)
+                self.state[ :, idx, :] += (1. / self.max_steps)
 
             elif observable == Observable.TERMINATION_IMMANENCY:
                 # Update 'Immanency of episode termination'
-                self.state[:, :, idx, :] = torch.max(torch.tensor(0., device=self.device),
+                self.state[ :, idx, :] = torch.max(torch.tensor(0., device=self.device),
                                                      torch.tensor(
                                                          (self.current_step - self.max_steps) / self.horizon_length,
                                                          device=self.device) + 1)
@@ -495,18 +477,18 @@ class SpinSystemBase(ABC):
             elif observable == Observable.NUMBER_OF_GREEDY_ACTIONS_AVAILABLE:
                 # 使用 torch.sum() 来替代 np.sum()
                 # 这里为什么要用1-？
-                self.state[:, :, idx, :] = (1 - torch.sum(immeditate_rewards_avaialable <= 0, dim=-1).to(
+                self.state[ :, idx, :] = (1 - torch.sum(immeditate_rewards_avaialable <= 0, dim=-1).to(
                     torch.float32) / self.n_spins).unsqueeze(-1)
 
             elif observable == Observable.DISTANCE_FROM_BEST_SCORE:
-                self.state[:, :, idx, :] = (
-                            torch.abs(self.score - self.best_obs_score) / self.max_local_reward_available[:, :,
+                self.state[ :, idx, :] = (
+                            torch.abs(self.score - self.best_obs_score) / self.max_local_reward_available[ :,
                                                                           0]).unsqueeze(-1)
 
             elif observable == Observable.DISTANCE_FROM_BEST_STATE:
                 # 使用 torch.count_nonzero 来代替 np.count_nonzero
-                self.state[:, :, idx, :self.n_spins] = torch.count_nonzero(
-                    (self.best_obs_spins[:, :, :self.n_spins] - self.state[:, :, 0, :self.n_spins])
+                self.state[ :, idx, :self.n_spins] = torch.count_nonzero(
+                    (self.best_obs_spins[ :, :self.n_spins] - self.state[ :, 0, :self.n_spins])
                     , dim=-1).unsqueeze(-1)
 
         #############################################################################################
@@ -530,12 +512,12 @@ class SpinSystemBase(ABC):
         state = self.state.clone()
         if self.spin_basis == SpinBasis.BINARY:
             # convert {1,-1} --> {0,1}
-            state[:, :, 0, :] = (1 - state[:, :, 0, :]) / 2
+            state[ :, 0, :] = (1 - state[ :, 0, :]) / 2
 
         if self.gg.biased:
             return torch.cat((state, self.matrix_obs, self.bias_obs), dim=0)
         else:
-            return torch.cat((state, self.matrix_obs.unsqueeze(1).repeat(1, self.n_sims, 1, 1)), dim=-2)
+            return torch.cat((state, self.matrix_obs), dim=-2)
 
     def get_immeditate_rewards_avaialable(self, spins=None):
         if spins is None:
@@ -644,11 +626,8 @@ class SpinSystemUnbiased(SpinSystemBase):
             spins = self._get_spins()
         # else:
         #     spins = self._format_spins_to_signed(spins)
-        return (1 / 4) * (torch.matmul(spins, self.matrix) * -spins).sum(dim=-1) + (1 / 4) * torch.sum(self.matrix,
-                                                                                                       dim=(-1,
-                                                                                                            -2)).unsqueeze(
-            -1)
-        # return (1 / 4) * torch.sum(self.matrix * (1 - torch.outer(spins, spins)))
+        return ((1 / 4) * (torch.matmul(self.matrix,spins.unsqueeze(-1)).squeeze(-1) * -spins).sum(dim=-1) + (1 / 4)
+                * torch.sum(self.matrix,dim=(-1,-2)))
 
     def get_best_cut(self):
         if self.optimisation_target == OptimisationTarget.CUT:
@@ -703,7 +682,7 @@ class SpinSystemUnbiased(SpinSystemBase):
 
     @staticmethod
     def _get_immeditate_cuts_avaialable(spins, matrix):
-        return torch.matmul(spins, matrix) * spins
+        return torch.matmul(matrix, spins.unsqueeze(-1)).squeeze(-1) * spins
 
 
 class SpinSystemBiased(SpinSystemBase):
@@ -733,42 +712,3 @@ class SpinSystemBiased(SpinSystemBase):
         bias = self.bias.astype('float64')
         return self.__calc_over_range_jit(list_spins, matrix, bias)
 
-    @staticmethod
-    @jit(nopython=True)
-    def _calculate_energy_change(new_spins, matrix, bias, action):
-        return 2 * new_spins[action] * (matmul(new_spins.T, matrix[:, action]) + bias[action])
-
-    @staticmethod
-    @jit(nopython=True)
-    def _calculate_cut_change(new_spins, matrix, bias, action):
-        raise NotImplementedError("MaxCut not defined/implemented for biased SpinSystems.")
-
-    @staticmethod
-    @jit(nopython=True)
-    def _calculate_energy_jit(spins, matrix, bias):
-        return matmul(spins.T, matmul(matrix, spins)) / 2 + matmul(spins.T, bias)
-
-    @staticmethod
-    @jit(parallel=True)
-    def __calc_over_range_jit(list_spins, matrix, bias):
-        energy = 1e50
-        best_spins = None
-
-        for spins in list_spins:
-            spins = spins.astype('float64')
-            # This is self._calculate_energy_jit without calling to the class or self so jit can do its thing.
-            current_energy = -(matmul(spins.T, matmul(matrix, spins)) / 2 + matmul(spins.T, bias))
-            if current_energy < energy:
-                energy = current_energy
-                best_spins = spins
-        return energy, best_spins
-
-    @staticmethod
-    @jit(nopython=True)
-    def _get_immeditate_energies_avaialable_jit(spins, matrix, bias):
-        return - (2 * spins * (matmul(matrix, spins) + bias))
-
-    @staticmethod
-    @jit(nopython=True)
-    def _get_immeditate_cuts_avaialable_jit(spins, matrix, bias):
-        raise NotImplementedError("MaxCut not defined/implemented for biased SpinSystems.")

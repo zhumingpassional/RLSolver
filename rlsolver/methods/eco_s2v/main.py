@@ -11,8 +11,8 @@ from rlsolver.methods.eco_s2v.config.config import *
 # save_loc = f"../../result"
 save_loc = RESULT_DIR
 
-train_network = False
-inference_network = True
+train_network = True
+inference_network = False
 
 if train_network:
     if ALG == Alg.eco:

@@ -136,7 +136,9 @@ class DQN:
 
             # Other
             logging=True,
-            seed=None
+            seed=None,
+            test_sampling_speed = False,
+            logger_save_path = None
     ):
 
         self.double_dqn = double_dqn
@@ -165,6 +167,8 @@ class DQN:
         self.final_exploration_step = final_exploration_step
         self.adam_epsilon = adam_epsilon
         self.logging = logging
+        self.test_sampling_speed = test_sampling_speed
+        self.logger_save_path = logger_save_path
         if callable(loss):
             self.loss = loss
         else:
@@ -253,14 +257,16 @@ class DQN:
     def get_random_replay_buffer(self):
         return random.sample(self.replay_buffers.items(), k=1)[0][1]
 
-    def learn(self, timesteps, verbose=False):
-
+    def learn(self, timesteps, start_time = None,verbose=False):
+        total_time = 0
         if self.logging:
-            logger = Logger()
+            logger = Logger(save_path=self.logger_save_path
+                            ,seed=self.seed,update_frequency = self.update_frequency,
+                            update_target_frequency=self.update_target_frequency)
 
         # Initialise the state
         state = self.env.reset()
-        score = torch.zeros((self.env.n_graphs, self.env.n_sims), device=self.device, dtype=torch.float)
+        score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
         losses_eps = []
         t1 = time.time()
 
@@ -270,12 +276,13 @@ class DQN:
         is_training_ready = False
 
         for timestep in range(timesteps):
-
+        
             if not is_training_ready:
                 if all([len(rb) >= self.replay_start_size for rb in self.replay_buffers.values()]):
                     print('\nAll buffers have {} transitions stored - training is starting!\n'.format(
                         self.replay_start_size))
                     is_training_ready = True
+                    training_ready_step = timestep
 
             # Choose action
             action = self.act(state.to(self.device).float(), is_training_ready=is_training_ready)
@@ -294,50 +301,51 @@ class DQN:
             # Store transition in replay buffer
             self.replay_buffer.add(state, action, reward, state_next, done)
 
-            if done[0, 0]:
+            if done[0]:
                 # Reinitialise the state
                 if verbose:
                     loss_str = "{:.2e}".format(np.mean(losses_eps)) if is_training_ready else "N/A"
                     print("timestep : {}, episode time: {}, score : {}, mean loss: {}, time : {} s".format(
                         (timestep + 1),
                         self.env.current_step,
-                        torch.mean(torch.round(score * 1000) / 1000),
+                        torch.mean(score),
                         loss_str,
-                        round(time.time() - t1, 3)))
+                        round(time.time() - t1, 3),))
 
-                if self.logging:
-                    logger.add_scalar('Episode_score', score, timestep)
                 self.env, self.acting_in_reversible_spin_env = self.get_random_env()
                 self.replay_buffer = self.get_replay_buffer_for_env(self.env)
                 state = torch.as_tensor(self.env.reset())
-                score = torch.zeros((self.env.n_graphs, self.env.n_sims), device=self.device, dtype=torch.float)
+                score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
                 losses_eps = []
                 t1 = time.time()
 
             else:
                 state = state_next
 
-            if is_training_ready:
+            if not self.test_sampling_speed:
+                if is_training_ready:
 
-                # Update the main network
-                if timestep % self.update_frequency == 0:
+                    # Update the main network
+                    if timestep % self.update_frequency == 0:
 
-                    # Sample a batch of transitions
-                    transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
-                    # Train on selected batch
-                    loss = self.train_step(transitions)
-                    losses.append([timestep, loss])
-                    losses_eps.append(loss)
+                        # Sample a batch of transitions
+                        transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
+                        # Train on selected batch
+                        loss = self.train_step(transitions)
+                        losses.append([timestep, loss])
+                        losses_eps.append(loss)
 
-                    if self.logging:
-                        logger.add_scalar('Loss', loss, timestep)
+                        if self.logging:
+                            logger.add_scalar('Loss', loss, timestep)
 
-                # Periodically update target network
-                if timestep % self.update_target_frequency == 0:
-                    self.target_network.load_state_dict(self.network.state_dict())
+                    # Periodically update target network
+                    if timestep % self.update_target_frequency == 0:
+                        self.target_network.load_state_dict(self.network.state_dict())
 
             if (timestep + 1) % self.test_frequency == 0 and self.evaluate and is_training_ready:
+                total_time += time.time() - start_time
                 test_score = self.evaluate_agent()
+                start_time = time.time()
                 print('\nTest score: {}\n'.format(torch.round(test_score * 1000) / 1000))
                 if self.test_metric in [TestMetric.FINAL_CUT, TestMetric.MAX_CUT, TestMetric.CUMULATIVE_REWARD]:
                     best_network = all([test_score > score for t, score in test_scores])
@@ -345,6 +353,9 @@ class DQN:
                     best_network = all([test_score < score for t, score in test_scores])
                 else:
                     raise NotImplementedError("{} is not a recognised TestMetric".format(self.test_metric))
+                
+                if self.logging:
+                    logger.add_scalar('Episode_score', test_score, (total_time,timestep-training_ready_step))
 
                 if best_network:
                     path = self.network_save_path
@@ -356,30 +367,17 @@ class DQN:
 
                 test_scores.append([timestep + 1, test_score])
 
-            if (timestep + 1) % self.save_network_frequency == 0 and is_training_ready:
+            if (timestep + 1) % self.save_network_frequency == 0 and is_training_ready and not self.test_sampling_speed:
+                total_time += time.time() - start_time
                 path = self.network_save_path
                 path_main, path_ext = os.path.splitext(path)
                 path_main += str(timestep + 1)
                 if path_ext == '':
                     path_ext += '.pth'
                 self.save(path_main + path_ext)
-
-        if self.logging:
-            logger.save()
-
-        path = self.test_save_path
-        if os.path.splitext(path)[-1] == '':
-            path += '.pkl'
-
-        with open(path, 'wb+') as output:
-            pickle.dump(np.array(test_scores), output, pickle.HIGHEST_PROTOCOL)
-            if verbose:
-                print('test_scores saved to {}'.format(path))
-
-        with open(self.losses_save_path, 'wb+') as output:
-            pickle.dump(np.array(losses), output, pickle.HIGHEST_PROTOCOL)
-            if verbose:
-                print('losses saved to {}'.format(self.losses_save_path))
+                if self.logging:
+                    logger.save()
+                start_time = time.time()
 
     @torch.no_grad()
     def __only_bad_actions_allowed(self, state, network):
@@ -395,9 +393,9 @@ class DQN:
             # Calculate target Q
             with torch.no_grad():
                 if self.double_dqn:
-                    network_output = self.network(states_next.float())
+                    network_output = self.network(states_next.clone())
                     greedy_actions = network_output.argmax(-1, True)
-                    target_network_output = self.target_network(states_next.float())
+                    target_network_output = self.target_network(states_next.clone())
                     q_value_target = target_network_output.gather(-1, greedy_actions)
                 else:
                     q_value_target = self.target_network(states_next.float()).max(1, True)[0]
@@ -445,14 +443,14 @@ class DQN:
         if is_training_ready and random.uniform(0, 1) >= self.epsilon:
             # 使用 PyTorch 进行 Q 函数预测
             with torch.no_grad():  # 关闭梯度计算
-                action = self.predict(state).squeeze(-1)  # 假设 self.predict 返回的 action
+                action = self.predict(state.clone()).squeeze(-1)  # 假设 self.predict 返回的 action
         else:
             if self.acting_in_reversible_spin_env:
                 # 在可逆环境中，随机选择动作
                 # action = np.random.randint(0, self.env.action_space.n)
                 action = torch.randint(0, self.env.action_space.n,
-                                       (self.env.n_sims * self.env.n_graphs,), device=self.device,
-                                       dtype=torch.long).view(self.env.n_graphs, self.env.n_sims)
+                                       (self.env.n_sims,), device=self.device,
+                                       dtype=torch.long)
             else:
                 # 从尚未翻转的 spin 中随机选择一个
                 state_tensor = torch.tensor(state, dtype=torch.float32)  # 转换为 PyTorch Tensor
@@ -517,16 +515,16 @@ class DQN:
         test_env = deepcopy(self.test_envs[0])
 
         # self.predict(obs).squeeze(-1)
-        done = torch.zeros((test_env.n_graphs, test_env.n_sims), dtype=torch.bool, device=test_env.device)
+        done = torch.zeros((test_env.n_sims), dtype=torch.bool, device=test_env.device)
         actions = self.predict(obs).squeeze(-1)
 
-        while not done[0, 0]:
+        while not done[0]:
             obs, rew, done, info = test_env.step(actions)
             actions = self.predict(obs).squeeze(-1)
 
             if self.test_metric == TestMetric.CUMULATIVE_REWARD:
                 test_scores += rew
-            if done[0, 0]:
+            if done[0]:
                 if self.test_metric == TestMetric.BEST_ENERGY:
                     test_scores = test_env.best_energy
                 elif self.test_metric == TestMetric.ENERGY_ERROR:

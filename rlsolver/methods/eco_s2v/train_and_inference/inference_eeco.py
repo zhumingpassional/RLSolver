@@ -9,7 +9,7 @@ from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
                                                     RewardSignal, ExtraAction,
                                                     OptimisationTarget, SpinBasis,
                                                     DEFAULT_OBSERVABLES, Observable)
-from rlsolver.methods.eco_s2v.src.networks.mpnn import EECO_MPNN as MPNN
+from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.util_read_data import read_nxgraphs
 from rlsolver.methods.util_result import write_graph_result
 from rlsolver.methods.eco_s2v.config.config import *
@@ -89,13 +89,8 @@ def run(save_loc="BA_40spin/eco",
             continue
         graphs_test = torch.stack(graphs,dim=0)
         start_time = time.time()
-        n_tests = graphs_test.shape[0]
-        for start_idx in range(0, n_tests, NUM_INFERENCE_GRAPHS):
-            end_idx = min(start_idx + NUM_INFERENCE_GRAPHS, n_tests)
-            batch_graphs = graphs_test[start_idx:end_idx]
-            file_list_ = file_list[start_idx:end_idx]
-            test_graph_generator = SetGraphGenerator(batch_graphs)
-            n_inference_graphs = batch_graphs.shape[0]
+        for i in range(graphs_test.shape[0]):
+            test_graph_generator = SetGraphGenerator(graphs[i].unsqueeze(0).expand(NUM_INFERENCE_SIMS,-1,-1))
             ####################################################
             # SETUP NETWORK TO TEST
             ####################################################
@@ -105,7 +100,7 @@ def run(save_loc="BA_40spin/eco",
                                       graphs_test[0].shape[1] * step_factor,  # step_factor is 1 here
                                       **env_args,device = INFERENCE_DEVICE,
                                          n_sims = NUM_INFERENCE_SIMS,
-                                         n_graphs = n_inference_graphs)
+                                         )
 
             network = network_fn(n_obs_in=test_env.observation_space.shape[-1],
                                  **network_args).to(INFERENCE_DEVICE)
@@ -118,8 +113,7 @@ def run(save_loc="BA_40spin/eco",
             # print("Successfully created agent with pre-trained MPNN.\nMPNN architecture\n\n{}".format(repr(network)))
             obj,result = eeco_test_network(network,test_env)
             run_duration = time.time() - start_time
-            for i,graph_name in enumerate(file_list_):
-                write_graph_result(obj[i], run_duration, result.shape[1], ALG.value, ((result[i]+1)/2).to(torch.int), graph_name, plus1=True)
+            write_graph_result(obj, run_duration, result.shape[0], ALG.value, ((result+1)/2).to(torch.int), file_list[i], plus1=True)
 
 if __name__ == "__main__":
     prefixes = INFERENCE_PREFIXES

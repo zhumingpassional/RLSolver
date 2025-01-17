@@ -4,6 +4,9 @@ import random
 import threading
 from collections import namedtuple
 from enum import Enum
+from rlsolver.methods.eco_s2v.config.config import *
+import os
+import string
 
 import numpy as np
 import torch
@@ -46,8 +49,13 @@ class ReplayBuffer:
         if self.next_batch_process is not None:
             # Don't add to the buffer when sampling from it.
             self.next_batch_process.join()
-        self._memory[self._position] = Transition(*args)
-        self._position = (self._position + 1) % self._capacity
+        if ALG == Alg.eeco:
+            for i in range(len(args[0])):
+                self._memory[self._position] = Transition(args[0][i],args[1][i],args[2][i],args[3][i],args[4][i],)
+                self._position = (self._position + 1) % self._capacity
+        else:
+            self._memory[self._position] = Transition(*args)
+            self._position = (self._position + 1) % self._capacity
 
     def _prepare_sample(self, batch_size, device=None):
         self.next_batch_size = batch_size
@@ -283,12 +291,17 @@ class PrioritisedReplayBuffer:
 
 
 class Logger:
-    def __init__(self):
+    def __init__(self,save_path,seed,update_frequency,update_target_frequency):
         self._memory = {}
         self._saves = 0
         self._maxsize = 1000000
         self._dumps = 0
-
+        self.save_path = save_path
+        self.seed = seed
+        self.update_frequency = update_frequency
+        self.update_target_frequency = update_target_frequency
+        with open(self.save_path, 'a') as output:
+            output.write(f'//seed:{self.seed}\n//update_frequency:{self.update_frequency}\n//update_target_frequency:{self.update_target_frequency}\n')
     def add_scalar(self, name, data, timestep):
         """
         Saves a scalar
@@ -307,5 +320,11 @@ class Logger:
             self._memory = {}
 
     def save(self):
-        with open('log_data.pkl', 'wb') as output:
-            pickle.dump(self._memory, output, pickle.HIGHEST_PROTOCOL)
+        # 保存所有内存中的数据到txt文件
+        with open(self.save_path, 'w') as output:
+            for key, values in self._memory.items():
+                if key == "Episode_score":
+                    for value in values:
+                        obj = value[0]  # obj是第一个元素
+                        time, time_step = value[1]  # 元组中的时间和time_step
+                        output.write(f"{obj} {time} {time_step}\n")

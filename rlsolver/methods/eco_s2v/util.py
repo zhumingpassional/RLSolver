@@ -43,18 +43,17 @@ def eeco_test_network(network, test_env, device=None):
         #         actions = qs_allowed.argmax(1, True).squeeze(1)
         #     return actions
 
-    done = torch.zeros((test_env.n_graphs, test_env.n_sims), dtype=torch.bool, device=test_env.device)
-    obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(1).repeat(1, test_env.n_sims, 1, 1)), dim=-2)
+    done = torch.zeros(( test_env.n_sims), dtype=torch.bool, device=test_env.device)
+    obs = torch.cat((test_env.state, test_env.matrix_obs), dim=-2)
     actions = predict(network,obs,test_env.reversible_spins).squeeze(-1)
 
-    while not done[0, 0]:
+    while not done[0]:
         obs, rew, done, info = test_env.step(actions)
         actions = predict(network,obs,test_env.reversible_spins).squeeze(-1)
 
     test_scores = test_env.get_best_cut()
-    obj,obj_indices = torch.max(test_scores,dim=1)
-    env_indices = torch.arange(test_env.n_graphs,dtype=torch.long,device=test_env.device)
-    result = test_env.state[env_indices,obj_indices,0]
+    obj,obj_indices = torch.max(test_scores, dim=0)
+    result = test_env.state[obj_indices,0]
     return obj,result
 
 def test_network(network, env_args, graphs_test, device=None, step_factor=1, batched=True,
@@ -554,3 +553,9 @@ def mk_dir(export_dir, quite=False):
             pass
     else:
         print('dir already exists: ', export_dir)
+
+def write_sampling_speed(sampling_speed_save_path, sampling_speed):
+    with open(sampling_speed_save_path, 'a') as f:
+        f.write(f"//ALG:{ALG.value} //GRAPH:{GRAPH_TYPE.value}_{NUM_TRAIN_NODES} //sampling speed:")
+        f.write(f"{str(sampling_speed)}samples/s")
+        
