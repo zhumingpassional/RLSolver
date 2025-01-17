@@ -6,12 +6,10 @@ GRAPH_TYPE = GraphType.BA
 
 GPU_ID = 0
 
-NUM_TRAIN_NODES = 100
-NUM_TRAIN_GRAPHS = 2 ** 1
-NUM_TRAIN_SIMS = 2 ** 1
+NUM_TRAIN_NODES = 200
+NUM_TRAIN_SIMS = 2 ** 5
 
 NUM_INFERENCE_SIMS = 2 ** 3
-NUM_INFERENCE_GRAPHS = 2 ** 0
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000]
 # NUM_INFERENCE_NODES = [100]
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
@@ -19,6 +17,7 @@ NUM_TRAINED_NODES_IN_INFERENCE = 20
 # PREFIXES = ["BA_100_", "BA_200_", "BA_300_", "BA_400_", "BA_500_", "BA_600_", "BA_700_", "BA_800_", "BA_900_",
 #             "BA_1000_", "BA_1100_", "BA_1200_", "BA_2000_", "BA_3000_", "BA_4000_",
 #             "BA_5000_"]  # Replace with your desired prefixes
+TEST_SAMPLING_SPEED = False
 
 from enum import Enum
 
@@ -38,12 +37,10 @@ def calc_device(gpu_id: int):
 
 
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
-NETWORK_SAVE_PATH = "pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
-
-# GRAPH_SAVE_LOC = "../../data/syn_BA"
-DATA_DIR = "../../data/syn_" + GRAPH_TYPE.value
+NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
+DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = "../../result"
-
+UPDATE_FREQUENCY = 32
 TRAIN_DEVICE = calc_device(GPU_ID)
 INFERENCE_DEVICE = calc_device(GPU_ID)
 if GRAPH_TYPE == GraphType.BA:

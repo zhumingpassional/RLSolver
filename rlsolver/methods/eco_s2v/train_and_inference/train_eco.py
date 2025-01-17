@@ -6,7 +6,9 @@ import numpy as np
 # from numba.cuda.cudadrv.nvrtc import NVRTC
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir, load_graph_set_from_folder
+from rlsolver.methods.eco_s2v.util import (load_graph_set, mk_dir, 
+                                           load_graph_set_from_folder,
+                                           write_sampling_speed)
 from rlsolver.methods.eco_s2v.src.agents.dqn.dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.util import (SetGraphGenerator,
@@ -53,7 +55,7 @@ def run(save_loc, graph_save_loc):
     ####################################################
     # SET UP TRAINING AND TEST GRAPHS
     ####################################################
-
+    start = time.time()
     n_spins_train = NUM_TRAIN_NODES
 
     if GRAPH_TYPE == GraphType.ER:
@@ -90,141 +92,120 @@ def run(save_loc, graph_save_loc):
     # SET UP FOLDERS FOR SAVING DATA
     ####################################################
 
-    # data_folder = os.path.join(save_loc, 'data')
-    # network_folder = os.path.join(save_loc, 'network')
-
-    # mk_dir(data_folder)
-    # mk_dir(network_folder)
-    # print(data_folder)
     pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_"
     network_save_path = pre_fix + "network.pth"
     test_save_path = pre_fix + "test_scores.pkl"
     loss_save_path = pre_fix + "losses.pkl"
+    logger_save_path  = pre_fix+"logger.txt"
+    sampling_speed_save_path = pre_fix+"sampling_speed.txt"
 
     ####################################################
     # SET UP AGENT
     ####################################################
 
     nb_steps = NB_STEPS
-
     network_fn = lambda: MPNN(n_obs_in=train_envs[0].observation_space.shape[1],
                               n_layers=3,
                               n_features=64,
                               n_hid_readout=[],
                               tied_weights=False)
-
-    agent = DQN(train_envs,
-
-                network_fn,
-
-                init_network_params=None,
-                init_weight_std=0.01,
-
-                double_dqn=True,
-                clip_Q_targets=False,
-
-                replay_start_size=REPLAY_START_SIZE,
-                replay_buffer_size=REPLAY_BUFFER_SIZE,  # 20000
-                gamma=gamma,  # 1
-                update_target_frequency=FINAL_EXPLORATION_STEP,  # 500
-
-                update_learning_rate=False,
-                initial_learning_rate=1e-4,
-                peak_learning_rate=1e-4,
-                peak_learning_rate_step=20000,
-                final_learning_rate=1e-4,
-                final_learning_rate_step=200000,
-
-                update_frequency=32,  # 1
-                minibatch_size=64,  # 128
-                max_grad_norm=None,
-                weight_decay=0,
-
-                update_exploration=True,
-                initial_exploration_rate=1,
-                final_exploration_rate=0.05,  # 0.05
-                final_exploration_step=FINAL_EXPLORATION_STEP,  # 40000
-
-                adam_epsilon=1e-8,
-                logging=False,
-                loss="mse",
-
-                # save_network_frequency=400000,
-                save_network_frequency=SAVE_NETWORK_FREQUENCY,
-                network_save_path=network_save_path,
-
-                evaluate=True,
-                test_envs=test_envs,
-                test_episodes=n_tests,
-                # test_frequency=50000,  # 10000
-                test_frequency=10000,  # 10000
-                test_save_path=test_save_path,
-                test_metric=TestMetric.MAX_CUT,
-
-                seed=None
-                )
+    args = {
+    'envs': train_envs,
+    'network': network_fn,
+    'init_network_params': None,
+    'init_weight_std': 0.01,
+    'double_dqn': True,
+    'clip_Q_targets': False,
+    'replay_start_size': int(round(REPLAY_START_SIZE/(NUM_TRAIN_SIMS))),
+    'replay_buffer_size': REPLAY_BUFFER_SIZE,
+    'gamma': gamma,
+    'update_learning_rate': False,
+    'initial_learning_rate': 1e-4,
+    'peak_learning_rate': 1e-3,
+    'peak_learning_rate_step': 5000,
+    'final_learning_rate': 1e-4,
+    'final_learning_rate_step': 200000,
+    'minibatch_size': 64,
+    'max_grad_norm': None,
+    'weight_decay': 0,
+    'update_exploration': True,
+    'initial_exploration_rate': 1,
+    'final_exploration_rate': 0.05,
+    'final_exploration_step': FINAL_EXPLORATION_STEP,
+    'adam_epsilon': 1e-8,
+    'logging': True,
+    'evaluate': True,
+    'update_target_frequency': max(1, int(round(UPDATE_TARGET_FREQUENCY/(NUM_TRAIN_SIMS)))),
+    'update_frequency': max(1, int(UPDATE_FREQUENCY/(NUM_TRAIN_SIMS))),
+    'save_network_frequency': SAVE_NETWORK_FREQUENCY,
+    'loss': "mse",
+    'network_save_path': network_save_path,
+    'test_envs': test_envs,
+    'test_episodes': n_tests,
+    'test_frequency': TEST_FREQUENCY,
+    'test_save_path': test_save_path,
+    'test_metric': TestMetric.MAX_CUT,
+    'logger_save_path': logger_save_path,
+    'seed': None,
+    'test_sampling_speed': TEST_SAMPLING_SPEED
+    }
+    if TEST_SAMPLING_SPEED:
+            nb_steps = 2000
+            args['test_frequency']=args['update_target_frequency']=args['update_frequency']=args['save_network_frequency']=1e6
+            args['replay_start_size'] = 0
+    agent = DQN(**args)
 
     print("\n Created DQN agent with network:\n\n", agent.network)
 
     #############
     # TRAIN AGENT
     #############
-    start = time.time()
-    agent.learn(timesteps=nb_steps, verbose=True)
+    sampling_start_time = time.time()
+    agent.learn(timesteps=nb_steps,start_time=start, verbose=True)
     # 训完之后会输出时间
     print(time.time() - start)
+    if TEST_SAMPLING_SPEED:
+        sampling_speed = NUM_TRAIN_SIMS*nb_steps/(time.time()-sampling_start_time)
+        write_sampling_speed(sampling_speed_save_path,sampling_speed)
+        
+    else:
+        obj_values = []
+        time_values = []
+        time_step_values = []
 
-    agent.save()
+        with open(logger_save_path, 'r') as f:
+            for line in f:
+                # 忽略注释行（以'//'开头的行）
+                if line.startswith("//"):
+                    continue
+                
+                # 拆分每行数据并将其转换为浮动数
+                obj, time_, time_step = map(float, line.split())
+                
+                # 将值添加到对应的列表
+                obj_values.append(obj)
+                time_values.append(time_)
+                time_step_values.append(time_step)
 
-    ############
-    # PLOT - learning curve
-    ############
-    data = pickle.load(open(test_save_path, 'rb'))
-    data = np.array(data)
+            # 使用matplotlib绘图
+            plt.figure(figsize=(10, 6))
 
-    fig_fname = pre_fix + "training_curve"
+            # 绘制obj随时间变化的图
+            plt.subplot(2, 1, 1)
+            plt.plot(time_values, obj_values, marker='o', color='b')
+            plt.xlabel('Time')
+            plt.ylabel('Obj')
+            plt.title('Obj vs Time')
 
-    plt.plot(data[:, 0], data[:, 1])
-    plt.xlabel("Timestep")
-    plt.ylabel("Mean reward")
-    if agent.test_metric == TestMetric.ENERGY_ERROR:
-        plt.ylabel("Energy Error")
-    elif agent.test_metric == TestMetric.BEST_ENERGY:
-        plt.ylabel("Best Energy")
-    elif agent.test_metric == TestMetric.CUMULATIVE_REWARD:
-        plt.ylabel("Cumulative Reward")
-    elif agent.test_metric == TestMetric.MAX_CUT:
-        plt.ylabel("Max Cut")
-    elif agent.test_metric == TestMetric.FINAL_CUT:
-        plt.ylabel("Final Cut")
+            # 绘制obj随time_step变化的图
+            plt.subplot(2, 1, 2)
+            plt.plot(time_step_values, obj_values, marker='o', color='r')
+            plt.xlabel('Time Step')
+            plt.ylabel('Obj')
+            plt.title('Obj vs Time Step')
 
-    plt.savefig(fig_fname + ".png", bbox_inches='tight')
-    plt.savefig(fig_fname + ".pdf", bbox_inches='tight')
-
-    plt.clf()
-
-    ############
-    # PLOT - losses
-    ############
-    data = pickle.load(open(loss_save_path, 'rb'))
-    data = np.array(data)
-
-    fig_fname = pre_fix + "loss"
-
-    N = 50
-    data_x = np.convolve(data[:, 0], np.ones((N,)) / N, mode='valid')
-    data_y = np.convolve(data[:, 1], np.ones((N,)) / N, mode='valid')
-
-    plt.plot(data_x, data_y)
-    plt.xlabel("Timestep")
-    plt.ylabel("Loss")
-
-    plt.yscale("log")
-    plt.grid(True)
-
-    plt.savefig(fig_fname + ".png", bbox_inches='tight')
-    plt.savefig(fig_fname + ".pdf", bbox_inches='tight')
-
+            plt.tight_layout()
+            plt.savefig(pre_fix+".png", dpi=300)
 
 if __name__ == "__main__":
     run()
