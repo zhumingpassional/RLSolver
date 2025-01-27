@@ -322,6 +322,24 @@ class SingleGraphGenerator(GraphGenerator):
             return m
 
 
+class ValidationGraphGenerator(GraphGenerator):
+    def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=2 ** 3, seed=None):
+        super().__init__(n_spins, edge_type, False)
+        self.n_sims = n_sims
+        self.seed = seed
+        self.m_insertion_edges = m_insertion_edges
+
+    def get(self):
+        adj = []
+        for i in range(self.n_sims):
+            if self.seed is not None:
+                g = nx.barabasi_albert_graph(self.n_spins, self.m_insertion_edges, seed=self.seed)
+                adj_matrix = nx.to_numpy_array(g)
+                np.fill_diagonal(adj_matrix, 0)
+                adj.append(adj_matrix)
+        return adj
+
+
 class SetGraphGenerator(GraphGenerator):
 
     def __init__(self, matrices, biases=None, ordered=False):
