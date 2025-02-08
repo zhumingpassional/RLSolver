@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir, load_graph_set_from_folder, write_sampling_speed
+from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir, load_graph_set_from_folder, write_sampling_speed,write_sampling_speed,plot_scatter
 from rlsolver.methods.eco_s2v.src.agents.dqn.eeco_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
@@ -71,10 +71,9 @@ def run(save_loc, graph_save_loc):
     ####
     # Pre-generated test graphs
     ####
-    graphs_test = validation_graph_generator.get()
-    n_tests = graphs_test.shape[0]
-
-    test_graph_generator = SetGraphGenerator(graphs_test)
+    graphs_validation = validation_graph_generator.get()
+    n_validations = graphs_validation.shape[0]
+    validation_graph_generator = SetGraphGenerator(graphs_validation)
 
     ####################################################
     # SET UP TRAINING AND TEST ENVIRONMENTS
@@ -86,12 +85,12 @@ def run(save_loc, graph_save_loc):
                                  **env_args, device=TRAIN_DEVICE,
                                  n_sims=NUM_TRAIN_SIMS)]
 
-    n_spins_test = test_graph_generator.get().shape[1]
+    n_spins_test = validation_graph_generator.get().shape[1]
     test_envs = [ising_env.make("SpinSystem",
-                                test_graph_generator,
+                                validation_graph_generator,
                                 int(n_spins_test * step_fact),
                                 **env_args, device=TRAIN_DEVICE,
-                                n_sims=n_tests)]
+                                n_sims=n_validations)]
 
     pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_"
     network_save_path = pre_fix + "network.pth"
@@ -144,7 +143,7 @@ def run(save_loc, graph_save_loc):
         'loss': "mse",
         'network_save_path': network_save_path,
         'test_envs': test_envs,
-        'test_episodes': n_tests,
+        'test_episodes': n_validations,
         'test_frequency': 400,
         'test_save_path': test_save_path,
         'test_metric': TestMetric.MAX_CUT,
@@ -173,44 +172,7 @@ def run(save_loc, graph_save_loc):
         write_sampling_speed(sampling_speed_save_path, sampling_speed)
 
     else:
-        obj_values = []
-        time_values = []
-        time_step_values = []
-
-        with open(logger_save_path, 'r') as f:
-            for line in f:
-                # 忽略注释行（以'//'开头的行）
-                if line.startswith("//"):
-                    continue
-
-                # 拆分每行数据并将其转换为浮动数
-                obj, time_, time_step = map(float, line.split())
-
-                # 将值添加到对应的列表
-                obj_values.append(obj)
-                time_values.append(time_)
-                time_step_values.append(time_step)
-
-            # 使用matplotlib绘图
-            plt.figure(figsize=(10, 6))
-
-            # 绘制obj随时间变化的图
-            plt.subplot(2, 1, 1)
-            plt.plot(time_values, obj_values, marker='o', color='b')
-            plt.xlabel('Time')
-            plt.ylabel('Obj')
-            plt.title('Obj vs Time')
-
-            # 绘制obj随time_step变化的图
-            plt.subplot(2, 1, 2)
-            plt.plot(time_step_values, obj_values, marker='o', color='r')
-            plt.xlabel('Time Step')
-            plt.ylabel('Obj')
-            plt.title('Obj vs Time Step')
-
-            plt.tight_layout()
-            plt.savefig(pre_fix + ".png", dpi=300)
-
+        plot_scatter(logger_save_path)
 
 if __name__ == "__main__":
     run()

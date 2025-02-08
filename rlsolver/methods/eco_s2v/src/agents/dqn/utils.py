@@ -93,6 +93,34 @@ class ReplayBuffer:
     def __len__(self):
         return len(self._memory)
 
+class eeco_ReplayBuffer:
+    def __init__(self, capacity):
+        self._capacity = capacity
+        self._memory = {'state':torch.zeros((self._capacity,NUM_TRAIN_NODES+7,NUM_TRAIN_NODES),dtype=torch.float,device=TRAIN_DEVICE), 
+                        'action':torch.zeros((self._capacity,),dtype=torch.long,device=TRAIN_DEVICE), 
+                        'reward':torch.zeros((self._capacity,),dtype=torch.float,device=TRAIN_DEVICE), 
+                        'state_next':torch.zeros((self._capacity,NUM_TRAIN_NODES+7,NUM_TRAIN_NODES),dtype=torch.float,device=TRAIN_DEVICE),
+                        'done':torch.zeros((self._capacity,),dtype=torch.bool,device=TRAIN_DEVICE)}
+        self._position = 0
+
+    def add(self, *args):
+        batch_size = args[0].shape[0]
+        # indices = [(self._position + i) % self._capacity for i in range(batch_size)]
+        indices = (self._position + torch.arange(batch_size, device=TRAIN_DEVICE)) % self._capacity
+
+        self._memory['state'][indices] = args[0]
+        self._memory['action'][indices] = args[1]
+        self._memory['reward'][indices] = args[2]
+        self._memory['state_next'][indices] = args[3]
+        self._memory['done'][indices] = args[4]
+        self._position = (self._position + batch_size) % self._capacity
+
+    def sample(self, batch_size,biased=None):
+        if biased is not None:
+            indices = torch.randint(0,biased,(batch_size,),dtype=torch.long,device=TRAIN_DEVICE)
+        else:
+            indices = torch.randint(0,self._capacity,(batch_size,),dtype=torch.long,device=TRAIN_DEVICE)
+        return [self._memory[key][indices] for key in self._memory.keys()]
 
 class PrioritisedReplayBuffer:
 

@@ -13,7 +13,9 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-from rlsolver.methods.eco_s2v.src.agents.dqn.utils import ReplayBuffer, Logger, TestMetric, set_global_seed
+# from rlsolver.methods.eco_s2v.src.agents.dqn.utils import ReplayBuffer, Logger, TestMetric, set_global_seed
+from rlsolver.methods.eco_s2v.src.agents.dqn.utils import  Logger, TestMetric, set_global_seed
+from rlsolver.methods.eco_s2v.src.agents.dqn.utils import eeco_ReplayBuffer as ReplayBuffer
 from rlsolver.methods.eco_s2v.src.envs.util import ExtraAction
 from rlsolver.methods.eco_s2v.config.config import *
 
@@ -274,11 +276,14 @@ class DQN:
         losses = []
 
         is_training_ready = False
-
+        if_buffer_full = False
         for timestep in range(timesteps):
-        
+            if timestep*self.env.n_sims>=self.replay_buffer_size:
+                if_buffer_full = True
             if not is_training_ready:
-                if all([len(rb) >= self.replay_start_size for rb in self.replay_buffers.values()]):
+                # if all([len(rb) >= self.replay_start_size for rb in self.replay_buffers.values()]):
+                # if time
+                if self.replay_start_size <= timestep*self.env.n_sims:
                     print('\nAll buffers have {} transitions stored - training is starting!\n'.format(
                         self.replay_start_size))
                     is_training_ready = True
@@ -329,7 +334,12 @@ class DQN:
                     if timestep % self.update_frequency == 0:
 
                         # Sample a batch of transitions
-                        transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
+                        # transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
+                        if if_buffer_full:
+                            transitions = self.get_random_replay_buffer().sample(self.minibatch_size)
+                        else: 
+                            transitions = self.get_random_replay_buffer().sample(self.minibatch_size, timestep*self.env.n_sims)
+
                         # Train on selected batch
                         loss = self.train_step(transitions)
                         losses.append([timestep, loss])

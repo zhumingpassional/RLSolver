@@ -409,7 +409,8 @@ class SpinSystemBase(ABC):
             rew /= self.n_spins
 
         if self.stag_punishment is not None or self.basin_reward is not None:
-            visiting_new_state = self.history_buffer.update(action).to(self.device)
+            visiting_new_state = self.history_buffer.update(self.state[:,0,:])
+            # visiting_new_state = torch.zeros((self.n_sims), device=self.device, dtype=torch.bool)
         if self.stag_punishment is not None:
             # 原先单环境逻辑： if not visiting_new_state: rew -= self.stag_punishment
             # 现在对二维环境：把 visiting_new_state 当作布尔掩码
