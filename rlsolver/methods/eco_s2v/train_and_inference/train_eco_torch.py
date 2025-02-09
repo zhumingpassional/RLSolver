@@ -17,6 +17,7 @@ from rlsolver.methods.eco_s2v.src.envs.torch_util import (SetGraphGenerator,
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.eco_s2v.config.config import *
 import torch
+from rlsolver.methods.eco_s2v.plot import plot_scatter
 
 try:
     import seaborn as sns
