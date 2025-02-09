@@ -13,7 +13,6 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-# from rlsolver.methods.eco_s2v.src.agents.dqn.utils import ReplayBuffer, Logger, TestMetric, set_global_seed
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import  Logger, TestMetric, set_global_seed
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import eeco_ReplayBuffer as ReplayBuffer
 from rlsolver.methods.eco_s2v.src.envs.util import ExtraAction
