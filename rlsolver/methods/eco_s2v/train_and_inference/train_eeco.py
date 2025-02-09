@@ -73,24 +73,23 @@ def run(save_loc, graph_save_loc):
     ####
     graphs_validation = validation_graph_generator.get()
     n_validations = graphs_validation.shape[0]
-    validation_graph_generator = SetGraphGenerator(graphs_validation)
 
     ####################################################
     # SET UP TRAINING AND TEST ENVIRONMENTS
     ####################################################
 
-    train_envs = [ising_env.make("SpinSystem",
+    train_envs = ising_env.make("SpinSystem",
                                  train_graph_generator,
                                  int(n_spins_train * step_fact),
                                  **env_args, device=TRAIN_DEVICE,
-                                 n_sims=NUM_TRAIN_SIMS)]
+                                 n_sims=NUM_TRAIN_SIMS)
 
     n_spins_test = validation_graph_generator.get().shape[1]
-    test_envs = [ising_env.make("SpinSystem",
+    test_envs = ising_env.make("SpinSystem",
                                 validation_graph_generator,
                                 int(n_spins_test * step_fact),
                                 **env_args, device=TRAIN_DEVICE,
-                                n_sims=n_validations)]
+                                n_sims=n_validations)
 
     pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_"
     network_save_path = pre_fix + "network.pth"
@@ -105,7 +104,7 @@ def run(save_loc, graph_save_loc):
 
     nb_steps = NB_STEPS
 
-    network_fn = lambda: MPNN(n_obs_in=train_envs[0].observation_space.shape[1],
+    network_fn = lambda: MPNN(n_obs_in=train_envs.observation_space.shape[1],
                               n_layers=3,
                               n_features=64,
                               n_hid_readout=[],
@@ -152,24 +151,21 @@ def run(save_loc, graph_save_loc):
         'test_sampling_speed': TEST_SAMPLING_SPEED
     }
     if TEST_SAMPLING_SPEED:
-        nb_steps = 2000
+        nb_steps = 10000
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
         args['replay_start_size'] = 0
     agent = DQN(**args)
-
     print("\n Created DQN agent with network:\n\n", agent.network)
-
     #############
     # TRAIN AGENT
     #############
-
     sampling_start_time = time.time()
     agent.learn(timesteps=nb_steps, start_time=start, verbose=True)
-    print(time.time() - start)
+    print(time.time() - sampling_start_time)
     if TEST_SAMPLING_SPEED:
         sampling_speed = NUM_TRAIN_SIMS * nb_steps / (time.time() - sampling_start_time)
-        write_sampling_speed(sampling_speed_save_path, sampling_speed)
+        write_sampling_speed(sampling_speed_save_path, sampling_speed,f"{NUM_TRAIN_SIMS}")
 
     else:
         plot_scatter(logger_save_path)

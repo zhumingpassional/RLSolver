@@ -75,8 +75,6 @@ def run(save_loc, graph_save_loc):
     graphs_validation = validation_graph_generator.get()
 
     n_validations = len(graphs_validation)
-    validation_graph_generator = SetGraphGenerator(graphs_validation, ordered=True)
-
     ####################################################
     # SET UP TRAINING AND TEST ENVIRONMENTS
     ####################################################
@@ -154,7 +152,7 @@ def run(save_loc, graph_save_loc):
         'test_sampling_speed': TEST_SAMPLING_SPEED
     }
     if TEST_SAMPLING_SPEED:
-        nb_steps = 2000
+        nb_steps = 10000
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
         args['replay_start_size'] = 0
@@ -170,7 +168,7 @@ def run(save_loc, graph_save_loc):
     # 训完之后会输出时间
     print(time.time() - start)
     if TEST_SAMPLING_SPEED:
-        sampling_speed = NUM_TRAIN_SIMS * nb_steps / (time.time() - sampling_start_time)
+        sampling_speed = nb_steps / (time.time() - sampling_start_time)
         write_sampling_speed(sampling_speed_save_path, sampling_speed)
 
     else:
