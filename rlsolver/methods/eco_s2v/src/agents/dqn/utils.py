@@ -93,6 +93,34 @@ class ReplayBuffer:
     def __len__(self):
         return len(self._memory)
 
+class eeco_ReplayBuffer:
+    def __init__(self, capacity):
+        self._capacity = capacity
+        self._memory = {'state':torch.zeros((self._capacity,NUM_TRAIN_NODES+7,NUM_TRAIN_NODES),dtype=torch.float,device=TRAIN_DEVICE), 
+                        'action':torch.zeros((self._capacity,),dtype=torch.long,device=TRAIN_DEVICE), 
+                        'reward':torch.zeros((self._capacity,),dtype=torch.float,device=TRAIN_DEVICE), 
+                        'state_next':torch.zeros((self._capacity,NUM_TRAIN_NODES+7,NUM_TRAIN_NODES),dtype=torch.float,device=TRAIN_DEVICE),
+                        'done':torch.zeros((self._capacity,),dtype=torch.bool,device=TRAIN_DEVICE)}
+        self._position = 0
+
+    def add(self, state, action, reward, state_next, done):
+        batch_size = state.shape[0]
+        # indices = [(self._position + i) % self._capacity for i in range(batch_size)]
+        indices = (self._position + torch.arange(batch_size, device=TRAIN_DEVICE)) % self._capacity
+
+        self._memory['state'][indices] = state
+        self._memory['action'][indices] = action
+        self._memory['reward'][indices] = reward
+        self._memory['state_next'][indices] = state_next
+        self._memory['done'][indices] = done
+        self._position = (self._position + batch_size) % self._capacity
+
+    def sample(self, batch_size,biased=None):
+        if biased is not None:
+            indices = torch.randint(0,biased,(batch_size,),dtype=torch.long,device=TRAIN_DEVICE)
+        else:
+            indices = torch.randint(0,self._capacity,(batch_size,),dtype=torch.long,device=TRAIN_DEVICE)
+        return [self._memory[key][indices] for key in self._memory.keys()]
 
 class PrioritisedReplayBuffer:
 
@@ -321,7 +349,7 @@ class Logger:
 
     def save(self):
         # 保存所有内存中的数据到txt文件
-        with open(self.save_path, 'w') as output:
+        with open(self.save_path, 'a') as output:
             for key, values in self._memory.items():
                 if key == "Episode_score":
                     for value in values:

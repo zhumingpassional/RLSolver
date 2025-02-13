@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir, load_graph_set_from_folder, write_sampling_speed
+from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir, load_graph_set_from_folder, write_sampling_speed,write_sampling_speed
 from rlsolver.methods.eco_s2v.src.agents.dqn.eeco_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
@@ -17,6 +17,7 @@ from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.eco_s2v.config.config import *
 import torch
+from rlsolver.methods.eco_s2v.plot import plot_scatter
 
 try:
     import seaborn as sns
@@ -62,51 +63,53 @@ def run(save_loc, graph_save_loc):
                                                                edge_type=EdgeType.DISCRETE, n_sims=NUM_TRAIN_SIMS)
     if GRAPH_TYPE == GraphType.BA:
         train_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
-                                                                   edge_type=EdgeType.DISCRETE, n_sims=NUM_TRAIN_SIMS)
+                                                                   edge_type=EdgeType.DISCRETE, n_sims=NUM_TRAIN_SIMS,device=TRAIN_DEVICE)
 
     validation_graph_generator = ValidationGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
                                                           edge_type=EdgeType.DISCRETE,
                                                           n_sims=NUM_VALIDATION_SIMS, seed=VALIDATION_SEED)
+    # validation_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
+    #                                                       edge_type=EdgeType.DISCRETE,
+    #                                                       n_sims=NUM_VALIDATION_SIMS, 
+    #                                                       seed=VALIDATION_SEED,device=TRAIN_DEVICE)    
 
     ####
     # Pre-generated test graphs
     ####
-    graphs_test = validation_graph_generator.get()
-    n_tests = graphs_test.shape[0]
-
-    test_graph_generator = SetGraphGenerator(graphs_test)
-
+    graphs_validation = validation_graph_generator.get()
+    n_validations = graphs_validation.shape[0]
+    # validation_graph_generator = SetGraphGenerator(graphs_validation)
     ####################################################
     # SET UP TRAINING AND TEST ENVIRONMENTS
     ####################################################
 
-    train_envs = [ising_env.make("SpinSystem",
+    train_envs = ising_env.make("SpinSystem",
                                  train_graph_generator,
                                  int(n_spins_train * step_fact),
                                  **env_args, device=TRAIN_DEVICE,
-                                 n_sims=NUM_TRAIN_SIMS)]
+                                 n_sims=NUM_TRAIN_SIMS)
 
-    n_spins_test = test_graph_generator.get().shape[1]
-    test_envs = [ising_env.make("SpinSystem",
-                                test_graph_generator,
+    n_spins_test = validation_graph_generator.get().shape[1]
+    test_envs = ising_env.make("SpinSystem",
+                                validation_graph_generator,
                                 int(n_spins_test * step_fact),
                                 **env_args, device=TRAIN_DEVICE,
-                                n_sims=n_tests)]
+                                n_sims=n_validations)
 
     pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_"
     network_save_path = pre_fix + "network.pth"
     test_save_path = pre_fix + "test_scores.pkl"
     loss_save_path = pre_fix + "losses.pkl"
-    logger_save_path = pre_fix + "logger.txt"
+    logger_save_path = pre_fix + f"logger{NUM_TRAIN_SIMS}.txt"
     sampling_speed_save_path = pre_fix + "sampling_speed.txt"
 
     ####################################################
     # SET UP AGENT
     ####################################################
 
-    nb_steps = NB_STEPS
+    nb_steps = 20000
 
-    network_fn = lambda: MPNN(n_obs_in=train_envs[0].observation_space.shape[1],
+    network_fn = lambda: MPNN(n_obs_in=train_envs.observation_space.shape[1],
                               n_layers=3,
                               n_features=64,
                               n_hid_readout=[],
@@ -138,13 +141,13 @@ def run(save_loc, graph_save_loc):
         'adam_epsilon': 1e-8,
         'logging': True,
         'evaluate': True,
-        'update_target_frequency': max(1, int(round(UPDATE_TARGET_FREQUENCY / (NUM_TRAIN_SIMS)))),
-        'update_frequency': max(1, int(UPDATE_FREQUENCY / (NUM_TRAIN_SIMS))),
+        'update_target_frequency': int(UPDATE_TARGET_FREQUENCY/32),
+        'update_frequency': UPDATE_FREQUENCY,
         'save_network_frequency': SAVE_NETWORK_FREQUENCY,
         'loss': "mse",
         'network_save_path': network_save_path,
         'test_envs': test_envs,
-        'test_episodes': n_tests,
+        'test_episodes': n_validations,
         'test_frequency': 400,
         'test_save_path': test_save_path,
         'test_metric': TestMetric.MAX_CUT,
@@ -153,64 +156,23 @@ def run(save_loc, graph_save_loc):
         'test_sampling_speed': TEST_SAMPLING_SPEED
     }
     if TEST_SAMPLING_SPEED:
-        nb_steps = 2000
+        nb_steps = 10000
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
         args['replay_start_size'] = 0
     agent = DQN(**args)
-
     print("\n Created DQN agent with network:\n\n", agent.network)
-
     #############
     # TRAIN AGENT
     #############
-
     sampling_start_time = time.time()
     agent.learn(timesteps=nb_steps, start_time=start, verbose=True)
-    print(time.time() - start)
     if TEST_SAMPLING_SPEED:
         sampling_speed = NUM_TRAIN_SIMS * nb_steps / (time.time() - sampling_start_time)
-        write_sampling_speed(sampling_speed_save_path, sampling_speed)
+        write_sampling_speed(sampling_speed_save_path, sampling_speed,f"{NUM_TRAIN_SIMS}")
 
     else:
-        obj_values = []
-        time_values = []
-        time_step_values = []
-
-        with open(logger_save_path, 'r') as f:
-            for line in f:
-                # 忽略注释行（以'//'开头的行）
-                if line.startswith("//"):
-                    continue
-
-                # 拆分每行数据并将其转换为浮动数
-                obj, time_, time_step = map(float, line.split())
-
-                # 将值添加到对应的列表
-                obj_values.append(obj)
-                time_values.append(time_)
-                time_step_values.append(time_step)
-
-            # 使用matplotlib绘图
-            plt.figure(figsize=(10, 6))
-
-            # 绘制obj随时间变化的图
-            plt.subplot(2, 1, 1)
-            plt.plot(time_values, obj_values, marker='o', color='b')
-            plt.xlabel('Time')
-            plt.ylabel('Obj')
-            plt.title('Obj vs Time')
-
-            # 绘制obj随time_step变化的图
-            plt.subplot(2, 1, 2)
-            plt.plot(time_step_values, obj_values, marker='o', color='r')
-            plt.xlabel('Time Step')
-            plt.ylabel('Obj')
-            plt.title('Obj vs Time Step')
-
-            plt.tight_layout()
-            plt.savefig(pre_fix + ".png", dpi=300)
-
+        plot_scatter(logger_save_path)
 
 if __name__ == "__main__":
     run()

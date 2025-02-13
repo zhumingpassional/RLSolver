@@ -172,13 +172,51 @@ class RandomErdosRenyiGraphGenerator(GraphGenerator):
         return self.pad_matrix(adj) if with_padding else adj
 
 
+# class RandomBarabasiAlbertGraphGenerator(GraphGenerator):
+
+#     def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=2 ** 3):
+#         super().__init__(n_spins, edge_type, False, n_sims)
+
+#         self.m_insertion_edges = m_insertion_edges
+#         self.device = TRAIN_DEVICE
+#         if self.edge_type == EdgeType.UNIFORM:
+#             self.get_connection_mask = lambda: torch.ones((self.n_spins, self.n_spins), device=self.device)
+#         elif self.edge_type == EdgeType.DISCRETE:
+#             def get_connection_mask():
+#                 mask = 2. * torch.randint(0, 2, (self.n_spins, self.n_spins), device=self.device) - 1.
+#                 mask = torch.tril(mask) + torch.triu(mask.T, 1)
+#                 return mask
+
+#             self.get_connection_mask = get_connection_mask
+#         elif self.edge_type == EdgeType.RANDOM:
+#             def get_connection_mask():
+#                 mask = 2. * torch.randint(0, 2, (self.n_sims, n_spins, n_spins), dtype=torch.float32,
+#                                           device=self.device) - 1
+#                 mask = torch.tril(mask, diagonal=0) + torch.triu(mask.transpose(1, 2), diagonal=1)
+#                 return mask
+
+#             self.get_connection_mask = get_connection_mask
+#         else:
+#             raise NotImplementedError()
+
+#     def get(self, with_padding=False):
+#         adj = torch.empty((self.n_sims, self.n_spins, self.n_spins), device=self.device, dtype=torch.float)
+#         for i in range(self.n_sims):
+#             g = nx.barabasi_albert_graph(self.n_spins, self.m_insertion_edges)
+#             # g = nx.erdos_renyi_graph(self.n_spins, p)
+
+#             adj[i] = torch.tensor(nx.to_numpy_array(g), dtype=torch.float32, device=self.device).fill_diagonal_(0)
+
+#         adj = adj * self.get_connection_mask()
+#         return self.pad_matrix(adj) if with_padding else adj
 class RandomBarabasiAlbertGraphGenerator(GraphGenerator):
-
-    def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=2 ** 3):
+    def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=8, device="cuda"):
         super().__init__(n_spins, edge_type, False, n_sims)
-
         self.m_insertion_edges = m_insertion_edges
-        self.device = TRAIN_DEVICE
+        self.device = device
+        # self.seed = seed
+        # if self.seed is not None:
+        #     torch.manual_seed(self.seed)
         if self.edge_type == EdgeType.UNIFORM:
             self.get_connection_mask = lambda: torch.ones((self.n_spins, self.n_spins), device=self.device)
         elif self.edge_type == EdgeType.DISCRETE:
@@ -186,29 +224,91 @@ class RandomBarabasiAlbertGraphGenerator(GraphGenerator):
                 mask = 2. * torch.randint(0, 2, (self.n_spins, self.n_spins), device=self.device) - 1.
                 mask = torch.tril(mask) + torch.triu(mask.T, 1)
                 return mask
-
             self.get_connection_mask = get_connection_mask
         elif self.edge_type == EdgeType.RANDOM:
             def get_connection_mask():
-                mask = 2. * torch.randint(0, 2, (self.n_sims, n_spins, n_spins), dtype=torch.float32,
-                                          device=self.device) - 1
+                mask = 2. * torch.randint(0, 2, (self.n_sims, self.n_spins, self.n_spins), dtype=torch.float32, device=self.device) - 1
                 mask = torch.tril(mask, diagonal=0) + torch.triu(mask.transpose(1, 2), diagonal=1)
                 return mask
-
             self.get_connection_mask = get_connection_mask
         else:
             raise NotImplementedError()
 
+    def generate_barabasi_albert(self):
+        """
+        直接在 PyTorch 中并行生成 Barabási–Albert 图
+        """
+        adj = torch.zeros((self.n_sims, self.n_spins, self.n_spins), device=self.device)
+        
+        # 初始完全连通子图
+        for i in range(self.m_insertion_edges + 1):
+            adj[:, i, :i + 1] = 1
+            adj[:, :i + 1, i] = 1
+
+        for new_node in range(self.m_insertion_edges + 1, self.n_spins):
+            degree = adj.sum(dim=-1)
+            prob = degree / degree.sum(dim=-1, keepdim=True)
+            
+            chosen_edges = torch.multinomial(prob, num_samples=self.m_insertion_edges, replacement=False)
+            batch_indices = torch.arange(self.n_sims, device=self.device).repeat_interleave(self.m_insertion_edges)
+            adj[batch_indices, new_node, chosen_edges.view(-1)] = 1
+            adj[batch_indices, chosen_edges.view(-1), new_node] = 1
+
+        return adj
+
     def get(self, with_padding=False):
-        adj = torch.empty((self.n_sims, self.n_spins, self.n_spins), device=self.device, dtype=torch.float)
-        for i in range(self.n_sims):
-            g = nx.barabasi_albert_graph(self.n_spins, self.m_insertion_edges)
-            # g = nx.erdos_renyi_graph(self.n_spins, p)
-
-            adj[i] = torch.tensor(nx.to_numpy_array(g), dtype=torch.float32, device=self.device).fill_diagonal_(0)
-
+        adj = self.generate_barabasi_albert()
+        # if self.seed is not None:
         adj = adj * self.get_connection_mask()
-        return self.pad_matrix(adj) if with_padding else adj
+        return self.pad_matrix(adj) if with_padding else adj    
+# class RandomBarabasiAlbertGraphGenerator:
+#     def __init__(self, n_spins=20, m_insertion_edges=4, edge_type="DISCRETE", n_sims=8, device="cuda"):
+#         self.n_spins = n_spins
+#         self.m_insertion_edges = m_insertion_edges
+#         self.n_sims = n_sims
+#         self.device = device
+
+#     def generate_barabasi_albert(self):
+#         """
+#         使用 PyTorch 并行实现 Barabási–Albert 过程
+#         生成多个 BA 图的邻接矩阵
+#         """
+#         # 初始化邻接矩阵，全 0
+#         adj = torch.zeros((self.n_sims, self.n_spins, self.n_spins), device=self.device)
+
+#         # 初始完全连通子图
+#         for i in range(self.m_insertion_edges + 1):
+#             adj[:, i, :i + 1] = 1
+#             adj[:, :i + 1, i] = 1
+
+#         # 节点加入过程
+#         for new_node in range(self.m_insertion_edges + 1, self.n_spins):
+#             # 计算度
+#             degree = adj.sum(dim=-1)
+
+#             # 计算连接概率 (度数归一化)
+#             prob = degree / degree.sum(dim=-1, keepdim=True)
+
+#             # 选择 m 个节点（基于概率）
+#             chosen_edges = torch.multinomial(prob, num_samples=self.m_insertion_edges, replacement=False)
+
+#             # 连接新节点
+#             batch_indices = torch.arange(self.n_sims, device=self.device).repeat_interleave(self.m_insertion_edges)
+#             adj[batch_indices, new_node, chosen_edges.view(-1)] = 1
+#             adj[batch_indices, chosen_edges.view(-1), new_node] = 1  # 无向图
+
+#         return adj
+
+#     def get(self, with_padding=False):
+#         # 生成邻接矩阵
+#         adj = self.generate_barabasi_albert()
+
+#         # 连接掩码
+#         connection_mask = torch.randint(0, 2, (self.n_sims, self.n_spins, self.n_spins), device=self.device) * 2 - 1
+#         connection_mask = torch.tril(connection_mask) + torch.triu(connection_mask.transpose(1, 2), 1)
+
+#         adj = adj * connection_mask  # 应用掩码
+#         return adj
 
 
 class RandomRegularGraphGenerator(GraphGenerator):
@@ -432,38 +532,40 @@ class PerturbedGraphGenerator(GraphGenerator):
         m = m + noise
 
         return self.pad_matrix(m) if with_padding else m
-
-
+ 
 class HistoryBuffer():
-    def __init__(self, n_sims):
+    def __init__(self,n_sims):
         self.n_sims = n_sims
-        self.buffer = [{} for _ in range(self.n_sims)]
-        self.current_action_hist = [set() for _ in range(self.n_sims)]  # 针对 n 个环境，每个环境有一个集合
-        self.current_action_hist_len = [0] * self.n_sims  # 每个环境的历史长度
+        self.buffer = None
+        self.device=TRAIN_DEVICE
 
-    def update(self, actions):
-        updated = torch.zeros(self.n_sims, dtype=torch.bool)  # 用于记录哪些环境的状态被更新
-        for env_idx, action in enumerate(actions):  # 遍历每个环境
-            new_action_hist = self.current_action_hist[env_idx].copy()
-            if action in self.current_action_hist[env_idx]:
-                new_action_hist.remove(action)
-                self.current_action_hist_len[env_idx] -= 1
-            else:
-                new_action_hist.add(action)
-                self.current_action_hist_len[env_idx] += 1
+    def pack_spins(self,spins):
+        n_sims, spin_dim = spins.shape
+        assert spin_dim % 8 == 0, "spin_dim 必须是 8 的倍数"
+        return spins.view(n_sims, -1, 8).mul(2**torch.arange(7, -1, -1, device=spins.device)).sum(dim=2).to(torch.uint8)
 
-            try:
-                list_of_states = self.buffer[env_idx][self.current_action_hist_len[env_idx]]
-                if new_action_hist in list_of_states:
-                    self.current_action_hist[env_idx] = new_action_hist
-                    continue  # 如果新状态已存在，直接跳过更新
-            except KeyError:
-                list_of_states = []
+    def update(self, spins):
+        """
+        记录新的 spins，并返回哪些是新状态
+        :param spins: (n_sims, spin_dim) 形状的 0/1 Tensor
+        :return: (n_sims,) 形状的布尔 Tensor，表示哪些是新状态
+        """
+        spins_packed = self.pack_spins(spins)  # 压缩存储
 
-            # 更新 buffer 和 current_action_hist
-            list_of_states.append(new_action_hist)
-            self.current_action_hist[env_idx] = new_action_hist
-            self.buffer[env_idx][self.current_action_hist_len[env_idx]] = list_of_states
-            updated[env_idx] = True  # 标记该环境状态已更新
+        # 第一次更新时初始化 buffer
+        if self.buffer is None:
+            self.buffer = spins_packed.unsqueeze(0)  # (1, n_sims, packed_dim)
+            return torch.ones(self.n_sims, dtype=torch.bool, device=self.device)  # 全部是新状态
+
+        # 计算 Hamming 距离匹配（更快）
+        matches = (self.buffer ^ spins_packed.unsqueeze(0)).sum(dim=2)  # 计算每个环境的 Hamming 距离
+        visited = (matches == 0).any(dim=0)  # (n_sims,)
+
+        # 只有 `visited=False` 时，表示是新状态
+        updated = ~visited
+
+        # 追加新状态
+        self.buffer = torch.cat([self.buffer, spins_packed.unsqueeze(0)], dim=0)
+
 
         return updated

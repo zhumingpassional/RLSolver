@@ -18,6 +18,7 @@ from rlsolver.methods.eco_s2v.src.envs.util import (SetGraphGenerator,
                                                     DEFAULT_OBSERVABLES)
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.plot import plot_scatter
 
 try:
     import seaborn as sns
@@ -72,10 +73,10 @@ def run(save_loc, graph_save_loc):
     ####
     # Pre-generated test graphs
     ####
-    graphs_test = validation_graph_generator.get()
-    n_tests = len(graphs_test)
+    graphs_validation = validation_graph_generator.get()
 
-    test_graph_generator = SetGraphGenerator(graphs_test, ordered=True)
+    n_validations = len(graphs_validation)
+    validation_graph_generator = SetGraphGenerator(graphs_validation, ordered=True)
 
     ####################################################
     # SET UP TRAINING AND TEST ENVIRONMENTS
@@ -88,7 +89,7 @@ def run(save_loc, graph_save_loc):
 
     n_spins_test = train_graph_generator.get().shape[0]
     test_envs = [ising_env.make("SpinSystem",
-                                test_graph_generator,
+                                validation_graph_generator,
                                 int(n_spins_test * step_fact),
                                 **env_args)]
 
@@ -120,7 +121,7 @@ def run(save_loc, graph_save_loc):
         'init_weight_std': 0.01,
         'double_dqn': True,
         'clip_Q_targets': False,
-        'replay_start_size': int(round(REPLAY_START_SIZE / (NUM_TRAIN_SIMS))),
+        'replay_start_size': REPLAY_START_SIZE,
         'replay_buffer_size': REPLAY_BUFFER_SIZE,
         'gamma': gamma,
         'update_learning_rate': False,
@@ -139,13 +140,13 @@ def run(save_loc, graph_save_loc):
         'adam_epsilon': 1e-8,
         'logging': True,
         'evaluate': True,
-        'update_target_frequency': max(1, int(round(UPDATE_TARGET_FREQUENCY / (NUM_TRAIN_SIMS)))),
-        'update_frequency': max(1, int(UPDATE_FREQUENCY / (NUM_TRAIN_SIMS))),
+        'update_target_frequency': UPDATE_TARGET_FREQUENCY,
+        'update_frequency': 32,
         'save_network_frequency': SAVE_NETWORK_FREQUENCY,
         'loss': "mse",
         'network_save_path': network_save_path,
         'test_envs': test_envs,
-        'test_episodes': n_tests,
+        'test_episodes': n_validations,
         'test_frequency': TEST_FREQUENCY,
         'test_save_path': test_save_path,
         'test_metric': TestMetric.MAX_CUT,
@@ -154,7 +155,7 @@ def run(save_loc, graph_save_loc):
         'test_sampling_speed': TEST_SAMPLING_SPEED
     }
     if TEST_SAMPLING_SPEED:
-        nb_steps = 2000
+        nb_steps = 10000
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
         args['replay_start_size'] = 0
@@ -170,47 +171,11 @@ def run(save_loc, graph_save_loc):
     # 训完之后会输出时间
     print(time.time() - start)
     if TEST_SAMPLING_SPEED:
-        sampling_speed = NUM_TRAIN_SIMS * nb_steps / (time.time() - sampling_start_time)
+        sampling_speed = nb_steps / (time.time() - sampling_start_time)
         write_sampling_speed(sampling_speed_save_path, sampling_speed)
 
     else:
-        obj_values = []
-        time_values = []
-        time_step_values = []
-
-        with open(logger_save_path, 'r') as f:
-            for line in f:
-                # 忽略注释行（以'//'开头的行）
-                if line.startswith("//"):
-                    continue
-
-                # 拆分每行数据并将其转换为浮动数
-                obj, time_, time_step = map(float, line.split())
-
-                # 将值添加到对应的列表
-                obj_values.append(obj)
-                time_values.append(time_)
-                time_step_values.append(time_step)
-
-            # 使用matplotlib绘图
-            plt.figure(figsize=(10, 6))
-
-            # 绘制obj随时间变化的图
-            plt.subplot(2, 1, 1)
-            plt.plot(time_values, obj_values, marker='o', color='b')
-            plt.xlabel('Time')
-            plt.ylabel('Obj')
-            plt.title('Obj vs Time')
-
-            # 绘制obj随time_step变化的图
-            plt.subplot(2, 1, 2)
-            plt.plot(time_step_values, obj_values, marker='o', color='r')
-            plt.xlabel('Time Step')
-            plt.ylabel('Obj')
-            plt.title('Obj vs Time Step')
-
-            plt.tight_layout()
-            plt.savefig(pre_fix + ".png", dpi=300)
+        plot_scatter(logger_save_path)
 
 
 if __name__ == "__main__":

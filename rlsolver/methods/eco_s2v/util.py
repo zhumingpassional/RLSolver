@@ -554,8 +554,10 @@ def mk_dir(export_dir, quite=False):
     else:
         print('dir already exists: ', export_dir)
 
-def write_sampling_speed(sampling_speed_save_path, sampling_speed):
+def write_sampling_speed(sampling_speed_save_path, sampling_speed,n_train_sims=None):
     with open(sampling_speed_save_path, 'a') as f:
-        f.write(f"//ALG:{ALG.value} //GRAPH:{GRAPH_TYPE.value}_{NUM_TRAIN_NODES} //sampling speed:")
-        f.write(f"{str(sampling_speed)}samples/s")
-        
+        f.write(f"\n//ALG:{ALG.value} //GRAPH:{GRAPH_TYPE.value}_{NUM_TRAIN_NODES} //sampling speed:")
+        if n_train_sims is not None:
+            f.write(f"n_sims:{n_train_sims}\n")
+        f.write(f"{str(sampling_speed)}samples/s\n")
+

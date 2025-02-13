@@ -29,7 +29,7 @@ class Alg(Enum):
     eco_torch = 'eco_torch'
     eeco = 'eeco'
 
-ALG = Alg.eco
+ALG = Alg.eeco
 
 
 
@@ -42,7 +42,7 @@ def calc_device(gpu_id: int):
 NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
 DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = "../../result"
-UPDATE_FREQUENCY = 32
+UPDATE_FREQUENCY = 1
 TRAIN_DEVICE = calc_device(GPU_ID)
 INFERENCE_DEVICE = calc_device(GPU_ID)
 if GRAPH_TYPE == GraphType.BA:
@@ -79,12 +79,12 @@ if GRAPH_TYPE == GraphType.BA:
         SAVE_NETWORK_FREQUENCY = 400000
         TEST_FREQUENCY = 50000
     elif NUM_TRAIN_NODES == 200:
-        NB_STEPS = 8000000
+        NB_STEPS =  8000000
         REPLAY_START_SIZE = 3000
         REPLAY_BUFFER_SIZE = 15000
         UPDATE_TARGET_FREQUENCY = 4000
         FINAL_EXPLORATION_STEP = 800000
-        SAVE_NETWORK_FREQUENCY = 80000
+        SAVE_NETWORK_FREQUENCY = 5000
         TEST_FREQUENCY = 10000
     else:
         raise ValueError("parameters are not set")
@@ -127,7 +127,7 @@ elif GRAPH_TYPE.value == GraphType.ER:
         REPLAY_BUFFER_SIZE = 15000
         UPDATE_TARGET_FREQUENCY = 4000
         FINAL_EXPLORATION_STEP = 800000
-        SAVE_NETWORK_FREQUENCY = 400000
+        SAVE_NETWORK_FREQUENCY = 5000
         TEST_FREQUENCY = 50000
     else:
         raise ValueError("parameters are not set")

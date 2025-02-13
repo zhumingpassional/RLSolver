@@ -13,7 +13,8 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-from rlsolver.methods.eco_s2v.src.agents.dqn.utils import ReplayBuffer, Logger, TestMetric, set_global_seed
+from rlsolver.methods.eco_s2v.src.agents.dqn.utils import  Logger, TestMetric, set_global_seed
+from rlsolver.methods.eco_s2v.src.agents.dqn.utils import eeco_ReplayBuffer as ReplayBuffer
 from rlsolver.methods.eco_s2v.src.envs.util import ExtraAction
 from rlsolver.methods.eco_s2v.config.config import *
 
@@ -177,21 +178,12 @@ class DQN:
             except KeyError:
                 raise ValueError("loss must be 'huber', 'mse' or a callable")
 
-        if type(envs) != list:
-            envs = [envs]
-        self.envs = envs
-        self.env, self.acting_in_reversible_spin_env = self.get_random_env()
-
-        self.replay_buffers = {}
-        for n_spins in set([env.action_space.n for env in self.envs]):
-            self.replay_buffers[n_spins] = ReplayBuffer(self.replay_buffer_size)
-
-        self.replay_buffer = self.get_replay_buffer_for_env(self.env)
-
+        self.env = envs
+        self.acting_in_reversible_spin_env = self.env.reversible_spins
+        self.replay_buffer = ReplayBuffer(self.replay_buffer_size)
         self.seed = random.randint(0, 1e6) if seed is None else seed
-
-        for env in self.envs:
-            set_global_seed(self.seed, env)
+        
+        set_global_seed(self.seed, self.env)
 
         self.network = network().to(self.device)
         self.init_network_params = init_network_params
@@ -243,13 +235,7 @@ class DQN:
         self.save_network_frequency = save_network_frequency
         self.network_save_path = network_save_path
 
-    def get_random_env(self, envs=None):
-        if envs is None:
-            env = random.sample(self.envs, k=1)[0]
-        else:
-            env = random.sample(envs, k=1)[0]
 
-        return env, env.reversible_spins
 
     def get_replay_buffer_for_env(self, env):
         return self.replay_buffers[env.action_space.n]
@@ -258,6 +244,7 @@ class DQN:
         return random.sample(self.replay_buffers.items(), k=1)[0][1]
 
     def learn(self, timesteps, start_time = None,verbose=False):
+        t2 = 0
         total_time = 0
         if self.logging:
             logger = Logger(save_path=self.logger_save_path
@@ -269,16 +256,17 @@ class DQN:
         score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
         losses_eps = []
         t1 = time.time()
-
         test_scores = []
         losses = []
-
         is_training_ready = False
-
+        if_buffer_full = False
         for timestep in range(timesteps):
-        
+            if timestep*self.env.n_sims>=self.replay_buffer_size:
+                if_buffer_full = True
             if not is_training_ready:
-                if all([len(rb) >= self.replay_start_size for rb in self.replay_buffers.values()]):
+                # if all([len(rb) >= self.replay_start_size for rb in self.replay_buffers.values()]):
+                # if time
+                if self.replay_start_size <= timestep*self.env.n_sims:
                     print('\nAll buffers have {} transitions stored - training is starting!\n'.format(
                         self.replay_start_size))
                     is_training_ready = True
@@ -297,9 +285,11 @@ class DQN:
 
             # Perform action in environment
             state_next, reward, done, _ = self.env.step(action)
+            
             score += reward
             # Store transition in replay buffer
             self.replay_buffer.add(state, action, reward, state_next, done)
+            
 
             if done[0]:
                 # Reinitialise the state
@@ -311,13 +301,15 @@ class DQN:
                         torch.mean(score),
                         loss_str,
                         round(time.time() - t1, 3),))
-
-                self.env, self.acting_in_reversible_spin_env = self.get_random_env()
-                self.replay_buffer = self.get_replay_buffer_for_env(self.env)
-                state = torch.as_tensor(self.env.reset())
+                
+                t1 = time.time()
+                t2_start = time.time()         
+                state = self.env.reset()
+                t2+=(time.time()-t2_start)
                 score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
                 losses_eps = []
-                t1 = time.time()
+                
+                
 
             else:
                 state = state_next
@@ -329,7 +321,12 @@ class DQN:
                     if timestep % self.update_frequency == 0:
 
                         # Sample a batch of transitions
-                        transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
+                        # transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
+                        if if_buffer_full:
+                            transitions = self.replay_buffer.sample(self.minibatch_size)
+                        else: 
+                            transitions = self.replay_buffer.sample(self.minibatch_size, timestep*self.env.n_sims)
+
                         # Train on selected batch
                         loss = self.train_step(transitions)
                         losses.append([timestep, loss])
@@ -378,6 +375,7 @@ class DQN:
                 if self.logging:
                     logger.save()
                 start_time = time.time()
+        # print(f"t2:{t2}")
 
     @torch.no_grad()
     def __only_bad_actions_allowed(self, state, network):
@@ -424,7 +422,7 @@ class DQN:
         td_target = rewards + dones.logical_not() * self.gamma * q_value_target.squeeze(-1)
 
         # Calculate Q value
-        q_value = self.network(states.float()).gather(-1, actions.unsqueeze(-1))
+        q_value = self.network(states).gather(-1, actions.unsqueeze(-1))
 
         # Calculate loss
         loss = self.loss(q_value, td_target.unsqueeze(-1), reduction='mean')

@@ -6,6 +6,7 @@ import torch
 import numpy as np
 import torch.multiprocessing as mp
 from numba import jit, float64, int64
+import time
 
 from rlsolver.methods.eco_s2v.src.envs.eeco_util import (EdgeType,
                                                          RewardSignal,
@@ -182,7 +183,6 @@ class SpinSystemBase(ABC):
             # self.matrix = self.gg.get(with_padding=(self.extra_action != ExtraAction.NONE))
             self.matrix = self.gg.get()
         self._reset_graph_observables()
-
         spinsOne = torch.ones(self.n_sims, self.n_spins, device=self.device)
         local_rewards_available = self._get_immeditate_cuts_avaialable(spinsOne, self.matrix)
         if torch.any(torch.eq(torch.sum(torch.abs(local_rewards_available), dim=-1), 0)):
@@ -409,7 +409,8 @@ class SpinSystemBase(ABC):
             rew /= self.n_spins
 
         if self.stag_punishment is not None or self.basin_reward is not None:
-            visiting_new_state = self.history_buffer.update(action).to(self.device)
+            visiting_new_state = self.history_buffer.update(self.state[:,0,:])
+            # visiting_new_state = torch.zeros((self.n_sims), device=self.device, dtype=torch.bool)
         if self.stag_punishment is not None:
             # 原先单环境逻辑： if not visiting_new_state: rew -= self.stag_punishment
             # 现在对二维环境：把 visiting_new_state 当作布尔掩码
