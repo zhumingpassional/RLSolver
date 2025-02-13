@@ -76,6 +76,8 @@ def run(save_loc, graph_save_loc):
     graphs_validation = validation_graph_generator.get()
 
     n_validations = len(graphs_validation)
+    validation_graph_generator = SetGraphGenerator(graphs_validation, ordered=True)
+
     ####################################################
     # SET UP TRAINING AND TEST ENVIRONMENTS
     ####################################################
@@ -119,7 +121,7 @@ def run(save_loc, graph_save_loc):
         'init_weight_std': 0.01,
         'double_dqn': True,
         'clip_Q_targets': False,
-        'replay_start_size': int(round(REPLAY_START_SIZE / (NUM_TRAIN_SIMS))),
+        'replay_start_size': REPLAY_START_SIZE,
         'replay_buffer_size': REPLAY_BUFFER_SIZE,
         'gamma': gamma,
         'update_learning_rate': False,
@@ -138,8 +140,8 @@ def run(save_loc, graph_save_loc):
         'adam_epsilon': 1e-8,
         'logging': True,
         'evaluate': True,
-        'update_target_frequency': max(1, int(round(UPDATE_TARGET_FREQUENCY / (NUM_TRAIN_SIMS)))),
-        'update_frequency': max(1, int(UPDATE_FREQUENCY / (NUM_TRAIN_SIMS))),
+        'update_target_frequency': UPDATE_TARGET_FREQUENCY,
+        'update_frequency': 32,
         'save_network_frequency': SAVE_NETWORK_FREQUENCY,
         'loss': "mse",
         'network_save_path': network_save_path,

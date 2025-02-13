@@ -40,4 +40,7 @@ def plot_scatter(logger_save_path):
 
         plot_save_path = os.path.splitext(logger_save_path)[0] + '.png'
         plot_save_path = plot_save_path.replace('result/eeco', 'result/eeco/plot')
+        plot_dir = os.path.dirname(plot_save_path)
+        if not os.path.exists(plot_dir):
+            os.makedirs(plot_dir)
         plt.savefig(plot_save_path, dpi=300)

@@ -38,6 +38,7 @@ def calc_device(gpu_id: int):
 
 
 
+# NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
 NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
 DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = "../../result"
@@ -78,7 +79,7 @@ if GRAPH_TYPE == GraphType.BA:
         SAVE_NETWORK_FREQUENCY = 400000
         TEST_FREQUENCY = 50000
     elif NUM_TRAIN_NODES == 200:
-        NB_STEPS =  20000
+        NB_STEPS =  8000000
         REPLAY_START_SIZE = 3000
         REPLAY_BUFFER_SIZE = 15000
         UPDATE_TARGET_FREQUENCY = 4000

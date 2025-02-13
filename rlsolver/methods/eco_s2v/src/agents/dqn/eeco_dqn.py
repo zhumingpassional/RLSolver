@@ -375,6 +375,7 @@ class DQN:
                 if self.logging:
                     logger.save()
                 start_time = time.time()
+        # print(f"t2:{t2}")
 
     @torch.no_grad()
     def __only_bad_actions_allowed(self, state, network):

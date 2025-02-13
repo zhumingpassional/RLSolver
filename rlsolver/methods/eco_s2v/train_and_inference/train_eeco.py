@@ -100,14 +100,14 @@ def run(save_loc, graph_save_loc):
     network_save_path = pre_fix + "network.pth"
     test_save_path = pre_fix + "test_scores.pkl"
     loss_save_path = pre_fix + "losses.pkl"
-    logger_save_path = pre_fix + f"logger{NUM_TRAIN_SIMS}_4_3.txt"
+    logger_save_path = pre_fix + f"logger{NUM_TRAIN_SIMS}.txt"
     sampling_speed_save_path = pre_fix + "sampling_speed.txt"
 
     ####################################################
     # SET UP AGENT
     ####################################################
 
-    nb_steps = NB_STEPS
+    nb_steps = 20000
 
     network_fn = lambda: MPNN(n_obs_in=train_envs.observation_space.shape[1],
                               n_layers=3,
