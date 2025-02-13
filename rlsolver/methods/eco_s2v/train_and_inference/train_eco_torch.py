@@ -6,7 +6,7 @@ import numpy as np
 # from numba.cuda.cudadrv.nvrtc import NVRTC
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir,write_sampling_speed, load_graph_set_from_folder
+from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir,write_sampling_speed, load_graph_set_from_folder,plot_scatter
 from rlsolver.methods.eco_s2v.src.agents.dqn.torch_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.torch_util import (SetGraphGenerator,
@@ -17,6 +17,7 @@ from rlsolver.methods.eco_s2v.src.envs.torch_util import (SetGraphGenerator,
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.eco_s2v.config.config import *
 import torch
+from rlsolver.methods.eco_s2v.plot import plot_scatter
 
 try:
     import seaborn as sns
@@ -169,43 +170,7 @@ def run(save_loc, graph_save_loc):
         write_sampling_speed(sampling_speed_save_path,sampling_speed)
 
     else:
-        obj_values = []
-        time_values = []
-        time_step_values = []
-
-        with open(logger_save_path, 'r') as f:
-            for line in f:
-                # 忽略注释行（以'//'开头的行）
-                if line.startswith("//"):
-                    continue
-                
-                # 拆分每行数据并将其转换为浮动数
-                obj, time_, time_step = map(float, line.split())
-                
-                # 将值添加到对应的列表
-                obj_values.append(obj)
-                time_values.append(time_)
-                time_step_values.append(time_step)
-
-            # 使用matplotlib绘图
-            plt.figure(figsize=(10, 6))
-
-            # 绘制obj随时间变化的图
-            plt.subplot(2, 1, 1)
-            plt.plot(time_values, obj_values, marker='o', color='b')
-            plt.xlabel('Time')
-            plt.ylabel('Obj')
-            plt.title('Obj vs Time')
-
-            # 绘制obj随time_step变化的图
-            plt.subplot(2, 1, 2)
-            plt.plot(time_step_values, obj_values, marker='o', color='r')
-            plt.xlabel('Time Step')
-            plt.ylabel('Obj')
-            plt.title('Obj vs Time Step')
-
-            plt.tight_layout()
-            plt.savefig(pre_fix+".png", dpi=300)
+        plot_scatter(logger_save_path)
 
 
 if __name__ == "__main__":
