@@ -138,7 +138,8 @@ class DQN:
             logging=True,
             seed=None,
             test_sampling_speed = False,
-            logger_save_path = None
+            logger_save_path = None,
+            sampling_speed_save_path = None,
     ):
 
         self.device = TRAIN_DEVICE
@@ -171,6 +172,7 @@ class DQN:
         self.logging = logging
         self.test_sampling_speed = test_sampling_speed
         self.logger_save_path = logger_save_path
+        self.sampling_speed_save_path = sampling_speed_save_path
         if callable(loss):
             self.loss = loss
         else:
@@ -269,10 +271,16 @@ class DQN:
     def learn(self, start_time, timesteps, verbose=False):
 
         total_time = 0
-        if self.logging:
+        if not self.test_sampling_speed:
             logger = Logger(save_path=self.logger_save_path
                             ,seed=self.seed,update_frequency = self.update_frequency,
-                            update_target_frequency=self.update_target_frequency)
+                            update_target_frequency=self.update_target_frequency,
+                            n_sims = 1)
+        else:
+            logger = Logger(save_path=self.sampling_speed_save_path
+                            ,seed=self.seed,update_frequency = self.update_frequency,
+                            update_target_frequency=self.update_target_frequency,
+                            n_sims = 1)
 
 
         # Initialise the state
@@ -340,6 +348,10 @@ class DQN:
 
             else:
                 state = state_next
+
+            if self.test_sampling_speed and (timestep+1) % 1000 == 0:
+                logger.add_scalar('sampling_speed', timestep,time.time() - start_time) 
+
             if not self.test_sampling_speed:
                 if is_training_ready:
 
@@ -361,7 +373,7 @@ class DQN:
                     if timestep % self.update_target_frequency == 0:
                         self.target_network.load_state_dict(self.network.state_dict())
 
-            if (timestep + 1) % self.test_frequency == 0 and self.evaluate and is_training_ready:
+            if (timestep + 1) % self.test_frequency == 0 and self.evaluate and is_training_ready and not self.test_sampling_speed:
                 total_time += time.time() - start_time
                 test_score = self.evaluate_agent()
                 start_time = time.time()
@@ -397,7 +409,8 @@ class DQN:
                 if self.logging:
                     logger.save()
                 start_time = time.time()
-
+        if self.logging:
+            logger.save()
 
     @torch.no_grad()
     def __only_bad_actions_allowed(self, state, network):

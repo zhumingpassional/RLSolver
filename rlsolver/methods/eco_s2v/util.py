@@ -6,6 +6,7 @@ import numpy as np
 import scipy as sp
 import pandas as pd
 import torch
+import string
 
 from collections import namedtuple
 from copy import deepcopy
@@ -561,3 +562,18 @@ def write_sampling_speed(sampling_speed_save_path, sampling_speed,n_train_sims=N
             f.write(f"n_sims:{n_train_sims}\n")
         f.write(f"{str(sampling_speed)}samples/s\n")
 
+def cal_txt_name(*args):
+    new_filenames = []
+    for arg in args:
+        new_filename = arg
+        while os.path.exists(new_filename):
+            assert ('.txt' in new_filename)
+            parts = new_filename.split('.txt')
+            assert (len(parts) == 2)
+            lowercase_letters = string.ascii_lowercase
+            random_int = np.random.randint(0, len(lowercase_letters))
+            random_letter = lowercase_letters[random_int]
+            new_filename = parts[0] + random_letter + '.txt'
+        new_filenames.append(new_filename)
+    return (filename for filename in new_filenames)
+        

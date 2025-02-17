@@ -6,7 +6,7 @@ import numpy as np
 # from numba.cuda.cudadrv.nvrtc import NVRTC
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir,write_sampling_speed, load_graph_set_from_folder
+from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir,write_sampling_speed, load_graph_set_from_folder,plot_scatter
 from rlsolver.methods.eco_s2v.src.agents.dqn.torch_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.torch_util import (SetGraphGenerator,

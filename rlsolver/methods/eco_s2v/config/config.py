@@ -5,14 +5,16 @@ from rlsolver.methods.config import GraphType
 GRAPH_TYPE = GraphType.BA
 
 GPU_ID = 0
+BUFFER_GPU_ID = -1
+
 
 NUM_TRAIN_NODES = 200
 NUM_TRAIN_SIMS = 2 ** 5
 VALIDATION_SEED = 10
 NUM_VALIDATION_SIMS = 2 ** 5
 
-NUM_INFERENCE_SIMS = 2 ** 3
-NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000]
+NUM_INFERENCE_SIMS = 2 ** 5
+NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000,10000]
 # NUM_INFERENCE_NODES = [100]
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
 NUM_TRAINED_NODES_IN_INFERENCE = 20
@@ -36,15 +38,14 @@ ALG = Alg.eeco
 def calc_device(gpu_id: int):
     return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
-
-
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
 NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
 DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = "../../result"
-UPDATE_FREQUENCY = 1
+UPDATE_FREQUENCY = 32
 TRAIN_DEVICE = calc_device(GPU_ID)
 INFERENCE_DEVICE = calc_device(GPU_ID)
+BUFFER_DEVICE = calc_device(BUFFER_GPU_ID)
 if GRAPH_TYPE == GraphType.BA:
     if NUM_TRAIN_NODES == 20:
         NB_STEPS = 2500000
@@ -81,11 +82,12 @@ if GRAPH_TYPE == GraphType.BA:
     elif NUM_TRAIN_NODES == 200:
         NB_STEPS =  8000000
         REPLAY_START_SIZE = 3000
-        REPLAY_BUFFER_SIZE = 15000
+        REPLAY_BUFFER_SIZE = 480000
         UPDATE_TARGET_FREQUENCY = 4000
         FINAL_EXPLORATION_STEP = 800000
-        SAVE_NETWORK_FREQUENCY = 5000
-        TEST_FREQUENCY = 10000
+        SAVE_NETWORK_FREQUENCY = 500000000
+        TEST_FREQUENCY = 200
+    
     else:
         raise ValueError("parameters are not set")
 elif GRAPH_TYPE.value == GraphType.ER:
@@ -124,10 +126,11 @@ elif GRAPH_TYPE.value == GraphType.ER:
     elif NUM_TRAIN_NODES == 200:
         NB_STEPS = 10000000
         REPLAY_START_SIZE = 3000
-        REPLAY_BUFFER_SIZE = 15000
+        REPLAY_BUFFER_SIZE = 70000
         UPDATE_TARGET_FREQUENCY = 4000
         FINAL_EXPLORATION_STEP = 800000
         SAVE_NETWORK_FREQUENCY = 5000
         TEST_FREQUENCY = 50000
     else:
         raise ValueError("parameters are not set")
+    
