@@ -507,7 +507,7 @@ class SpinSystemBase(ABC):
                 # print("Done : no more spins to flip")
                 done = True
 
-        return (self.get_observation(), rew, done, None)
+        return (self.get_observation(), rew, done, self.score)
 
     def get_observation(self):
         state = self.state.clone()

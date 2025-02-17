@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import load_graph_set, mk_dir, load_graph_set_from_folder, write_sampling_speed,write_sampling_speed
+from rlsolver.methods.eco_s2v.util import (load_graph_set, mk_dir, load_graph_set_from_folder, 
+                                           write_sampling_speed,write_sampling_speed,
+                                           cal_txt_name)
 from rlsolver.methods.eco_s2v.src.agents.dqn.eeco_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
@@ -96,18 +98,21 @@ def run(save_loc, graph_save_loc):
                                 **env_args, device=TRAIN_DEVICE,
                                 n_sims=n_validations)
 
-    pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_"
+    pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_" + str(
+        NUM_TRAIN_SIMS) + "_"
     network_save_path = pre_fix + "network.pth"
     test_save_path = pre_fix + "test_scores.pkl"
     loss_save_path = pre_fix + "losses.pkl"
-    logger_save_path = pre_fix + f"logger{NUM_TRAIN_SIMS}.txt"
+    logger_save_path = pre_fix + f"logger.txt"
     sampling_speed_save_path = pre_fix + "sampling_speed.txt"
+    logger_save_path,sampling_speed_save_path = cal_txt_name(logger_save_path,sampling_speed_save_path)
+    
 
     ####################################################
     # SET UP AGENT
     ####################################################
 
-    nb_steps = 20000
+    nb_steps = NB_STEPS
 
     network_fn = lambda: MPNN(n_obs_in=train_envs.observation_space.shape[1],
                               n_layers=3,
@@ -131,7 +136,7 @@ def run(save_loc, graph_save_loc):
         'peak_learning_rate_step': 5000,
         'final_learning_rate': 1e-4,
         'final_learning_rate_step': 200000,
-        'minibatch_size': 64,
+        'minibatch_size': int(NUM_TRAIN_SIMS*2),
         'max_grad_norm': None,
         'weight_decay': 0,
         'update_exploration': True,
@@ -148,12 +153,15 @@ def run(save_loc, graph_save_loc):
         'network_save_path': network_save_path,
         'test_envs': test_envs,
         'test_episodes': n_validations,
-        'test_frequency': 400,
+        'test_frequency': TEST_FREQUENCY,
         'test_save_path': test_save_path,
         'test_metric': TestMetric.MAX_CUT,
         'logger_save_path': logger_save_path,
+        'sampling_speed_save_path': sampling_speed_save_path,
         'seed': None,
-        'test_sampling_speed': TEST_SAMPLING_SPEED
+        'test_sampling_speed': TEST_SAMPLING_SPEED,
+        'sampling_patten': "best_score",
+        'buffer_device': BUFFER_DEVICE,
     }
     if TEST_SAMPLING_SPEED:
         nb_steps = 10000
@@ -167,11 +175,8 @@ def run(save_loc, graph_save_loc):
     #############
     sampling_start_time = time.time()
     agent.learn(timesteps=nb_steps, start_time=start, verbose=True)
-    if TEST_SAMPLING_SPEED:
-        sampling_speed = NUM_TRAIN_SIMS * nb_steps / (time.time() - sampling_start_time)
-        write_sampling_speed(sampling_speed_save_path, sampling_speed,f"{NUM_TRAIN_SIMS}")
 
-    else:
+    if not TEST_SAMPLING_SPEED:
         plot_scatter(logger_save_path)
 
 if __name__ == "__main__":

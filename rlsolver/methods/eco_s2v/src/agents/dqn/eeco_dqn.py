@@ -17,7 +17,8 @@ from rlsolver.methods.eco_s2v.src.agents.dqn.utils import  Logger, TestMetric, s
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import eeco_ReplayBuffer as ReplayBuffer
 from rlsolver.methods.eco_s2v.src.envs.util import ExtraAction
 from rlsolver.methods.eco_s2v.config.config import *
-
+import math
+import itertools
 
 class DQN:
     """
@@ -139,11 +140,15 @@ class DQN:
             logging=True,
             seed=None,
             test_sampling_speed = False,
-            logger_save_path = None
+            logger_save_path = None,
+            sampling_patten = None,
+            buffer_device = None,
+            sampling_speed_save_path = None,
     ):
 
         self.double_dqn = double_dqn
         self.device = TRAIN_DEVICE
+        self.buffer_device = buffer_device
         self.replay_start_size = replay_start_size
         self.replay_buffer_size = replay_buffer_size
         self.gamma = gamma
@@ -170,6 +175,8 @@ class DQN:
         self.logging = logging
         self.test_sampling_speed = test_sampling_speed
         self.logger_save_path = logger_save_path
+        self.sampling_patten = sampling_patten
+        self.sampling_speed_save_path = sampling_speed_save_path
         if callable(loss):
             self.loss = loss
         else:
@@ -179,8 +186,12 @@ class DQN:
                 raise ValueError("loss must be 'huber', 'mse' or a callable")
 
         self.env = envs
+        matrix_index_cycle = itertools.cycle(range(math.ceil(self.replay_buffer_size/(self.env.max_steps*self.env.n_sims))))
+        self.n_matrix = math.ceil(self.replay_buffer_size/(self.env.max_steps*self.env.n_sims))*self.env.n_sims
         self.acting_in_reversible_spin_env = self.env.reversible_spins
-        self.replay_buffer = ReplayBuffer(self.replay_buffer_size)
+        self.replay_buffer = ReplayBuffer(self.replay_buffer_size,sampling_patten=self.sampling_patten
+                                          ,device=self.buffer_device,n_matrix=self.n_matrix
+                                          ,matrix_index_cycle=matrix_index_cycle)
         self.seed = random.randint(0, 1e6) if seed is None else seed
         
         set_global_seed(self.seed, self.env)
@@ -244,15 +255,22 @@ class DQN:
         return random.sample(self.replay_buffers.items(), k=1)[0][1]
 
     def learn(self, timesteps, start_time = None,verbose=False):
-        t2 = 0
         total_time = 0
         if self.logging:
-            logger = Logger(save_path=self.logger_save_path
-                            ,seed=self.seed,update_frequency = self.update_frequency,
-                            update_target_frequency=self.update_target_frequency)
-
+            if not self.test_sampling_speed:
+                logger = Logger(save_path=self.logger_save_path
+                                ,seed=self.seed,update_frequency = self.update_frequency,
+                                update_target_frequency=self.update_target_frequency,
+                                n_sims = self.env.n_sims)
+            else:
+                logger = Logger(save_path=self.sampling_speed_save_path
+                                ,seed=self.seed,update_frequency = self.update_frequency,
+                                update_target_frequency=self.update_target_frequency,
+                                n_sims = self.env.n_sims)
+        
         # Initialise the state
         state = self.env.reset()
+        self.replay_buffer.record_matrix(state[:,7:,:])
         score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
         losses_eps = []
         t1 = time.time()
@@ -284,11 +302,11 @@ class DQN:
                 self.update_lr(timestep)
 
             # Perform action in environment
-            state_next, reward, done, _ = self.env.step(action)
+            state_next, reward, done, score = self.env.step(action)
             
             score += reward
             # Store transition in replay buffer
-            self.replay_buffer.add(state, action, reward, state_next, done)
+            self.replay_buffer.add(state, action, reward, state_next, done,score)
             
 
             if done[0]:
@@ -303,9 +321,8 @@ class DQN:
                         round(time.time() - t1, 3),))
                 
                 t1 = time.time()
-                t2_start = time.time()         
                 state = self.env.reset()
-                t2+=(time.time()-t2_start)
+                self.replay_buffer.record_matrix(state[:,7:,:])
                 score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
                 losses_eps = []
                 
@@ -313,6 +330,9 @@ class DQN:
 
             else:
                 state = state_next
+            
+            if self.test_sampling_speed and (timestep+1) % 1000 == 0:
+                logger.add_scalar('sampling_speed', timestep,time.time() - start_time)
 
             if not self.test_sampling_speed:
                 if is_training_ready:
@@ -329,6 +349,7 @@ class DQN:
 
                         # Train on selected batch
                         loss = self.train_step(transitions)
+
                         losses.append([timestep, loss])
                         losses_eps.append(loss)
 
@@ -338,8 +359,7 @@ class DQN:
                     # Periodically update target network
                     if timestep % self.update_target_frequency == 0:
                         self.target_network.load_state_dict(self.network.state_dict())
-
-            if (timestep + 1) % self.test_frequency == 0 and self.evaluate and is_training_ready:
+            if ((timestep + 1) % self.test_frequency == 0 and self.evaluate and is_training_ready) or timestep==0 and not self.test_sampling_speed:
                 total_time += time.time() - start_time
                 test_score = self.evaluate_agent()
                 start_time = time.time()
@@ -352,7 +372,7 @@ class DQN:
                     raise NotImplementedError("{} is not a recognised TestMetric".format(self.test_metric))
                 
                 if self.logging:
-                    logger.add_scalar('Episode_score', test_score, (total_time,timestep-training_ready_step))
+                    logger.add_scalar('Episode_score', test_score, (total_time,timestep))
 
                 if best_network:
                     path = self.network_save_path
@@ -375,8 +395,8 @@ class DQN:
                 if self.logging:
                     logger.save()
                 start_time = time.time()
-        # print(f"t2:{t2}")
-
+        if self.logging:
+            logger.save()
     @torch.no_grad()
     def __only_bad_actions_allowed(self, state, network):
         x = (state[0, :] == self.allowed_action_state).nonzero()
@@ -423,7 +443,6 @@ class DQN:
 
         # Calculate Q value
         q_value = self.network(states).gather(-1, actions.unsqueeze(-1))
-
         # Calculate loss
         loss = self.loss(q_value, td_target.unsqueeze(-1), reduction='mean')
         # Update weights
@@ -432,8 +451,6 @@ class DQN:
 
         if self.max_grad_norm is not None:  # Optional gradient clipping
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), self.max_grad_norm)
-
-        self.optimizer.step()
 
         return loss.item()
 
