@@ -400,34 +400,3 @@ class Logger:
                         n_samples, time, time_step = item[0],item[1],item[2]
                         output.write(f"{n_samples} {time} {time_step}\n")
                     print(f"sampling_speed saved to {self.save_path}")
-    # def save(self):
-    #     # 保存所有内存中的数据到txt文件
-    #     with open(self.save_path, 'w') as output:
-    #         for key, values in self._memory.items():
-    #             if key == "Episode_score":
-    #                 for value in values:
-    #                     obj = value[0]  # obj是第一个元素
-    #                     time, time_step = value[1]  # 元组中的时间和time_step
-    #                     output.write(f"{obj} {time} {time_step}\n")
-    #                 print(f"Episode_score saved to {self.save_path}")
-    #             if key == "sampling_speed":
-    #                 sampling_per_second = []
-    #                 sampling_per_second_dict = {}
-    #                 sampling_per_second_dict['n_sims'], sampling_per_second_dict['seed'] = self.n_sims, self.seed
-    #                 for i in range(1, len(values)):
-    #                     current_speed = self.n_sims * (values[i][0] - values[i - 1][0]) / (values[i][1] - values[i - 1][1])
-    #                     current_time = (values[i][1] + values[i - 1][1]) / 2
-    #                     current_step = (values[i][0] + values[i - 1][0]) / 2
-    #                     sampling_per_second.append([current_speed, current_time, current_step])
-                    
-    #                 # 将整个字典保存为JSON格式
-    #                 output.write("sampling_speed_dict:\n")
-    #                 json.dump(sampling_per_second_dict, output, indent=4)  # 将字典保存为JSON格式
-    #                 output.write("\n")  # 添加换行
-    #                 detailed_dict = {}
-    #                 for item in sampling_per_second:
-    #                     n_samples, time, time_step = item[0], item[1], item[2]
-    #                     detailed_dict[time] = {'n_samples': n_samples, 'time_step': time_step}
-    #                 json.dump(detailed_dict, output, indent=4)  # 保存详细字典
-    #                 print(f"sampling_speed data saved as JSON to {self.save_path}")
-
