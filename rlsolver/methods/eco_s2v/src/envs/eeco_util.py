@@ -446,14 +446,14 @@ class ValidationGraphGenerator(GraphGenerator):
 
 class SetGraphGenerator(GraphGenerator):
 
-    def __init__(self, matrices, biases=None, ordered=False):
+    def __init__(self, matrices, biases=None, ordered=False,device="cuda"):
 
         if len(set([m.shape[0] - 1 for m in matrices])) == 1:
             n_spins = matrices[0].shape[0]
         else:
             raise NotImplementedError("All graphs in SetGraphGenerator must have the same dimension.")
 
-        if all([torch.isin(m, torch.tensor([0, 1], device=TRAIN_DEVICE)).all().item() for m in matrices]):
+        if all([torch.isin(m, torch.tensor([0, 1], device=INFERENCE_DEVICE)).all().item() for m in matrices]):
 
             edge_type = EdgeType.UNIFORM
         elif all([torch.isin(m, torch.tensor([0, -1, 1], device=TRAIN_DEVICE)).all().item() for m in matrices]):
@@ -550,7 +550,9 @@ class HistoryBuffer():
         :param spins: (n_sims, spin_dim) 形状的 0/1 Tensor
         :return: (n_sims,) 形状的布尔 Tensor，表示哪些是新状态
         """
-        spins_packed = self.pack_spins(spins)  # 压缩存储
+        #spins_0的值是0或1，spins的值是1或-1
+        spins_0 = (spins+1)/2
+        spins_packed = self.pack_spins(spins_0)  # 压缩存储
 
         # 第一次更新时初始化 buffer
         if self.buffer is None:

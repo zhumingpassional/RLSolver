@@ -112,8 +112,9 @@ def run(save_loc="BA_40spin/eco",
 
             # print("Successfully created agent with pre-trained MPNN.\nMPNN architecture\n\n{}".format(repr(network)))
             obj,result = eeco_test_network(network,test_env)
+            print(obj)
             run_duration = time.time() - start_time
-            write_graph_result(obj, run_duration, result.shape[0], ALG.value, ((result+1)/2).to(torch.int), file_list[i], plus1=True)
+            write_graph_result(obj, run_duration, result.shape[0], ALG.value, ((result+1)/2), file_list[i], plus1=True)
 
 if __name__ == "__main__":
     prefixes = INFERENCE_PREFIXES

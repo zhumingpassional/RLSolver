@@ -97,19 +97,21 @@ def run(save_loc, graph_save_loc):
     # SET UP FOLDERS FOR SAVING DATA
     ####################################################
 
-    pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_1_"
-    network_save_path = pre_fix + "network.pth"
-    test_save_path = pre_fix + "test_scores.pkl"
-    loss_save_path = pre_fix + "losses.pkl"
-    logger_save_path = pre_fix + "logger.txt"
-    sampling_speed_save_path = pre_fix + "sampling_speed.txt"
-    logger_save_path,sampling_speed_save_path = cal_txt_name(logger_save_path,sampling_speed_save_path)
+    pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES)
+    pre_fix = cal_txt_name(pre_fix)
+    network_save_path = pre_fix + "/network.pth"
+    test_save_path = pre_fix + "/test_scores.pkl"
+    loss_save_path = pre_fix + "/losses.pkl"
+    logger_save_path = pre_fix + f"/logger.json"
+    sampling_speed_save_path = pre_fix + "sampling_speed.json"
+    print('pre_fix:', pre_fix)
+
 
     ####################################################
     # SET UP AGENT
     ####################################################
 
-    nb_steps = NB_STEPS
+    nb_steps = 1600000
     network_fn = lambda: MPNN(n_obs_in=train_envs[0].observation_space.shape[1],
                               n_layers=3,
                               n_features=64,
@@ -122,8 +124,8 @@ def run(save_loc, graph_save_loc):
         'init_weight_std': 0.01,
         'double_dqn': True,
         'clip_Q_targets': False,
-        'replay_start_size': REPLAY_START_SIZE,
-        'replay_buffer_size': REPLAY_BUFFER_SIZE,
+        'replay_start_size': 3000,
+        'replay_buffer_size': 15000,
         'gamma': gamma,
         'update_learning_rate': False,
         'initial_learning_rate': 1e-4,
@@ -137,11 +139,11 @@ def run(save_loc, graph_save_loc):
         'update_exploration': True,
         'initial_exploration_rate': 1,
         'final_exploration_rate': 0.05,
-        'final_exploration_step': FINAL_EXPLORATION_STEP,
+        'final_exploration_step': 800000,
         'adam_epsilon': 1e-8,
         'logging': True,
         'evaluate': True,
-        'update_target_frequency': UPDATE_TARGET_FREQUENCY,
+        'update_target_frequency': 4000,
         'update_frequency': 32,
         'save_network_frequency': SAVE_NETWORK_FREQUENCY,
         'loss': "mse",
@@ -156,11 +158,14 @@ def run(save_loc, graph_save_loc):
         'seed': None,
         'test_sampling_speed': TEST_SAMPLING_SPEED,
     }
+    args['args'] = args
     if TEST_SAMPLING_SPEED:
-        nb_steps = 10000
+        nb_steps = int(1e10)
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
-        args['replay_start_size'] = 0
+        args['replay_start_size'] = args['initial_exploration_rate'] =0
+        args['replay_buffer_size'] = NUM_TRAIN_SIMS
+        args['update_exploration'] = False
     agent = DQN(**args)
 
     print("\n Created DQN agent with network:\n\n", agent.network)

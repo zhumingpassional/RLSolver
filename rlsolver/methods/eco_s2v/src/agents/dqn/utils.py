@@ -9,6 +9,8 @@ import os
 import string
 import numpy as np
 import torch
+from rlsolver.methods.eco_s2v.util import cal_txt_name
+import json
 
 Transition = namedtuple(
     'Transition', ('state', 'action', 'reward', 'state_next', 'done')
@@ -349,16 +351,20 @@ class PrioritisedReplayBuffer:
 
 
 class Logger:
-    def __init__(self,save_path,seed,update_frequency,update_target_frequency,n_sims):
+    def __init__(self,save_path,args,n_sims):
         self._memory = {}
         self._saves = 0
         self._maxsize = 1000000
         self._dumps = 0
         self.save_path = save_path
-        self.seed = seed
-        self.update_frequency = update_frequency
-        self.update_target_frequency = update_target_frequency
-        self.n_sims = n_sims  
+        self.result = {}
+        self.result['args'] = str(args['args'])
+        self.result['n_sims'] = n_sims
+        if not os.path.exists(os.path.dirname(self.save_path)):
+            os.makedirs(os.path.dirname(self.save_path))
+        with open(self.save_path, 'w') as output:
+            json.dump( self.result, output, indent=4)
+
     def add_scalar(self, name, data, timestep):
         """
         Saves a scalar
@@ -377,26 +383,32 @@ class Logger:
             self._memory = {}
 
     def save(self):
+        self.save_path = cal_txt_name(self.save_path)
+        result = {}
         # 保存所有内存中的数据到txt文件
         with open(self.save_path, 'w') as output:
             for key, values in self._memory.items():
                 if key == "Episode_score":
-                    output.write(f'//seed:{self.seed}\n//n_sims:{self.n_sims}\n//update_frequency:{self.update_frequency}\n//update_target_frequency:{self.update_target_frequency}\n')
+                    obj_vs_time = {}
                     for value in values:
                         obj = value[0]  # obj是第一个元素
-                        time, time_step = value[1]  # 元组中的时间和time_step
-                        output.write(f"{obj} {time} {time_step}\n")
-                    print(f"Episode_score saved to {self.save_path}")
+                        time, time_step = value[1]# 元组中的时间和time_step
+                        obj_vs_time[f'{time}'] = [obj, time_step]
+                    result['obj_vs_time'] = obj_vs_time
+                if key == "Loss":
+                    loss_dict = {}
+                    for value in values:
+                        loss = value[0]  # obj是第一个元素
+                        time, time_step = value[1]# 元组中的时间和time_step
+                        loss_dict[f'{time}'] = [loss, time_step]
+                    result['Loss'] = loss_dict
                 if key == "sampling_speed":
-                    sampling_per_second = []
-                    output.write(f'//seed:{self.seed}\n//n_sims:{self.n_sims}\n')
-
+                    sampling_per_second = {}
                     for i in range(1, len(values)):
                         current_speed = self.n_sims*(values[i][0] - values[i - 1][0]) / (values[i][1] - values[i - 1][1])
-                        current_time = values[i - 1][1]-values[0][1]
-                        current_step = values[i - 1][0]-values[0][0]
-                        sampling_per_second.append([current_speed, current_time,current_step])
-                    for item in sampling_per_second:
-                        n_samples, time, time_step = item[0],item[1],item[2]
-                        output.write(f"{n_samples} {time} {time_step}\n")
+                        sampling_per_second[f'{values[i-1][1]-values[0][1]}']=current_speed
+                    result['sampling_speed'] = sampling_per_second
+                    json.dump(result, output, indent=4)
                     print(f"sampling_speed saved to {self.save_path}")
+            json.dump(result, output, indent=4)
+            print(f"Episode_score saved to {self.save_path}")

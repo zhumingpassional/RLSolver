@@ -144,6 +144,7 @@ class DQN:
             sampling_patten = None,
             buffer_device = None,
             sampling_speed_save_path = None,
+            args = None,
     ):
 
         self.double_dqn = double_dqn
@@ -166,7 +167,7 @@ class DQN:
         self.max_grad_norm = max_grad_norm
         self.weight_decay = weight_decay
         self.update_frequency = update_frequency
-        self.update_exploration = update_exploration,
+        self.update_exploration = update_exploration
         self.initial_exploration_rate = initial_exploration_rate
         self.epsilon = self.initial_exploration_rate
         self.final_exploration_rate = final_exploration_rate
@@ -177,6 +178,7 @@ class DQN:
         self.logger_save_path = logger_save_path
         self.sampling_patten = sampling_patten
         self.sampling_speed_save_path = sampling_speed_save_path
+        self.args = args
         if callable(loss):
             self.loss = loss
         else:
@@ -195,7 +197,7 @@ class DQN:
         self.seed = random.randint(0, 1e6) if seed is None else seed
         
         set_global_seed(self.seed, self.env)
-
+        
         self.network = network().to(self.device)
         self.init_network_params = init_network_params
         self.init_weight_std = init_weight_std
@@ -256,18 +258,21 @@ class DQN:
 
     def learn(self, timesteps, start_time = None,verbose=False):
         total_time = 0
+
         if self.logging:
             if not self.test_sampling_speed:
                 logger = Logger(save_path=self.logger_save_path
-                                ,seed=self.seed,update_frequency = self.update_frequency,
-                                update_target_frequency=self.update_target_frequency,
+                                ,args=self.args,
                                 n_sims = self.env.n_sims)
             else:
                 logger = Logger(save_path=self.sampling_speed_save_path
-                                ,seed=self.seed,update_frequency = self.update_frequency,
-                                update_target_frequency=self.update_target_frequency,
+                                ,args=self.args,
                                 n_sims = self.env.n_sims)
-        
+        if self.test_sampling_speed:
+            last_record_sampling_time = time.time()
+            logger.add_scalar('sampling_speed', 0,start_time)
+        last_record_obj_time = time.time()
+
         # Initialise the state
         state = self.env.reset()
         self.replay_buffer.record_matrix(state[:,7:,:])
@@ -302,7 +307,7 @@ class DQN:
                 self.update_lr(timestep)
 
             # Perform action in environment
-            state_next, reward, done, score = self.env.step(action)
+            state_next, reward, done = self.env.step(action)
             
             score += reward
             # Store transition in replay buffer
@@ -330,9 +335,12 @@ class DQN:
 
             else:
                 state = state_next
-            
-            if self.test_sampling_speed and (timestep+1) % 1000 == 0:
-                logger.add_scalar('sampling_speed', timestep,time.time() - start_time)
+        
+            if self.test_sampling_speed and (time.time() - last_record_sampling_time >= 1):  # 每1秒记录一次
+                logger.add_scalar('sampling_speed', timestep, time.time())
+                last_record_sampling_time = time.time()  # 更新记录时间
+                if time.time() - start_time > 200:
+                    break
 
             if not self.test_sampling_speed:
                 if is_training_ready:
@@ -353,8 +361,8 @@ class DQN:
                         losses.append([timestep, loss])
                         losses_eps.append(loss)
 
-                        if self.logging:
-                            logger.add_scalar('Loss', loss, timestep)
+                        # if self.logging:
+                        #     logger.add_scalar('Loss', loss, timestep)
 
                     # Periodically update target network
                     if timestep % self.update_target_frequency == 0:
@@ -372,7 +380,10 @@ class DQN:
                     raise NotImplementedError("{} is not a recognised TestMetric".format(self.test_metric))
                 
                 if self.logging:
-                    logger.add_scalar('Episode_score', test_score, (total_time,timestep))
+                    if timestep == 0:
+                        logger.add_scalar('Episode_score', test_score, (0,0))
+                    else:
+                        logger.add_scalar('Episode_score', test_score, (total_time,timestep-training_ready_step))
 
                 if best_network:
                     path = self.network_save_path
@@ -384,17 +395,20 @@ class DQN:
 
                 test_scores.append([timestep + 1, test_score])
 
-            if (timestep + 1) % self.save_network_frequency == 0 and is_training_ready and not self.test_sampling_speed:
+            if (time.time() - last_record_obj_time >= self.save_network_frequency) and is_training_ready and not self.test_sampling_speed:
                 total_time += time.time() - start_time
                 path = self.network_save_path
                 path_main, path_ext = os.path.splitext(path)
-                path_main += str(timestep + 1)
+                path_main += ('_'+str(int(total_time)))
+                if self.logging:
+                    logger.add_scalar('Loss', loss, (total_time,timestep-training_ready_step))
                 if path_ext == '':
                     path_ext += '.pth'
                 self.save(path_main + path_ext)
-                if self.logging:
-                    logger.save()
                 start_time = time.time()
+                last_record_obj_time = time.time()
+
+        
         if self.logging:
             logger.save()
     @torch.no_grad()
@@ -404,36 +418,14 @@ class DQN:
         return True if q_next < 0 else False
 
     def train_step(self, transitions):
-
         states, actions, rewards, states_next, dones = transitions
 
-        if self.acting_in_reversible_spin_env:
             # Calculate target Q
-            with torch.no_grad():
-                if self.double_dqn:
-                    network_output = self.network(states_next.clone())
-                    greedy_actions = network_output.argmax(-1, True)
-                    target_network_output = self.target_network(states_next.clone())
-                    q_value_target = target_network_output.gather(-1, greedy_actions)
-                else:
-                    q_value_target = self.target_network(states_next.float()).max(1, True)[0]
-
-        else:
-            target_preds = self.target_network(states_next.float())
-            disallowed_actions_mask = (states_next[:, 0, :] != self.allowed_action_state)
-            # Calculate target Q, selecting ONLY ALLOWED ACTIONS greedily.
-            with torch.no_grad():
-                if self.double_dqn:
-                    network_preds = self.network(states_next.float())
-
-                    # Set the Q-value of disallowed actions to a large negative number (-10000) so they are not selected.
-                    network_preds_allowed = network_preds.masked_fill(disallowed_actions_mask, -10000)
-                    greedy_actions = network_preds_allowed.argmax(1, True)
-                    q_value_target = target_preds.gather(1, greedy_actions)
-
-                else:
-                    q_value_target = target_preds.masked_fill(disallowed_actions_mask, -10000).max(1, True)[0]
-
+        with torch.no_grad():
+            network_output = self.network(states_next.clone())
+            greedy_actions = network_output.argmax(-1, True)
+            target_network_output = self.target_network(states_next.clone())
+            q_value_target = target_network_output.gather(-1, greedy_actions)
         if self.clip_Q_targets:
             q_value_target[q_value_target < 0] = 0
 
@@ -443,15 +435,15 @@ class DQN:
 
         # Calculate Q value
         q_value = self.network(states).gather(-1, actions.unsqueeze(-1))
+
         # Calculate loss
         loss = self.loss(q_value, td_target.unsqueeze(-1), reduction='mean')
         # Update weights
         self.optimizer.zero_grad()
         loss.backward()
-
         if self.max_grad_norm is not None:  # Optional gradient clipping
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), self.max_grad_norm)
-
+        self.optimizer.step()
         return loss.item()
 
     def act(self, state, is_training_ready=True):
@@ -534,7 +526,7 @@ class DQN:
         actions = self.predict(obs).squeeze(-1)
 
         while not done[0]:
-            obs, rew, done, info = test_env.step(actions)
+            obs, rew, done = test_env.step(actions)
             actions = self.predict(obs).squeeze(-1)
 
             if self.test_metric == TestMetric.CUMULATIVE_REWARD:
@@ -556,6 +548,9 @@ class DQN:
         return torch.mean(test_scores)
 
     def save(self, path='network.pth'):
+        folder_path = os.path.dirname(path)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
         if os.path.splitext(path)[-1] == '':
             path + '.pth'
         torch.save(self.network.state_dict(), path)
