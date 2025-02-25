@@ -67,7 +67,7 @@ def run(save_loc, graph_save_loc):
         train_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
                                                                    edge_type=EdgeType.DISCRETE, n_sims=NUM_TRAIN_SIMS,device=TRAIN_DEVICE)
 
-    validation_graph_generator = ValidationGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
+    validation_graph_generator = ValidationGraphGenerator(n_spins=NUM_VALIDATION_NODES, m_insertion_edges=4,
                                                           edge_type=EdgeType.DISCRETE,
                                                           n_sims=NUM_VALIDATION_SIMS, seed=VALIDATION_SEED)
     # validation_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
@@ -100,12 +100,13 @@ def run(save_loc, graph_save_loc):
 
     pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_" + str(
         NUM_TRAIN_SIMS) + "_"
-    network_save_path = pre_fix + "network.pth"
-    test_save_path = pre_fix + "test_scores.pkl"
-    loss_save_path = pre_fix + "losses.pkl"
-    logger_save_path = pre_fix + f"logger.txt"
-    sampling_speed_save_path = pre_fix + "sampling_speed.txt"
-    logger_save_path,sampling_speed_save_path = cal_txt_name(logger_save_path,sampling_speed_save_path)
+    pre_fix = cal_txt_name(pre_fix)
+    network_save_path = pre_fix + "/network.pth"
+    test_save_path = pre_fix + "/test_scores.pkl"
+    loss_save_path = pre_fix + "/losses.pkl"
+    logger_save_path = pre_fix + f"/logger.json"
+    sampling_speed_save_path = pre_fix + "sampling_speed.json"
+    print('pre_fix:', pre_fix)
     
 
     ####################################################
@@ -127,20 +128,21 @@ def run(save_loc, graph_save_loc):
         'init_weight_std': 0.01,
         'double_dqn': True,
         'clip_Q_targets': False,
-        'replay_start_size': int(round(REPLAY_START_SIZE / (NUM_TRAIN_SIMS))),
+        'replay_start_size': REPLAY_START_SIZE ,
         'replay_buffer_size': REPLAY_BUFFER_SIZE,
         'gamma': gamma,
         'update_learning_rate': False,
-        'initial_learning_rate': 1e-4,
-        'peak_learning_rate': 1e-3,
-        'peak_learning_rate_step': 5000,
+        'initial_learning_rate': 1e-3,
+        'peak_learning_rate': 1e-4,
+        'peak_learning_rate_step': 150,
         'final_learning_rate': 1e-4,
         'final_learning_rate_step': 200000,
-        'minibatch_size': int(NUM_TRAIN_SIMS*2),
+        # 'minibatch_size': int(NUM_TRAIN_SIMS*2),
+        'minibatch_size': 2**7,
         'max_grad_norm': None,
         'weight_decay': 0,
-        'update_exploration': True,
-        'initial_exploration_rate': 1,
+        'update_exploration': False,
+        'initial_exploration_rate': 0.05,
         'final_exploration_rate': 0.05,
         'final_exploration_step': FINAL_EXPLORATION_STEP,
         'adam_epsilon': 1e-8,
@@ -163,13 +165,15 @@ def run(save_loc, graph_save_loc):
         'sampling_patten': "best_score",
         'buffer_device': BUFFER_DEVICE,
     }
+    args['args'] = args
     if TEST_SAMPLING_SPEED:
-        nb_steps = 10000
+        nb_steps = int(1e10)
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
-        args['replay_start_size'] = 0
+        args['replay_start_size'] = args['initial_exploration_rate'] =0
+        args['replay_buffer_size'] = NUM_TRAIN_SIMS
+        args['update_exploration'] = False
     agent = DQN(**args)
-    print("\n Created DQN agent with network:\n\n", agent.network)
     #############
     # TRAIN AGENT
     #############

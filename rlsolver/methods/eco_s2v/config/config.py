@@ -7,21 +7,24 @@ GRAPH_TYPE = GraphType.BA
 GPU_ID = 0
 BUFFER_GPU_ID = -1
 
-
+#训练的参数
 NUM_TRAIN_NODES = 200
-NUM_TRAIN_SIMS = 2 ** 5
+NUM_TRAIN_SIMS = 2 ** 7
+NUM_VALIDATION_NODES = 200
 VALIDATION_SEED = 10
 NUM_VALIDATION_SIMS = 2 ** 5
+TEST_SAMPLING_SPEED = False
 
-NUM_INFERENCE_SIMS = 2 ** 5
+#推理的参数
+INFERENCE_GPU_ID = 7
+NUM_INFERENCE_SIMS = 2 ** 3
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000,10000]
-# NUM_INFERENCE_NODES = [100]
+USE_TENSOR_CORE = False
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
 NUM_TRAINED_NODES_IN_INFERENCE = 20
 # PREFIXES = ["BA_100_", "BA_200_", "BA_300_", "BA_400_", "BA_500_", "BA_600_", "BA_700_", "BA_800_", "BA_900_",
 #             "BA_1000_", "BA_1100_", "BA_1200_", "BA_2000_", "BA_3000_", "BA_4000_",
 #             "BA_5000_"]  # Replace with your desired prefixes
-TEST_SAMPLING_SPEED = False
 
 from enum import Enum
 
@@ -42,9 +45,11 @@ def calc_device(gpu_id: int):
 NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
 DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = "../../result"
-UPDATE_FREQUENCY = 32
+INFERENCE_NETWORK_DIR = None
+
+UPDATE_FREQUENCY = 1
 TRAIN_DEVICE = calc_device(GPU_ID)
-INFERENCE_DEVICE = calc_device(GPU_ID)
+INFERENCE_DEVICE = calc_device(INFERENCE_GPU_ID)
 BUFFER_DEVICE = calc_device(BUFFER_GPU_ID)
 if GRAPH_TYPE == GraphType.BA:
     if NUM_TRAIN_NODES == 20:
@@ -79,14 +84,14 @@ if GRAPH_TYPE == GraphType.BA:
         FINAL_EXPLORATION_STEP = 800000
         SAVE_NETWORK_FREQUENCY = 400000
         TEST_FREQUENCY = 50000
-    elif NUM_TRAIN_NODES == 200:
-        NB_STEPS =  8000000
-        REPLAY_START_SIZE = 3000
-        REPLAY_BUFFER_SIZE = 480000
+    elif NUM_TRAIN_NODES == 200 or NUM_TRAIN_NODES == 8:
+        NB_STEPS = 30000
+        REPLAY_START_SIZE = NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
+        REPLAY_BUFFER_SIZE = 20*NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
         UPDATE_TARGET_FREQUENCY = 4000
         FINAL_EXPLORATION_STEP = 800000
-        SAVE_NETWORK_FREQUENCY = 500000000
-        TEST_FREQUENCY = 200
+        SAVE_NETWORK_FREQUENCY = 10
+        TEST_FREQUENCY = 400000
     
     else:
         raise ValueError("parameters are not set")
@@ -129,7 +134,7 @@ elif GRAPH_TYPE.value == GraphType.ER:
         REPLAY_BUFFER_SIZE = 70000
         UPDATE_TARGET_FREQUENCY = 4000
         FINAL_EXPLORATION_STEP = 800000
-        SAVE_NETWORK_FREQUENCY = 5000
+        SAVE_NETWORK_FREQUENCY = 500000
         TEST_FREQUENCY = 50000
     else:
         raise ValueError("parameters are not set")

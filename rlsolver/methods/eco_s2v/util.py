@@ -7,6 +7,7 @@ import scipy as sp
 import pandas as pd
 import torch
 import string
+import tqdm
 
 from collections import namedtuple
 from copy import deepcopy
@@ -21,7 +22,13 @@ from rlsolver.methods.eco_s2v.config.config import *
 # TESTING ON GRAPHS
 ####################################################
 
-def eeco_test_network(network, test_env, device=None):
+def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
+    start_time_1 = time.time()
+    result = {}
+    obj_vs_time = {}
+    start_time = time.time()
+    test_scores = test_env.get_best_cut()
+    obj_vs_time["0"] = test_scores
 
     @torch.no_grad()
     def predict(network, states, acting_in_reversible_spin_env=None):
@@ -34,28 +41,27 @@ def eeco_test_network(network, test_env, device=None):
             else:
                 actions = qs.argmax(-1, True)
             return actions
-        # else:
-        #     if qs.dim() == 1:
-        #         x = (states[0, :] == self.allowed_action_state).nonzero()
-        #         actions = x[qs[x].argmax().item()].item()
-        #     else:
-        #         disallowed_actions_mask = (states[:, :, 0] != self.allowed_action_state)
-        #         qs_allowed = qs.masked_fill(disallowed_actions_mask, -10000)
-        #         actions = qs_allowed.argmax(1, True).squeeze(1)
-        #     return actions
 
     done = torch.zeros(( test_env.n_sims), dtype=torch.bool, device=test_env.device)
-    obs = torch.cat((test_env.state, test_env.matrix_obs), dim=-2)
-    actions = predict(network,obs,test_env.reversible_spins).squeeze(-1)
+    obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(0).expand(NUM_INFERENCE_SIMS,-1,-1)), dim=-2)
+    actions = predict(network,obs.to(torch.float),test_env.reversible_spins).squeeze(-1)
 
-    while not done[0]:
-        obs, rew, done, info = test_env.step(actions)
-        actions = predict(network,obs,test_env.reversible_spins).squeeze(-1)
 
+    # while not done[0]:
+    for i in tqdm.tqdm(range(test_env.max_steps)):
+        obs, done = test_env.step(actions)
+        actions = predict(network,obs.to(torch.float),test_env.reversible_spins).squeeze(-1)
+        test_scores = test_env.get_best_cut()
+        # obj_vs_time[f'{time.time()-start_time}'] = test_scores
     test_scores = test_env.get_best_cut()
     obj,obj_indices = torch.max(test_scores, dim=0)
-    result = test_env.state[obj_indices,0]
-    return obj,result
+    sol = test_env.state[obj_indices,0]
+    result["obj"] = obj.item()
+    # result["sol"] = sol.cpu().numpy()
+    for key, value in obj_vs_time.items():
+        obj_vs_time[key] = value.item()
+    # result["obj_vs_time"] = obj_vs_time
+    return result,sol.cpu().numpy()
 
 def test_network(network, env_args, graphs_test, device=None, step_factor=1, batched=True,
                  n_attempts=50, return_raw=False, return_history=False, max_batch_size=None):
@@ -567,13 +573,17 @@ def cal_txt_name(*args):
     for arg in args:
         new_filename = arg
         while os.path.exists(new_filename):
-            assert ('.txt' in new_filename)
-            parts = new_filename.split('.txt')
-            assert (len(parts) == 2)
             lowercase_letters = string.ascii_lowercase
             random_int = np.random.randint(0, len(lowercase_letters))
             random_letter = lowercase_letters[random_int]
-            new_filename = parts[0] + random_letter + '.txt'
+            if '.txt' in new_filename or ".json" in new_filename:
+                parts = new_filename.split('.')
+                assert (len(parts) == 2)
+                new_filename = parts[0] + random_letter + '.' + parts[1]
+            else:
+                new_filename = new_filename + '_' + random_letter
         new_filenames.append(new_filename)
-    return (filename for filename in new_filenames)
+    if len(new_filenames) == 1:
+        return new_filenames[0]
+    return tuple(new_filenames)
         

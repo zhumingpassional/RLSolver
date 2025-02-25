@@ -140,6 +140,7 @@ class DQN:
             test_sampling_speed = False,
             logger_save_path = None,
             sampling_speed_save_path = None,
+            args = None,
     ):
 
         self.device = TRAIN_DEVICE
@@ -163,7 +164,7 @@ class DQN:
         self.max_grad_norm = max_grad_norm
         self.weight_decay = weight_decay
         self.update_frequency = update_frequency
-        self.update_exploration = update_exploration,
+        self.update_exploration = update_exploration
         self.initial_exploration_rate = initial_exploration_rate
         self.epsilon = self.initial_exploration_rate
         self.final_exploration_rate = final_exploration_rate
@@ -173,6 +174,7 @@ class DQN:
         self.test_sampling_speed = test_sampling_speed
         self.logger_save_path = logger_save_path
         self.sampling_speed_save_path = sampling_speed_save_path
+        self.args = args
         if callable(loss):
             self.loss = loss
         else:
@@ -271,18 +273,21 @@ class DQN:
     def learn(self, start_time, timesteps, verbose=False):
 
         total_time = 0
-        if not self.test_sampling_speed:
-            logger = Logger(save_path=self.logger_save_path
-                            ,seed=self.seed,update_frequency = self.update_frequency,
-                            update_target_frequency=self.update_target_frequency,
-                            n_sims = 1)
-        else:
-            logger = Logger(save_path=self.sampling_speed_save_path
-                            ,seed=self.seed,update_frequency = self.update_frequency,
-                            update_target_frequency=self.update_target_frequency,
-                            n_sims = 1)
+        if self.logging:
+            if not self.test_sampling_speed:
+                logger = Logger(save_path=self.logger_save_path
+                                ,args=self.args,
+                                n_sims = 1)
+            else:
+                logger = Logger(save_path=self.sampling_speed_save_path
+                                ,args=self.args,
+                                n_sims = 1)
 
-
+        if self.test_sampling_speed:
+            last_record_time = time.time()
+            logger.add_scalar('sampling_speed', 0,start_time)
+        last_record_obj_time = time.time()
+            
         # Initialise the state
         state = torch.as_tensor(self.env.reset())
         score = 0
@@ -349,14 +354,17 @@ class DQN:
             else:
                 state = state_next
 
-            if self.test_sampling_speed and (timestep+1) % 1000 == 0:
-                logger.add_scalar('sampling_speed', timestep,time.time() - start_time) 
+            if self.test_sampling_speed and (time.time() - last_record_time >= 1):  # 每1秒记录一次
+                logger.add_scalar('sampling_speed', timestep, time.time())
+                last_record_time = time.time()  # 更新记录时间
+                if time.time() - start_time > 200:
+                    break
 
             if not self.test_sampling_speed:
                 if is_training_ready:
 
                     # Update the main network
-                    if timestep % self.update_frequency == 0 and timestep:
+                    if timestep % self.update_frequency == 0:
 
                         # Sample a batch of transitions
                         transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
@@ -366,8 +374,8 @@ class DQN:
                         losses.append([timestep, loss])
                         losses_eps.append(loss)
 
-                        if self.logging:
-                            logger.add_scalar('Loss', loss, timestep)
+                        # if self.logging:
+                        #     logger.add_scalar('Loss', loss, timestep)
 
                     # Periodically update target network
                     if timestep % self.update_target_frequency == 0:
@@ -396,18 +404,21 @@ class DQN:
 
                 test_scores.append([timestep + 1, test_score])
 
-            if (timestep + 1) % self.save_network_frequency == 0 and is_training_ready and not self.test_sampling_speed:
+            if (time.time() - last_record_obj_time >= self.save_network_frequency) and is_training_ready and not self.test_sampling_speed:
                 total_time += time.time() - start_time
 
                 path = self.network_save_path
                 path_main, path_ext = os.path.splitext(path)
-                path_main += str(timestep + 1)
+                path_main += ('_'+str(int(total_time) + 1))
                 if path_ext == '':
                     path_ext += '.pth'
-                self.save(path_main + path_ext)
-
                 if self.logging:
-                    logger.save()
+                    logger.add_scalar('Loss', loss, (total_time,timestep-training_ready_step))
+                self.save(path_main + path_ext)
+                start_time = time.time()
+                last_record_obj_time = time.time()
+
+
                 start_time = time.time()
         if self.logging:
             logger.save()
