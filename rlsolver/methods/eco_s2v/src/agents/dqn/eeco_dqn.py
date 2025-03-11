@@ -17,6 +17,8 @@ from rlsolver.methods.eco_s2v.src.agents.dqn.utils import  Logger, TestMetric, s
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import eeco_ReplayBuffer as ReplayBuffer
 from rlsolver.methods.eco_s2v.src.envs.util import ExtraAction
 from rlsolver.methods.eco_s2v.config.config import *
+
+from torch.cuda.amp import autocast, GradScaler
 import math
 import itertools
 
@@ -274,8 +276,8 @@ class DQN:
         last_record_obj_time = time.time()
 
         # Initialise the state
-        state = self.env.reset()
-        self.replay_buffer.record_matrix(state[:,7:,:])
+        state,matrix = self.env.reset()
+        self.replay_buffer.record_matrix(matrix)
         score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
         losses_eps = []
         t1 = time.time()
@@ -296,7 +298,7 @@ class DQN:
                     training_ready_step = timestep
 
             # Choose action
-            action = self.act(state.to(self.device).float(), is_training_ready=is_training_ready)
+            action = self.act(state.to(self.device).float(),matrix, is_training_ready=is_training_ready)
 
             # Update epsilon
             if self.update_exploration:
@@ -311,7 +313,7 @@ class DQN:
             
             score += reward
             # Store transition in replay buffer
-            self.replay_buffer.add(state, action, reward, state_next, done,score)
+            self.replay_buffer.add(state.half(), action, reward.half(), state_next.half(), done,score)
             
 
             if done[0]:
@@ -326,8 +328,8 @@ class DQN:
                         round(time.time() - t1, 3),))
                 
                 t1 = time.time()
-                state = self.env.reset()
-                self.replay_buffer.record_matrix(state[:,7:,:])
+                state,matrix = self.env.reset()
+                self.replay_buffer.record_matrix(matrix)
                 score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
                 losses_eps = []
                 
@@ -417,14 +419,19 @@ class DQN:
         q_next = network(state.to(self.device).float())[x].max()
         return True if q_next < 0 else False
 
-    def train_step(self, transitions):
-        states, actions, rewards, states_next, dones = transitions
+    # def train_step(self, transitions,scaler):
 
+    def train_step(self, transitions):
+        states, actions, rewards, states_next, dones,matrix = transitions
+        states = states.to(torch.float)
+        rewards = rewards.to(torch.float)
+        states_next = states_next.to(torch.float)
             # Calculate target Q
         with torch.no_grad():
-            network_output = self.network(states_next.clone())
+
+            network_output = self.network(states_next.clone(),matrix)
+            target_network_output = self.target_network(states_next.clone(),matrix)
             greedy_actions = network_output.argmax(-1, True)
-            target_network_output = self.target_network(states_next.clone())
             q_value_target = target_network_output.gather(-1, greedy_actions)
         if self.clip_Q_targets:
             q_value_target[q_value_target < 0] = 0
@@ -432,13 +439,13 @@ class DQN:
         # Calculate TD target
         # dones以bool存储的，
         td_target = rewards + dones.logical_not() * self.gamma * q_value_target.squeeze(-1)
-
         # Calculate Q value
-        q_value = self.network(states).gather(-1, actions.unsqueeze(-1))
+        q_value = self.network(states.clone(),matrix).gather(-1, actions.unsqueeze(-1))
 
         # Calculate loss
         loss = self.loss(q_value, td_target.unsqueeze(-1), reduction='mean')
         # Update weights
+        
         self.optimizer.zero_grad()
         loss.backward()
         if self.max_grad_norm is not None:  # Optional gradient clipping
@@ -446,11 +453,11 @@ class DQN:
         self.optimizer.step()
         return loss.item()
 
-    def act(self, state, is_training_ready=True):
+    def act(self, state,matrix, is_training_ready=True):
         if is_training_ready and random.uniform(0, 1) >= self.epsilon:
             # 使用 PyTorch 进行 Q 函数预测
             with torch.no_grad():  # 关闭梯度计算
-                action = self.predict(state.clone()).squeeze(-1)  # 假设 self.predict 返回的 action
+                action = self.predict(state.clone(),matrix).squeeze(-1)  # 假设 self.predict 返回的 action
         else:
             if self.acting_in_reversible_spin_env:
                 # 在可逆环境中，随机选择动作
@@ -489,12 +496,12 @@ class DQN:
                 g['lr'] = lr
 
     @torch.no_grad()
-    def predict(self, states, acting_in_reversible_spin_env=None):
+    def predict(self, states, matrix,acting_in_reversible_spin_env=None):
 
         if acting_in_reversible_spin_env is None:
             acting_in_reversible_spin_env = self.acting_in_reversible_spin_env
 
-        qs = self.network(states)
+        qs = self.network(states,matrix)
 
         if acting_in_reversible_spin_env:
             if qs.dim() == 1:
@@ -518,16 +525,16 @@ class DQN:
         Evaluates agent's current performance.  Run multiple evaluations at once
         so the network predictions can be done in batches.
         """
-        obs = self.test_envs[0].reset()
+        obs,matrix = self.test_envs[0].reset()
         test_env = deepcopy(self.test_envs[0])
 
         # self.predict(obs).squeeze(-1)
         done = torch.zeros((test_env.n_sims), dtype=torch.bool, device=test_env.device)
-        actions = self.predict(obs).squeeze(-1)
+        actions = self.predict(obs,matrix).squeeze(-1)
 
         while not done[0]:
             obs, rew, done = test_env.step(actions)
-            actions = self.predict(obs).squeeze(-1)
+            actions = self.predict(obs,matrix).squeeze(-1)
 
             if self.test_metric == TestMetric.CUMULATIVE_REWARD:
                 test_scores += rew

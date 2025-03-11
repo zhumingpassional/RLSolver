@@ -98,13 +98,22 @@ class eeco_ReplayBuffer:
     def __init__(self, capacity,sampling_patten=None,device=None,n_matrix=None,matrix_index_cycle=None):
         self._capacity = capacity
         self.device = device
-        self._memory = {'state':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float,device=device), 
+        # self._memory = {'state':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float,device=device), 
+        #                 'action':torch.zeros((self._capacity,),dtype=torch.long,device=device), 
+        #                 'reward':torch.zeros((self._capacity,),dtype=torch.float,device=device), 
+        #                 'state_next':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float,device=device),
+        #                 'done':torch.zeros((self._capacity,),dtype=torch.bool,device=device,),
+        #                 'matrix_index':torch.zeros((self._capacity,),dtype=torch.long,device=device),
+        #                 'score':torch.zeros((self._capacity,),dtype=torch.float,device=device)}
+        #调试
+        self._memory = {'state':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float16,device=device), 
                         'action':torch.zeros((self._capacity,),dtype=torch.long,device=device), 
-                        'reward':torch.zeros((self._capacity,),dtype=torch.float,device=device), 
-                        'state_next':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float,device=device),
+                        'reward':torch.zeros((self._capacity,),dtype=torch.float16,device=device), 
+                        'state_next':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float16,device=device),
                         'done':torch.zeros((self._capacity,),dtype=torch.bool,device=device,),
                         'matrix_index':torch.zeros((self._capacity,),dtype=torch.long,device=device),
                         'score':torch.zeros((self._capacity,),dtype=torch.float,device=device)}
+        
         self._position = 0
         self.matrix_index_cycle = matrix_index_cycle
         self.sampling_patten = sampling_patten
@@ -115,10 +124,10 @@ class eeco_ReplayBuffer:
         # indices = [(self._position + i) % self._capacity for i in range(batch_size)]
         indices = (self._position + torch.arange(batch_size, device=self.device)) % self._capacity
 
-        self._memory['state'][indices] = state[:,:7,:].to(self.device)
+        self._memory['state'][indices] = state.to(self.device)
         self._memory['action'][indices] = action.to(self.device)
         self._memory['reward'][indices] = reward.to(self.device)
-        self._memory['state_next'][indices] = state_next[:,:7,:].to(self.device)
+        self._memory['state_next'][indices] = state_next.to(self.device)
         self._memory['done'][indices] = done.to(self.device)
         self._memory['score'][indices] = score.to(self.device)
         self._memory['matrix_index'][indices] = self.matrix_indices
@@ -128,6 +137,22 @@ class eeco_ReplayBuffer:
         self.matrix_indices = start_index + torch.arange(matrix.shape[0],device=self.device)
         self.matrix[self.matrix_indices] = matrix.to(self.device)
 
+#有cat版本
+    # def sample(self, batch_size,biased=None):
+    #     if biased is not None:
+    #         indices = torch.randint(0,biased,(batch_size,),dtype=torch.long,device=self.device)
+    #     else:
+    #         indices = torch.randint(0,self._capacity,(batch_size,),dtype=torch.long,device=self.device)
+    #     traj = []
+    #     matrix_index = self._memory['matrix_index'][indices]
+    #     matrix = self.matrix[matrix_index]
+    #     for key in list(self._memory.keys())[:-2]:
+    #         if key == 'state' or key == 'state_next':
+    #             traj.append(torch.cat((self._memory[key][indices],matrix), dim=-2).to(TRAIN_DEVICE))
+    #         else:
+    #             traj.append(self._memory[key][indices].to(TRAIN_DEVICE))
+    #     return traj
+#去掉cat      
     def sample(self, batch_size,biased=None):
         if biased is not None:
             indices = torch.randint(0,biased,(batch_size,),dtype=torch.long,device=self.device)
@@ -137,11 +162,11 @@ class eeco_ReplayBuffer:
         matrix_index = self._memory['matrix_index'][indices]
         matrix = self.matrix[matrix_index]
         for key in list(self._memory.keys())[:-2]:
-            if key == 'state' or key == 'state_next':
-                traj.append(torch.cat((self._memory[key][indices],matrix), dim=-2).to(TRAIN_DEVICE))
-            else:
-                traj.append(self._memory[key][indices].to(TRAIN_DEVICE))
+            traj.append(self._memory[key][indices].to(TRAIN_DEVICE))
+        traj.append(matrix.to(TRAIN_DEVICE))
         return traj
+    
+
     # def sample(self, batch_size,biased=None):
     #     if self.sampling_patten == "best_score":
     #         indices = torch.argsort(self._memory['score'],descending=True)[:batch_size]

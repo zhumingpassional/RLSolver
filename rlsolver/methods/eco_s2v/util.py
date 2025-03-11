@@ -8,6 +8,7 @@ import pandas as pd
 import torch
 import string
 import tqdm
+import torch.jit as jit
 
 from collections import namedtuple
 from copy import deepcopy
@@ -29,38 +30,41 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
     start_time = time.time()
     test_scores = test_env.get_best_cut()
     obj_vs_time["0"] = test_scores
-
+    #调试
+    if USE_TENSOR_CORE:
+        network.half()
     @torch.no_grad()
-    def predict(network, states, acting_in_reversible_spin_env=None):
-
-        qs = network(states)
-
-        if acting_in_reversible_spin_env:
-            if qs.dim() == 1:
-                actions = qs.argmax().item()
-            else:
-                actions = qs.argmax(-1, True)
-            return actions
+    def predict(network, states, matrix):
+        qs = network(states,matrix)
+        if qs.dim() == 1:
+            actions = qs.argmax().item()
+        else:
+            actions = qs.argmax(-1, True)
+        return actions
 
     done = torch.zeros(( test_env.n_sims), dtype=torch.bool, device=test_env.device)
-    obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(0).expand(NUM_INFERENCE_SIMS,-1,-1)), dim=-2)
-    actions = predict(network,obs.to(torch.float),test_env.reversible_spins).squeeze(-1)
+    # obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(0).expand(test_env.n_sims,-1,-1)), dim=-2)
+    state,matrix_ = test_env.get_observation()
+    if USE_TENSOR_CORE:
+        matrix = matrix_.unsqueeze(0).expand(state.shape[0],-1,-1).to(torch.float16)
+        actions = predict(network,state.to(torch.float16),matrix).squeeze(-1)
+    else:
+        matrix = matrix_.unsqueeze(0).expand(state.shape[0],-1,-1)
+        actions = predict(network,state,matrix).squeeze(-1)
 
-
-    # while not done[0]:
     for i in tqdm.tqdm(range(test_env.max_steps)):
-        obs, done = test_env.step(actions)
-        actions = predict(network,obs.to(torch.float),test_env.reversible_spins).squeeze(-1)
-        test_scores = test_env.get_best_cut()
-        # obj_vs_time[f'{time.time()-start_time}'] = test_scores
+        state, done = test_env.step(actions)
+        if USE_TENSOR_CORE:
+            actions = predict(network,state.to(torch.float16),matrix,).squeeze(-1)
+        else:
+            actions = predict(network,state,matrix,).squeeze(-1)
     test_scores = test_env.get_best_cut()
     obj,obj_indices = torch.max(test_scores, dim=0)
-    sol = test_env.state[obj_indices,0]
+    sol = test_env.best_spins[obj_indices]
     result["obj"] = obj.item()
-    # result["sol"] = sol.cpu().numpy()
+    result["sol"] = sol
     for key, value in obj_vs_time.items():
         obj_vs_time[key] = value.item()
-    # result["obj_vs_time"] = obj_vs_time
     return result,sol.cpu().numpy()
 
 def test_network(network, env_args, graphs_test, device=None, step_factor=1, batched=True,

@@ -345,7 +345,7 @@ class SpinSystemBase(ABC):
                 delta_score = -spins_score[sim_indices,action]
                 # delta_score = -torch.gather(spins_score, dim=2, index=action.unsqueeze(-1)).squeeze(-1)
                 # delta_score = self._calculate_score_change(new_state[:,:,0, :self.n_spins], self.matrix, action)
-            # score_new = self.calculate_score(new_state[:,0, :self.n_spins])
+            score_new = self.calculate_score(new_state[:,0, :self.n_spins])
             self.score += delta_score
 
         #############################################################################################
@@ -369,10 +369,10 @@ class SpinSystemBase(ABC):
         improvement = self.score - self.best_obs_score
 
         # 更新best_score和best_spins
-        current_best_score,best_score_index = torch.max(self.score,dim=0)
-        if current_best_score > self.best_score:
-            self.best_score = current_best_score
-            self.best_spins = self.state[best_score_index, 0, :self.n_spins].unsqueeze(0).expand(self.n_sims,-1)
+        update_mask = self.score > self.best_score
+        self.best_score = torch.where(update_mask, self.score, self.best_score)
+        self.best_spins = torch.where(update_mask.unsqueeze(-1).expand( -1, self.n_spins),
+                                      self.state[ :, 0, :self.n_spins], self.best_spins)
 
 
         # 处理有限记忆长度的情况
@@ -455,7 +455,7 @@ class SpinSystemBase(ABC):
                 # print("Done : no more spins to flip")
                 done = True
 
-        return (self.get_observation(), done)
+        return (self.state.clone(), done)
 
     def get_observation(self):
         state = self.state.clone()
@@ -463,10 +463,11 @@ class SpinSystemBase(ABC):
             # convert {1,-1} --> {0,1}
             state[ :, 0, :] = (1 - state[ :, 0, :]) / 2
 
-        if self.gg.biased:
-            return torch.cat((state, self.matrix_obs, self.bias_obs), dim=0)
-        else:
-            return torch.cat((state, self.matrix_obs.unsqueeze(0).expand(state.shape[0],-1,-1)), dim=-2)
+        # if self.gg.biased:
+        #     return torch.cat((state, self.matrix_obs, self.bias_obs), dim=0)
+        # else:
+        #     return torch.cat((state, self.matrix_obs.unsqueeze(0).expand(state.shape[0],-1,-1)), dim=-2)
+        return [state, self.matrix_obs]
 
     def get_immeditate_rewards_avaialable(self, spins=None):
         if spins is None:

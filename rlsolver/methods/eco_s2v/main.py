@@ -11,8 +11,8 @@ from rlsolver.methods.eco_s2v.config.config import *
 # save_loc = f"../../result"
 save_loc = RESULT_DIR
 
-train_network = True
-inference_network = False
+train_network = False
+inference_network = True
 
 if train_network:
     if ALG == Alg.eco:
@@ -29,10 +29,13 @@ if train_network:
 
 
 if inference_network:
-    if ALG == Alg.eeco:
+    if INFERENCE_ALG == Alg.eeco:
         from rlsolver.methods.eco_s2v.train_and_inference.inference_eeco import run
-        run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR, network_save_path=NETWORK_SAVE_PATH,
-                      batched=True, max_batch_size=None, max_parallel_jobs=2, prefixes=INFERENCE_PREFIXES)
+        run(graph_folder=DATA_DIR,
+        network_folder=NETWORK_FOLDER,
+        if_greedy=False,
+        n_sims=NUM_INFERENCE_SIMS,
+        mini_sims=MINI_INFERENCE_SIMS)
     else:
         from rlsolver.methods.eco_s2v.train_and_inference.inference import run
         run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR, network_save_path=NETWORK_SAVE_PATH,

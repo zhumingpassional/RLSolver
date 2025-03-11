@@ -508,7 +508,7 @@ class SpinSystemBase(ABC):
                 # print("Done : no more spins to flip")
                 done = True
 
-        return (self.get_observation(), rew, done)
+        return (self.state.clone(), rew, done)
 
     def get_observation(self):
         state = self.state.clone()
@@ -519,7 +519,10 @@ class SpinSystemBase(ABC):
         if self.gg.biased:
             return torch.cat((state, self.matrix_obs, self.bias_obs), dim=0)
         else:
-            return torch.cat((state, self.matrix_obs), dim=-2)
+            # return torch.cat((state, self.matrix_obs), dim=-2)
+            return [state, self.matrix_obs]
+
+        
 
     def get_immeditate_rewards_avaialable(self, spins=None):
         if spins is None:
