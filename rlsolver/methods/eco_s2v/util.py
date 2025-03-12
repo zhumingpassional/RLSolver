@@ -30,12 +30,12 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
     start_time = time.time()
     test_scores = test_env.get_best_cut()
     obj_vs_time["0"] = test_scores
-    #调试
+
     if USE_TENSOR_CORE:
         network.half()
     @torch.no_grad()
-    def predict(network, states, matrix):
-        qs = network(states,matrix)
+    def predict(network, states):
+        qs = network(states)
         if qs.dim() == 1:
             actions = qs.argmax().item()
         else:
@@ -44,20 +44,18 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
 
     done = torch.zeros(( test_env.n_sims), dtype=torch.bool, device=test_env.device)
     # obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(0).expand(test_env.n_sims,-1,-1)), dim=-2)
-    state,matrix_ = test_env.get_observation()
+    state = test_env.get_observation()
     if USE_TENSOR_CORE:
-        matrix = matrix_.unsqueeze(0).expand(state.shape[0],-1,-1).to(torch.float16)
-        actions = predict(network,state.to(torch.float16),matrix).squeeze(-1)
+        actions = predict(network,state.to(torch.float16)).squeeze(-1)
     else:
-        matrix = matrix_.unsqueeze(0).expand(state.shape[0],-1,-1)
-        actions = predict(network,state,matrix).squeeze(-1)
+        actions = predict(network,state).squeeze(-1)
 
     for i in tqdm.tqdm(range(test_env.max_steps)):
         state, done = test_env.step(actions)
         if USE_TENSOR_CORE:
-            actions = predict(network,state.to(torch.float16),matrix,).squeeze(-1)
+            actions = predict(network,state.to(torch.float16)).squeeze(-1)
         else:
-            actions = predict(network,state,matrix,).squeeze(-1)
+            actions = predict(network,state).squeeze(-1)
     test_scores = test_env.get_best_cut()
     obj,obj_indices = torch.max(test_scores, dim=0)
     sol = test_env.best_spins[obj_indices]
@@ -575,18 +573,21 @@ def write_sampling_speed(sampling_speed_save_path, sampling_speed,n_train_sims=N
 def cal_txt_name(*args):
     new_filenames = []
     for arg in args:
-        new_filename = arg
-        while os.path.exists(new_filename):
+        file_path  = arg
+        while os.path.exists(file_path):
             lowercase_letters = string.ascii_lowercase
             random_int = np.random.randint(0, len(lowercase_letters))
             random_letter = lowercase_letters[random_int]
-            if '.txt' in new_filename or ".json" in new_filename:
-                parts = new_filename.split('.')
-                assert (len(parts) == 2)
-                new_filename = parts[0] + random_letter + '.' + parts[1]
+            base_name = os.path.basename(file_path)
+            if '.txt' in base_name or ".json" in file_path:
+                file_name = os.path.basename(file_path)  # 获取文件名 "BA_100_ID0.txt"
+                file_stem = os.path.splitext(file_name)[0]  # 获取去掉扩展名的部分 "BA_100_ID0"
+                new_file_stem = file_stem + '_' + random_letter
+                new_file_name = new_file_stem + os.path.splitext(file_name)[1]
+                file_path = os.path.join(os.path.dirname(file_path), new_file_name)
             else:
-                new_filename = new_filename + '_' + random_letter
-        new_filenames.append(new_filename)
+                file_path = file_path + '_' + random_letter
+        new_filenames.append(file_path)
     if len(new_filenames) == 1:
         return new_filenames[0]
     return tuple(new_filenames)

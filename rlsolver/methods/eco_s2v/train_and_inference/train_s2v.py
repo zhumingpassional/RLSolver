@@ -15,7 +15,7 @@ from rlsolver.methods.eco_s2v.src.envs.util import (SetGraphGenerator,
                                                     EdgeType, RewardSignal, ExtraAction,
                                                     OptimisationTarget, SpinBasis,ValidationGraphGenerator,
                                                     Observable)
-from rlsolver.methods.eco_s2v.src.networks.mpnn_eco import MPNN
+from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.eco_s2v.config.config import *
 
 try:
@@ -102,7 +102,7 @@ def run(save_loc, graph_save_loc):
     test_save_path = pre_fix + "/test_scores.pkl"
     loss_save_path = pre_fix + "/losses.pkl"
     logger_save_path = pre_fix + f"/logger.json"
-    sampling_speed_save_path = pre_fix + "sampling_speed.json"
+    sampling_speed_save_path = pre_fix + "/sampling_speed.json"
     print('pre_fix:', pre_fix)
 
     ####################################################
@@ -143,7 +143,7 @@ def run(save_loc, graph_save_loc):
         'final_exploration_rate': 0.05,  # 0.05
         'final_exploration_step': FINAL_EXPLORATION_STEP,  # 40000
         'adam_epsilon': 1e-8,
-        'logging': False,
+        'logging': True,
         'loss': "mse",
         'save_network_frequency': SAVE_NETWORK_FREQUENCY,
         'network_save_path': network_save_path,
@@ -152,7 +152,7 @@ def run(save_loc, graph_save_loc):
         'test_episodes': n_validations,
         'logger_save_path': logger_save_path,
         'sampling_speed_save_path': sampling_speed_save_path,
-        'test_frequency': 10000,  # 10000
+        'test_frequency': 100,  # 10000
         'test_save_path': test_save_path,
         'test_metric': TestMetric.MAX_CUT,
         'seed': None,
@@ -162,7 +162,7 @@ def run(save_loc, graph_save_loc):
 
 
     if TEST_SAMPLING_SPEED:
-        nb_steps = int(1e10)
+        nb_steps = int(1e3)
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
         args['replay_start_size'] = args['initial_exploration_rate'] =0

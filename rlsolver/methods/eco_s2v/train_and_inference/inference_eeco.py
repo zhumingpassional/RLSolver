@@ -118,7 +118,7 @@ def run(graph_folder="../../data/syn_BA",
                                 best_sol = result['sol']
 
                         run_duration = time.time() - start_time
-                        print(best_obj, run_duration)
+                        # print(best_obj, run_duration)
 
                         if obj_vs_time.get(files[i]) is None:
                             obj_vs_time[files[i]] = {}
@@ -126,17 +126,7 @@ def run(graph_folder="../../data/syn_BA",
                             network_time = "0"
                         obj_vs_time[files[i]][network_time] = best_obj
                         print("Result: ", best_obj)
-    # with open(os.path.join(network_folder, "logger.json"), 'r') as f:
-    #     data = json.load(f)
-    #     data['obj_vs_time'] = {}
-    #
-    # with open(os.path.join(network_folder, "inference_logger.json"), 'w') as f:
-    #     for filename, time_data in obj_vs_time.items():
-    #         sorted_time_data = {k: time_data[k] for k in sorted(time_data, key=int)}
-    #         data['obj_vs_time'][filename] = sorted_time_data
-    #     json.dump(data, f, indent=4)
 
-    # print("Results saved to: ", os.path.join(network_folder, "inference_logger.json"))
 
 if __name__ == "__main__":
     run(graph_folder='../../../rlsolver/data/syn_BA',

@@ -39,23 +39,18 @@ class MPNN(nn.Module):
         return norm.float()
     
     # @torch.autocast(device_type="cuda")
-    def forward(self, obs,matrix):
+    def forward(self, obs):
         if obs.dim() == 2:
             obs = obs.unsqueeze(0)
 
-        node_features = obs.transpose_(-1, -2)
-        #提取state
+        obs.transpose_(-1, -2)
+
         # Calculate features to be used in the MPNN
-        # node_features = obs[:, :, 0:self.n_obs_in]
-        #提取
+        node_features = obs[:, :, 0:self.n_obs_in]
+
         # Get graph adj matrix.
-        adj = matrix
-        # adj_conns = (adj != 0).type(torch.FloatTensor).to(adj.device)
-        #统计节点的度数，度数为0的节点度数被赋值为1
+        adj = obs[:, :, self.n_obs_in:]
         norm = self.get_normalisation(adj)
-        #调试
-        # norm = norm.half()
-        #node_features(n_sims,n_spins,7),节点初始化嵌入层七个七个的输入线性层，输出64维，激活函数relu
         init_node_embeddings = self.node_init_embedding_layer(node_features)
         edge_embeddings = self.edge_embedding_layer(node_features, adj, norm)
 

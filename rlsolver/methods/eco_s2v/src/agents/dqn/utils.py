@@ -98,15 +98,8 @@ class eeco_ReplayBuffer:
     def __init__(self, capacity,sampling_patten=None,device=None,n_matrix=None,matrix_index_cycle=None):
         self._capacity = capacity
         self.device = device
-        # self._memory = {'state':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float,device=device), 
-        #                 'action':torch.zeros((self._capacity,),dtype=torch.long,device=device), 
-        #                 'reward':torch.zeros((self._capacity,),dtype=torch.float,device=device), 
-        #                 'state_next':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float,device=device),
-        #                 'done':torch.zeros((self._capacity,),dtype=torch.bool,device=device,),
-        #                 'matrix_index':torch.zeros((self._capacity,),dtype=torch.long,device=device),
-        #                 'score':torch.zeros((self._capacity,),dtype=torch.float,device=device)}
         #调试
-        self._memory = {'state':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float16,device=device), 
+        self._memory = {'state':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float16,device=device),
                         'action':torch.zeros((self._capacity,),dtype=torch.long,device=device), 
                         'reward':torch.zeros((self._capacity,),dtype=torch.float16,device=device), 
                         'state_next':torch.zeros((self._capacity,7,NUM_TRAIN_NODES),dtype=torch.float16,device=device),
@@ -124,10 +117,10 @@ class eeco_ReplayBuffer:
         # indices = [(self._position + i) % self._capacity for i in range(batch_size)]
         indices = (self._position + torch.arange(batch_size, device=self.device)) % self._capacity
 
-        self._memory['state'][indices] = state.to(self.device)
+        self._memory['state'][indices] = state[:,:7,:].to(self.device)
         self._memory['action'][indices] = action.to(self.device)
         self._memory['reward'][indices] = reward.to(self.device)
-        self._memory['state_next'][indices] = state_next.to(self.device)
+        self._memory['state_next'][indices] = state_next[:,:7,:].to(self.device)
         self._memory['done'][indices] = done.to(self.device)
         self._memory['score'][indices] = score.to(self.device)
         self._memory['matrix_index'][indices] = self.matrix_indices
@@ -162,8 +155,10 @@ class eeco_ReplayBuffer:
         matrix_index = self._memory['matrix_index'][indices]
         matrix = self.matrix[matrix_index]
         for key in list(self._memory.keys())[:-2]:
-            traj.append(self._memory[key][indices].to(TRAIN_DEVICE))
-        traj.append(matrix.to(TRAIN_DEVICE))
+            if key == 'state' or key == 'state_next':
+                traj.append(torch.cat((self._memory[key][indices],matrix), dim=-2).to(TRAIN_DEVICE))
+            else:
+                traj.append(self._memory[key][indices].to(TRAIN_DEVICE))
         return traj
     
 
@@ -385,10 +380,6 @@ class Logger:
         self.result = {}
         self.result['args'] = str(args['args'])
         self.result['n_sims'] = n_sims
-        if not os.path.exists(os.path.dirname(self.save_path)):
-            os.makedirs(os.path.dirname(self.save_path))
-        with open(self.save_path, 'w') as output:
-            json.dump( self.result, output, indent=4)
 
     def add_scalar(self, name, data, timestep):
         """
@@ -408,9 +399,10 @@ class Logger:
             self._memory = {}
 
     def save(self):
-        self.save_path = cal_txt_name(self.save_path)
         result = {}
         # 保存所有内存中的数据到txt文件
+        if not os.path.exists(os.path.dirname(self.save_path)):
+            os.makedirs(os.path.dirname(self.save_path))
         with open(self.save_path, 'w') as output:
             for key, values in self._memory.items():
                 if key == "Episode_score":
@@ -419,21 +411,20 @@ class Logger:
                         obj = value[0]  # obj是第一个元素
                         time, time_step = value[1]# 元组中的时间和time_step
                         obj_vs_time[f'{time}'] = [obj, time_step]
-                    result['obj_vs_time'] = obj_vs_time
+                    self.result['obj_vs_time'] = obj_vs_time
                 if key == "Loss":
                     loss_dict = {}
                     for value in values:
                         loss = value[0]  # obj是第一个元素
                         time, time_step = value[1]# 元组中的时间和time_step
                         loss_dict[f'{time}'] = [loss, time_step]
-                    result['Loss'] = loss_dict
+                    self.result['Loss'] = loss_dict
                 if key == "sampling_speed":
                     sampling_per_second = {}
                     for i in range(1, len(values)):
-                        current_speed = self.n_sims*(values[i][0] - values[i - 1][0]) / (values[i][1] - values[i - 1][1])
+                        current_speed = self.result['n_sims']*(values[i][0] - values[i - 1][0]) / (values[i][1] - values[i - 1][1])
                         sampling_per_second[f'{values[i-1][1]-values[0][1]}']=current_speed
-                    result['sampling_speed'] = sampling_per_second
-                    json.dump(result, output, indent=4)
-                    print(f"sampling_speed saved to {self.save_path}")
-            json.dump(result, output, indent=4)
-            print(f"Episode_score saved to {self.save_path}")
+                    self.result['sampling_speed'] = sampling_per_second
+            json.dump(self.result, output, indent=4)
+            print(f"result saved to {self.save_path}")
+
