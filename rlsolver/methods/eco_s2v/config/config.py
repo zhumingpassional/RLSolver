@@ -5,19 +5,20 @@ from rlsolver.methods.config import GraphType
 GRAPH_TYPE = GraphType.BA
 
 GPU_ID = 0
-BUFFER_GPU_ID = -1
+BUFFER_GPU_ID = 0
 
 #训练的参数
 NUM_TRAIN_NODES = 200
-NUM_TRAIN_SIMS = 2 ** 7
+NUM_TRAIN_SIMS = 2 ** 2
 NUM_VALIDATION_NODES = 200
 VALIDATION_SEED = 10
-NUM_VALIDATION_SIMS = 2 ** 5
+NUM_VALIDATION_SIMS = 2 ** 2
 TEST_SAMPLING_SPEED = False
 
 #推理的参数
-INFERENCE_GPU_ID = 7
-NUM_INFERENCE_SIMS = 2 ** 3
+INFERENCE_GPU_ID = 0
+NUM_INFERENCE_SIMS = 50
+MINI_INFERENCE_SIMS = 50 
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000,10000]
 USE_TENSOR_CORE = False
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
@@ -34,23 +35,23 @@ class Alg(Enum):
     eco_torch = 'eco_torch'
     eeco = 'eeco'
 
-ALG = Alg.eeco
-
-
+ALG = Alg.eco
 
 def calc_device(gpu_id: int):
     return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
-NETWORK_SAVE_PATH = "RLSolver-master/rlsolver/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
+NETWORK_SAVE_PATH = "pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
 DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = "../../result"
+NETWORK_FOLDER = "../../../rlsolver/methods/eco_s2v/pretrained_agent/eco"
 INFERENCE_NETWORK_DIR = None
 
 UPDATE_FREQUENCY = 1
 TRAIN_DEVICE = calc_device(GPU_ID)
 INFERENCE_DEVICE = calc_device(INFERENCE_GPU_ID)
 BUFFER_DEVICE = calc_device(BUFFER_GPU_ID)
+
 if GRAPH_TYPE == GraphType.BA:
     if NUM_TRAIN_NODES == 20:
         NB_STEPS = 2500000
@@ -84,15 +85,14 @@ if GRAPH_TYPE == GraphType.BA:
         FINAL_EXPLORATION_STEP = 800000
         SAVE_NETWORK_FREQUENCY = 400000
         TEST_FREQUENCY = 50000
-    elif NUM_TRAIN_NODES == 200 or NUM_TRAIN_NODES == 8:
-        NB_STEPS = 30000
+    elif NUM_TRAIN_NODES == 200:
+        NB_STEPS = 1000000
         REPLAY_START_SIZE = NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
-        REPLAY_BUFFER_SIZE = 20*NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
+        REPLAY_BUFFER_SIZE = 5*NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
         UPDATE_TARGET_FREQUENCY = 4000
         FINAL_EXPLORATION_STEP = 800000
         SAVE_NETWORK_FREQUENCY = 10
-        TEST_FREQUENCY = 400000
-    
+        TEST_FREQUENCY = 4000000
     else:
         raise ValueError("parameters are not set")
 elif GRAPH_TYPE.value == GraphType.ER:

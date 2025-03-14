@@ -8,6 +8,7 @@ import pandas as pd
 import torch
 import string
 import tqdm
+import torch.jit as jit
 
 from collections import namedtuple
 from copy import deepcopy
@@ -30,37 +31,38 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
     test_scores = test_env.get_best_cut()
     obj_vs_time["0"] = test_scores
 
+    if USE_TENSOR_CORE:
+        network.half()
     @torch.no_grad()
-    def predict(network, states, acting_in_reversible_spin_env=None):
-
+    def predict(network, states):
         qs = network(states)
-
-        if acting_in_reversible_spin_env:
-            if qs.dim() == 1:
-                actions = qs.argmax().item()
-            else:
-                actions = qs.argmax(-1, True)
-            return actions
+        if qs.dim() == 1:
+            actions = qs.argmax().item()
+        else:
+            actions = qs.argmax(-1, True)
+        return actions
 
     done = torch.zeros(( test_env.n_sims), dtype=torch.bool, device=test_env.device)
-    obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(0).expand(NUM_INFERENCE_SIMS,-1,-1)), dim=-2)
-    actions = predict(network,obs.to(torch.float),test_env.reversible_spins).squeeze(-1)
+    # obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(0).expand(test_env.n_sims,-1,-1)), dim=-2)
+    state = test_env.get_observation()
+    if USE_TENSOR_CORE:
+        actions = predict(network,state.to(torch.float16)).squeeze(-1)
+    else:
+        actions = predict(network,state).squeeze(-1)
 
-
-    # while not done[0]:
     for i in tqdm.tqdm(range(test_env.max_steps)):
-        obs, done = test_env.step(actions)
-        actions = predict(network,obs.to(torch.float),test_env.reversible_spins).squeeze(-1)
-        test_scores = test_env.get_best_cut()
-        # obj_vs_time[f'{time.time()-start_time}'] = test_scores
+        state, done = test_env.step(actions)
+        if USE_TENSOR_CORE:
+            actions = predict(network,state.to(torch.float16)).squeeze(-1)
+        else:
+            actions = predict(network,state).squeeze(-1)
     test_scores = test_env.get_best_cut()
     obj,obj_indices = torch.max(test_scores, dim=0)
-    sol = test_env.state[obj_indices,0]
+    sol = test_env.best_spins[obj_indices]
     result["obj"] = obj.item()
-    # result["sol"] = sol.cpu().numpy()
+    result["sol"] = sol
     for key, value in obj_vs_time.items():
         obj_vs_time[key] = value.item()
-    # result["obj_vs_time"] = obj_vs_time
     return result,sol.cpu().numpy()
 
 def test_network(network, env_args, graphs_test, device=None, step_factor=1, batched=True,
@@ -571,18 +573,21 @@ def write_sampling_speed(sampling_speed_save_path, sampling_speed,n_train_sims=N
 def cal_txt_name(*args):
     new_filenames = []
     for arg in args:
-        new_filename = arg
-        while os.path.exists(new_filename):
+        file_path  = arg
+        while os.path.exists(file_path):
             lowercase_letters = string.ascii_lowercase
             random_int = np.random.randint(0, len(lowercase_letters))
             random_letter = lowercase_letters[random_int]
-            if '.txt' in new_filename or ".json" in new_filename:
-                parts = new_filename.split('.')
-                assert (len(parts) == 2)
-                new_filename = parts[0] + random_letter + '.' + parts[1]
+            base_name = os.path.basename(file_path)
+            if '.txt' in base_name or ".json" in file_path:
+                file_name = os.path.basename(file_path)  # 获取文件名 "BA_100_ID0.txt"
+                file_stem = os.path.splitext(file_name)[0]  # 获取去掉扩展名的部分 "BA_100_ID0"
+                new_file_stem = file_stem + '_' + random_letter
+                new_file_name = new_file_stem + os.path.splitext(file_name)[1]
+                file_path = os.path.join(os.path.dirname(file_path), new_file_name)
             else:
-                new_filename = new_filename + '_' + random_letter
-        new_filenames.append(new_filename)
+                file_path = file_path + '_' + random_letter
+        new_filenames.append(file_path)
     if len(new_filenames) == 1:
         return new_filenames[0]
     return tuple(new_filenames)

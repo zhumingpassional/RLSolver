@@ -519,7 +519,7 @@ class SpinSystemBase(ABC):
         if self.gg.biased:
             return torch.cat((state, self.matrix_obs, self.bias_obs), dim=0)
         else:
-            return torch.cat((state, self.matrix_obs), dim=-2)
+            return torch.cat((state, self.matrix_obs), dim=-2)        
 
     def get_immeditate_rewards_avaialable(self, spins=None):
         if spins is None:

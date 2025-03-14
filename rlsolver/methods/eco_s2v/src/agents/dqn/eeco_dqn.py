@@ -17,6 +17,8 @@ from rlsolver.methods.eco_s2v.src.agents.dqn.utils import  Logger, TestMetric, s
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import eeco_ReplayBuffer as ReplayBuffer
 from rlsolver.methods.eco_s2v.src.envs.util import ExtraAction
 from rlsolver.methods.eco_s2v.config.config import *
+
+from torch.cuda.amp import autocast, GradScaler
 import math
 import itertools
 
@@ -311,7 +313,7 @@ class DQN:
             
             score += reward
             # Store transition in replay buffer
-            self.replay_buffer.add(state, action, reward, state_next, done,score)
+            self.replay_buffer.add(state.half(), action, reward.half(), state_next.half(), done,score)
             
 
             if done[0]:
@@ -327,7 +329,7 @@ class DQN:
                 
                 t1 = time.time()
                 state = self.env.reset()
-                self.replay_buffer.record_matrix(state[:,7:,:])
+                self.replay_buffer.record_matrix(state[:, 7:, :])
                 score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
                 losses_eps = []
                 
@@ -417,14 +419,19 @@ class DQN:
         q_next = network(state.to(self.device).float())[x].max()
         return True if q_next < 0 else False
 
+    # def train_step(self, transitions,scaler):
+
     def train_step(self, transitions):
         states, actions, rewards, states_next, dones = transitions
-
+        states = states.to(torch.float)
+        rewards = rewards.to(torch.float)
+        states_next = states_next.to(torch.float)
             # Calculate target Q
         with torch.no_grad():
+
             network_output = self.network(states_next.clone())
-            greedy_actions = network_output.argmax(-1, True)
             target_network_output = self.target_network(states_next.clone())
+            greedy_actions = network_output.argmax(-1, True)
             q_value_target = target_network_output.gather(-1, greedy_actions)
         if self.clip_Q_targets:
             q_value_target[q_value_target < 0] = 0
@@ -432,13 +439,13 @@ class DQN:
         # Calculate TD target
         # dones以bool存储的，
         td_target = rewards + dones.logical_not() * self.gamma * q_value_target.squeeze(-1)
-
         # Calculate Q value
-        q_value = self.network(states).gather(-1, actions.unsqueeze(-1))
+        q_value = self.network(states.clone()).gather(-1, actions.unsqueeze(-1))
 
         # Calculate loss
         loss = self.loss(q_value, td_target.unsqueeze(-1), reduction='mean')
         # Update weights
+        
         self.optimizer.zero_grad()
         loss.backward()
         if self.max_grad_norm is not None:  # Optional gradient clipping
@@ -489,7 +496,7 @@ class DQN:
                 g['lr'] = lr
 
     @torch.no_grad()
-    def predict(self, states, acting_in_reversible_spin_env=None):
+    def predict(self, states,acting_in_reversible_spin_env=None):
 
         if acting_in_reversible_spin_env is None:
             acting_in_reversible_spin_env = self.acting_in_reversible_spin_env
@@ -552,7 +559,7 @@ class DQN:
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         if os.path.splitext(path)[-1] == '':
-            path + '.pth'
+            path += '.pth'
         torch.save(self.network.state_dict(), path)
 
     def load(self, path):

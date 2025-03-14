@@ -613,9 +613,12 @@ class DQN:
 
         return np.mean(test_scores)
 
-    def save(self, path='../../result/network.pth'):
+    def save(self, path='network.pth'):
+        folder_path = os.path.dirname(path)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
         if os.path.splitext(path)[-1] == '':
-            path + '.pth'
+            path = path + '.pth'
         torch.save(self.network.state_dict(), path)
 
     def load(self, path):
