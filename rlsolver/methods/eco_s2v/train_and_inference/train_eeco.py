@@ -105,7 +105,7 @@ def run(save_loc, graph_save_loc):
     test_save_path = pre_fix + "/test_scores.pkl"
     loss_save_path = pre_fix + "/losses.pkl"
     logger_save_path = pre_fix + f"/logger.json"
-    sampling_speed_save_path = pre_fix + "sampling_speed.json"
+    sampling_speed_save_path = pre_fix + "/sampling_speed.json"
     print('pre_fix:', pre_fix)
     
 
@@ -113,7 +113,7 @@ def run(save_loc, graph_save_loc):
     # SET UP AGENT
     ####################################################
 
-    nb_steps = NB_STEPS
+    nb_steps = 3000
 
     network_fn = lambda: MPNN(n_obs_in=train_envs.observation_space.shape[1],
                               n_layers=3,
@@ -134,11 +134,11 @@ def run(save_loc, graph_save_loc):
         'update_learning_rate': False,
         'initial_learning_rate': 1e-3,
         'peak_learning_rate': 1e-4,
-        'peak_learning_rate_step': 150,
+        'peak_learning_rate_step': 15000,
         'final_learning_rate': 1e-4,
         'final_learning_rate_step': 200000,
         # 'minibatch_size': int(NUM_TRAIN_SIMS*2),
-        'minibatch_size': 2**7,
+        'minibatch_size': 64,
         'max_grad_norm': None,
         'weight_decay': 0,
         'update_exploration': False,
@@ -167,7 +167,7 @@ def run(save_loc, graph_save_loc):
     }
     args['args'] = args
     if TEST_SAMPLING_SPEED:
-        nb_steps = int(1e10)
+        nb_steps = int(1e5)
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
         args['replay_start_size'] = args['initial_exploration_rate'] =0
@@ -180,8 +180,6 @@ def run(save_loc, graph_save_loc):
     sampling_start_time = time.time()
     agent.learn(timesteps=nb_steps, start_time=start, verbose=True)
 
-    if not TEST_SAMPLING_SPEED:
-        plot_scatter(logger_save_path)
 
 if __name__ == "__main__":
     run()
