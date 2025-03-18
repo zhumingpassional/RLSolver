@@ -109,7 +109,7 @@ def run(save_loc, graph_save_loc):
     # SET UP AGENT
     ####################################################
 
-    nb_steps = NB_STEPS
+    nb_steps = 10000
 
     network_fn = lambda: MPNN(n_obs_in=train_envs[0].observation_space.shape[1],
                               n_layers=3,
@@ -152,7 +152,7 @@ def run(save_loc, graph_save_loc):
         'test_episodes': n_validations,
         'logger_save_path': logger_save_path,
         'sampling_speed_save_path': sampling_speed_save_path,
-        'test_frequency': 100,  # 10000
+        'test_frequency': TEST_FREQUENCY,  # 10000
         'test_save_path': test_save_path,
         'test_metric': TestMetric.MAX_CUT,
         'seed': None,
