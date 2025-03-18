@@ -113,7 +113,7 @@ def run(save_loc, graph_save_loc):
     # SET UP AGENT
     ####################################################
 
-    nb_steps = 3000
+    nb_steps = NB_STEPS
 
     network_fn = lambda: MPNN(n_obs_in=train_envs.observation_space.shape[1],
                               n_layers=3,
