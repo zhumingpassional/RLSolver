@@ -2,14 +2,14 @@ import sys
 import os
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
-rlsolver_path = os.path.join(cur_path, '../../../rlsolver')
+rlsolver_path = os.path.join(cur_path, '../../../')
 sys.path.append(os.path.dirname(rlsolver_path))
 from rlsolver.methods.eco_s2v.config.config import *
 
 save_loc = RESULT_DIR
 
-train_network = False
-inference_network = True
+train_network = True
+inference_network = False
 
 if train_network:
     if ALG == Alg.eco:

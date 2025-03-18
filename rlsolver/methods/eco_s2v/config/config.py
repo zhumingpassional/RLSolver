@@ -3,7 +3,7 @@ from torch.cuda import graph
 from rlsolver.methods.config import GraphType
 import os
 cur_path = os.path.dirname(os.path.abspath(__file__))
-rlsolver_path = os.path.join(cur_path, '../../../../rlsolver')
+rlsolver_path = os.path.join(cur_path, '../../../')
 
 GRAPH_TYPE = GraphType.BA
 
@@ -38,7 +38,7 @@ class Alg(Enum):
     eco_torch = 'eco_torch'
     eeco = 'eeco'
 
-ALG = Alg.eco
+ALG = Alg.eeco
 def calc_device(gpu_id: int):
     return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
