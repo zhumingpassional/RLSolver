@@ -1,6 +1,9 @@
 import torch as th
 from torch.cuda import graph
 from rlsolver.methods.config import GraphType
+import os
+cur_path = os.path.dirname(os.path.abspath(__file__))
+rlsolver_path = os.path.join(cur_path, '../../../../rlsolver')
 
 GRAPH_TYPE = GraphType.BA
 
@@ -36,15 +39,14 @@ class Alg(Enum):
     eeco = 'eeco'
 
 ALG = Alg.eco
-
 def calc_device(gpu_id: int):
     return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
-NETWORK_SAVE_PATH = "pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
-DATA_DIR = "../../../rlsolver/data/syn_" + GRAPH_TYPE.value
-RESULT_DIR = "../../result"
-NETWORK_FOLDER = "../../../rlsolver/methods/eco_s2v/pretrained_agent/eco"
+NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
+DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
+RESULT_DIR = rlsolver_path + "/result"
+NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/eco"
 INFERENCE_NETWORK_DIR = None
 
 UPDATE_FREQUENCY = 1

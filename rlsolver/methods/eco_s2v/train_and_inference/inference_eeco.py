@@ -36,8 +36,11 @@ def run(graph_folder="../../data/syn_BA",
     result_folder = os.path.dirname(network_folder) # 保存结果的文件夹
     networks = os.listdir(network_folder)
     obj_vs_time = {}
-
+    data = {}
     for network_name in networks:
+        if network_name.endswith(".json"):
+            with open(network_name,"r") as f:
+                data = f.read()
         if network_name.endswith(".pth"):
             network_time = network_name.split("_")[-1].split(".")[0]
             network_save_path = os.path.join(network_folder, network_name)
@@ -116,9 +119,10 @@ def run(graph_folder="../../data/syn_BA",
                             if result['obj'] > best_obj:  # 记录最佳结果
                                 best_obj = result['obj']
                                 best_sol = result['sol']
-
                         run_duration = time.time() - start_time
-                        # print(best_obj, run_duration)
+                        sol = (best_sol + 1)/2
+                        write_graph_result(best_obj, run_duration, sol.shape[0], ALG.value, sol.to(torch.int), file_list[i], plus1=True)
+
 
                         if obj_vs_time.get(files[i]) is None:
                             obj_vs_time[files[i]] = {}
@@ -126,6 +130,11 @@ def run(graph_folder="../../data/syn_BA",
                             network_time = "0"
                         obj_vs_time[files[i]][network_time] = best_obj
                         print("Result: ", best_obj)
+    if not data:
+        data['n_smis'] = 1
+    data['obj_vs_time'] = obj_vs_time
+    with open(network_result_save_path,'w') as f:
+        json.dump(data,f, indent=4)
 
 
 if __name__ == "__main__":
