@@ -392,31 +392,16 @@ class FLPContext(EnvContext):
         
         # softmax
         loc_best_soft = torch.softmax(dist_improve, dim=-1) # (batch_size, n_points)        
-        # breakpoint()
         embed_best = (embeddings * loc_best_soft[..., None]).sum(-2)
-        # breakpoint()
         return embed_best
     
 class MAXCUTContext(nn.Module):
 
     def __init__(self, embed_dim, linear_bias=True):
         super(MAXCUTContext, self).__init__()
-        self.state_embedding = nn.Linear(100, embed_dim, bias=linear_bias)
-        # self.project_context = nn.Linear(embed_dim, 20, bias=linear_bias)
-        # self.W_placeholder = nn.Parameter(torch.Tensor(2 * embed_dim).uniform_(-1, 1))
-    
+        self.state_embedding = nn.Linear(embed_dim, embed_dim, bias=linear_bias)
+
     def forward(self, embeddings, td):
         cut_improvement = torch.clamp(td['greedy_change'],min=0)
         c_i = torch.softmax(cut_improvement, dim=-1)
-        return (embeddings * c_i.unsqueeze(-1)).sum(-2)
-        # embeddings 的形状为 (batch_size, num_nodes, embed_dim)
-        # td["state"] 的形状为 (batch_size, num_nodes)
-        # breakpoint()
-        # embed_best = torch.sum(embeddings,dim=-1).squeeze(-1)*td['greedy_change']
-        return self.state_embedding(td['greedy_change'])
-
-        # reward = td["reward"]
-        breakpoint()
-        return embed_best
-        # 投影到最终的上下文向量
-        # return self.project_context(context_embedding)
+        return self.state_embedding((embeddings * c_i.unsqueeze(-1)).sum(-2))

@@ -22,14 +22,12 @@ class MaxCutEnv(RL4COEnvBase):
         self,
         generator: MaxCutGenerator = None,
         generator_params: dict = {},
-        check_solution=False,
         **kwargs,
     ):
         super().__init__(**kwargs)
         if generator is None:
             generator = MaxCutGenerator(**generator_params)
         self.generator = generator
-        self.check_solution = check_solution
         self._make_spec(self.generator)
 
     def _step(self, td: TensorDict) -> TensorDict:
@@ -69,6 +67,7 @@ class MaxCutEnv(RL4COEnvBase):
     def _reset(self, td: Optional[TensorDict] = None, batch_size=None) -> TensorDict:
 
         self.to(td.device)
+        # state_ = torch.randint(0, 2, (*batch_size, self.generator.n_spins), dtype=torch.bool, device=td.device)
         state_ = torch.ones((*batch_size,self.generator.n_spins), dtype=torch.bool,device=td.device)
         greedy_change = (torch.matmul(td["adj"], state_.to(torch.float).unsqueeze(-1)).squeeze(-1) * state_.to(torch.float))
 
@@ -77,7 +76,7 @@ class MaxCutEnv(RL4COEnvBase):
                 # given information
                 "adj": td["adj"],  # (batch_size, n_points, dim_loc)
                 "to_choose": td["to_choose"],  # 每个环境的交互次数
-                "state": torch.ones((*batch_size,self.generator.n_spins), dtype=torch.bool),
+                "state": state_,
                 "i": torch.zeros(
                     *batch_size, dtype=torch.int64, device=td.device
                 ),
@@ -96,11 +95,12 @@ class MaxCutEnv(RL4COEnvBase):
         )
 
     def _get_reward(self, td: TensorDict,actions) -> torch.Tensor:
-
+        # breakpoint()
         state = td['state'].to(torch.float)*2-1
-        obj = ((1 / 4) * (torch.matmul(td['adj'],state.unsqueeze(-1)).squeeze(-1) * -state).sum(dim=-1) + (1 / 4)
+        obj = 0.1*((1 / 4) * (torch.matmul(td['adj'],state.unsqueeze(-1)).squeeze(-1) * -state).sum(dim=-1) + (1 / 4)
                         * torch.sum(td['adj'],dim=(-1,-2)))
-
+        
+        # print(state.shape,td['adj'].shape)
         return obj
 
     @staticmethod

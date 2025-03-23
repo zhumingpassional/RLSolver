@@ -4,7 +4,7 @@ import torch
 from tensordict.tensordict import TensorDict
 from torch.distributions import Uniform
 import networkx as nx
-
+import numpy as np
 from rl4co_maxcut.envs.common.utils import Generator, get_sampler
 from rl4co_maxcut.utils.pylogger import get_pylogger
 

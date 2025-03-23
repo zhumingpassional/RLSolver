@@ -11,32 +11,34 @@ from rl4co_maxcut.models import AttentionModelPolicy, AttentionModel
 from rl4co_maxcut.utils import RL4COTrainer
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary
 
-device = "cuda:3"
-# Instantiate generator and environment
-generator = MaxCutGenerator()
-env = MaxCutEnv(generator)
 
+# Instantiate generator and environment
+generator = MaxCutGenerator(n_spins=20)
+env = MaxCutEnv(generator)
 gcn_encoder = GCNEncoder(
     env_name='maxcut', 
-    embed_dim=256,
+    embed_dim=64,
     num_layers=3,
 )
+
 # Create policy and RL model
-policy = AttentionModelPolicy(env_name=env.name, embed_dim=256,num_encoder_layers=6)
-model = AttentionModel(env,policy,batch_size=64,train_data_size=1000, baseline="rollout", optimizer_kwargs={"lr": 1e-4},policy_kwargs={
+policy = AttentionModelPolicy(env_name=env.name, embed_dim=64,num_encoder_layers=6)
+
+model = AttentionModel(env,policy,batch_size=64,train_data_size=90000, optimizer_kwargs={"lr": 1e-4},policy_kwargs={
         'encoder': gcn_encoder
     })
-#20000000
+
+
 checkpoint_callback = ModelCheckpoint(
-    dirpath="checkpoints",  # save to checkpoints/
-    filename="epoch_{epoch:03d}",  # save as epoch_XXX.ckpt
-    save_top_k=1,  # save only the best model
-    save_last=True,  # save the last model
-    monitor="val/reward",  # monitor validation reward
-    mode="max",
-)  # maximize validation reward
+    dirpath="rlsolver/methods/rl4co_maxcut/checkpoint",  # 保存路径
+    filename="maxcut_step_{step:06d}",  # 按步数保存
+    every_n_train_steps=500,  # 每 1000 步保存一次
+    save_top_k=-1,  # 保存所有模型
+    save_last=False,  # 保存最后一个模型
+    mode="max",  # 最大化 reward
+)
 rich_model_summary = RichModelSummary(max_depth=3)  # model summary callback
 callbacks = [checkpoint_callback, rich_model_summary]
-# Instantiate Trainer and fit
-trainer = RL4COTrainer(max_epochs=1, accelerator="gpu", reload_dataloaders_every_n_epochs=2,precision="16-mixed",callbacks=callbacks,devices=[0])
+
+trainer = RL4COTrainer(max_epochs=1, accelerator="gpu",precision="16-mixed",callbacks=callbacks,devices=[4])
 trainer.fit(model)
