@@ -569,20 +569,17 @@ class MTVRPInitEmbedding(VRPInitEmbedding):
 class FLPInitEmbedding(nn.Module):
     def __init__(self, embed_dim: int):
         super().__init__()
-        # breakpoint()
         self.projection = nn.Linear(2, embed_dim, bias=True)
 
     def forward(self, td: TensorDict):
         hdim = self.projection(td["locs"])
-        # breakpoint()
         return hdim
     
 class MAXCUTInitEmbdeeing(nn.Module):
     def __init__(self, embed_dim: int):
         super().__init__()
-        self.init_embed = nn.Linear(100, embed_dim, bias=True)
-
+        self.init_embed = nn.Linear(1, embed_dim, bias=True)
     def forward(self, td: TensorDict):
-        hdim = self.init_embed(td["adj"])
-        # breakpoint()
+        adj = td['adj']
+        hdim = torch.sum(self.init_embed(adj.unsqueeze(-1)),dim=-2).squeeze()
         return hdim
