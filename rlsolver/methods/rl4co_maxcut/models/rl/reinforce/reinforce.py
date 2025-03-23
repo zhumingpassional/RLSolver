@@ -1,4 +1,5 @@
 from typing import IO, Any, Optional, cast
+import time
 
 import torch
 import torch.nn as nn
@@ -42,6 +43,7 @@ class REINFORCE(RL4COLitModule):
         super().__init__(env, policy, **kwargs)
 
         self.save_hyperparameters(logger=False)
+        self.train_start_time = None
 
         if baseline == "critic":
             log.warning(
@@ -61,12 +63,14 @@ class REINFORCE(RL4COLitModule):
     ):
         td = self.env.reset(batch)
         # Perform forward pass (i.e., constructing solution and computing log-likelihoods)
-        # breakpoint()
         out = self.policy(td, self.env, phase=phase, select_best=phase != "train")
-        # breakpoint()
         # Compute loss
         if phase == "train":
             out = self.calculate_loss(td, batch, out)
+            if self.train_start_time is not None:
+                elapsed_time = time.time() - self.train_start_time
+                self.log("train/reward_vs_time", td['reward'].mean(), on_step=True, prog_bar=True)
+                self.log("train/time", elapsed_time, on_step=True, prog_bar=True)
 
         metrics = self.log_metrics(out, phase, dataloader_idx=dataloader_idx)
         return {"loss": out.get("loss", None), **metrics}
