@@ -1,22 +1,16 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from operator import matmul
-from rlsolver.methods.eco_s2v.config.config import *
 import torch
 import numpy as np
 import torch.multiprocessing as mp
-from numba import jit, float64, int64
-import time
 
-from rlsolver.methods.eco_s2v.src.envs.eeco_util import (EdgeType,
-                                                         RewardSignal,
+from rlsolver.methods.eco_s2v.src.envs.eeco_util import (RewardSignal,
                                                          ExtraAction,
                                                          OptimisationTarget,
                                                          Observable,
                                                          SpinBasis,
                                                          DEFAULT_OBSERVABLES,
-                                                         GraphGenerator,
-                                                         RandomGraphGenerator,
                                                          HistoryBuffer)
 
 # A container for get_result function below. Works just like tuple, but prettier.

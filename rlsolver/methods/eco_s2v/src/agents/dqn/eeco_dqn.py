@@ -2,8 +2,6 @@
 Implements a DQN learning agent.
 """
 
-import os
-import pickle
 import random
 import time
 from copy import deepcopy
@@ -16,9 +14,8 @@ import torch.optim as optim
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import  Logger, TestMetric, set_global_seed
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import eeco_ReplayBuffer as ReplayBuffer
 from rlsolver.methods.eco_s2v.src.envs.util import ExtraAction
-from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.config import *
 
-from torch.cuda.amp import autocast, GradScaler
 import math
 import itertools
 

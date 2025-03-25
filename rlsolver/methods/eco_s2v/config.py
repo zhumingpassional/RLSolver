@@ -42,11 +42,11 @@ ALG = Alg.eeco
 def calc_device(gpu_id: int):
     return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
-# NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
-NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
+# NETWORK_SAVE_PATH = "pretrained_agent/eco/eco_BA_20spin_best.pth"
+NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
 DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/"
-NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/"+"eco"
+NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/"+"tmp"
 INFERENCE_NETWORK_DIR = None
 
 UPDATE_FREQUENCY = 1

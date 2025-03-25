@@ -7,19 +7,17 @@ sys.path.append(os.path.dirname(rlsolver_path))
 
 import time
 import torch
-from typing import List
 import networkx as nx
 from rlsolver.methods.eco_s2v.src.envs.inference_network_env import SpinSystemFactory
-from rlsolver.methods.eco_s2v.util import eeco_test_network, load_graph_from_txt,load_graph_set_from_folder
+from rlsolver.methods.eco_s2v.util import eeco_test_network, load_graph_from_txt
 from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
-                                                    RewardSignal, ExtraAction,
-                                                    OptimisationTarget, SpinBasis,
-                                                    DEFAULT_OBSERVABLES, Observable)
+                                                         RewardSignal, ExtraAction,
+                                                         OptimisationTarget, SpinBasis,
+                                                         DEFAULT_OBSERVABLES)
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 
-from rlsolver.methods.util_read_data import read_nxgraphs
 from rlsolver.methods.util_result import write_graph_result
-from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.config import *
 import json
 
 

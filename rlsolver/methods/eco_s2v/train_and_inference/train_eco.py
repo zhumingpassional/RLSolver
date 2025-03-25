@@ -1,14 +1,8 @@
-import os
-import pickle
-
 import matplotlib.pyplot as plt
-import numpy as np
 # from numba.cuda.cudadrv.nvrtc import NVRTC
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import (load_graph_set, mk_dir,
-                                           load_graph_set_from_folder,
-                                           write_sampling_speed,cal_txt_name)
+from rlsolver.methods.eco_s2v.util import (cal_txt_name)
 from rlsolver.methods.eco_s2v.src.agents.dqn.dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.util import (SetGraphGenerator,
@@ -17,8 +11,7 @@ from rlsolver.methods.eco_s2v.src.envs.util import (SetGraphGenerator,
                                                     OptimisationTarget, SpinBasis, ValidationGraphGenerator,
                                                     DEFAULT_OBSERVABLES)
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
-from rlsolver.methods.eco_s2v.config.config import *
-from rlsolver.methods.eco_s2v.plot import plot_scatter
+from rlsolver.methods.eco_s2v.config import *
 
 try:
     import seaborn as sns

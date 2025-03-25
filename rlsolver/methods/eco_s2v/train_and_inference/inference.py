@@ -1,22 +1,17 @@
-import os
 import time
 import torch
-from concurrent.futures import ProcessPoolExecutor
-from typing import List
 
-import rlsolver.methods.eco_s2v.src.envs.core as ising_env
 from rlsolver.methods.eco_s2v.util import test_network, load_graph_set_from_txt
 from rlsolver.methods.eco_s2v.src.envs.util import (SingleGraphGenerator,
                                                     RewardSignal, ExtraAction,
                                                     OptimisationTarget, SpinBasis,
                                                     DEFAULT_OBSERVABLES, Observable)
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
-from rlsolver.methods.util_read_data import read_nxgraphs
 from rlsolver.methods.util_result import write_graph_result
-from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.config import *
 from rlsolver.methods.util import calc_txt_files_with_prefixes
 from rlsolver.methods.eco_s2v.src.envs.spinsystem import SpinSystemFactory
-from rlsolver.methods.eco_s2v.config.config import INFERENCE_DEVICE
+from rlsolver.methods.eco_s2v.config import INFERENCE_DEVICE
 
 
 # def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, device, network_fn, network_args,

@@ -4,14 +4,14 @@ import os
 cur_path = os.path.dirname(os.path.abspath(__file__))
 rlsolver_path = os.path.join(cur_path, '../../../')
 sys.path.append(os.path.dirname(rlsolver_path))
-from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.config import *
 
 save_loc = RESULT_DIR
 
-train_network = True
-inference_network = False
+train_inference_network = 0  # 0: train, 1: inference
+assert train_inference_network in [0, 1]
 
-if train_network:
+if train_inference_network == 0:
     if ALG == Alg.eco:
         from rlsolver.methods.eco_s2v.train_and_inference.train_eco import run
     elif ALG == Alg.s2v:
@@ -25,7 +25,7 @@ if train_network:
     run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)
 
 
-if inference_network:
+if train_inference_network == 1:
     if ALG == Alg.eeco:
         from rlsolver.methods.eco_s2v.train_and_inference.inference_eeco import run
         run(graph_folder=DATA_DIR,

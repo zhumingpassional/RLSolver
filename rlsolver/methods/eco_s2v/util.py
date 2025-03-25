@@ -1,4 +1,3 @@
-import os
 import pickle
 import networkx as nx
 import time
@@ -8,7 +7,6 @@ import pandas as pd
 import torch
 import string
 import tqdm
-import torch.jit as jit
 
 from collections import namedtuple
 from copy import deepcopy
@@ -16,7 +14,7 @@ from copy import deepcopy
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
 from rlsolver.methods.eco_s2v.src.envs.util import (SingleGraphGenerator, SpinBasis)
 from rlsolver.methods.eco_s2v.src.agents.solver import Network, Greedy
-from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.config import *
 
 
 ####################################################

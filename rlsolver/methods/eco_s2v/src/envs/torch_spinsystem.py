@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from operator import matmul
-from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.config import *
 import torch
 import numpy as np
 import torch.multiprocessing as mp
-from numba import jit, float64, int64
+from numba import jit
 
 from rlsolver.methods.eco_s2v.src.envs.torch_util import (EdgeType,
                             RewardSignal,
