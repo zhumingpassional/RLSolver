@@ -1,7 +1,7 @@
-from rl4co_maxcut.envs.common.base import RL4COEnvBase
-from rl4co_maxcut.models.rl import REINFORCE
-from rl4co_maxcut.models.rl.reinforce.baselines import REINFORCEBaseline
-from rl4co_maxcut.models.zoo.am.policy import AttentionModelPolicy
+from rlsolver.methods.rl4co_maxcut.envs.common.base import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.models.rl import REINFORCE
+from rlsolver.methods.rl4co_maxcut.models.rl.reinforce.baselines import REINFORCEBaseline
+from rlsolver.methods.rl4co_maxcut.models.zoo.am.policy import AttentionModelPolicy
 
 
 class AttentionModel(REINFORCE):

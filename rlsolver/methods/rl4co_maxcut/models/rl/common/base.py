@@ -5,14 +5,15 @@ from typing import Any, Iterable
 
 import torch
 import torch.nn as nn
+import time
 
 from lightning import LightningModule
 from torch.utils.data import DataLoader
 
-from rl4co_maxcut.data.generate_data import generate_default_datasets
-from rl4co_maxcut.envs.common.base import RL4COEnvBase
-from rl4co_maxcut.utils.optim_helpers import create_optimizer, create_scheduler
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.data.generate_data import generate_default_datasets
+from rlsolver.methods.rl4co_maxcut.envs.common.base import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.utils.optim_helpers import create_optimizer, create_scheduler
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 
@@ -81,7 +82,6 @@ class RL4COLitModule(LightningModule, metaclass=abc.ABCMeta):
 
         self.env = env
         self.policy = policy
-
         self.instantiate_metrics(metrics)
         self.log_on_step = log_on_step
 
@@ -107,6 +107,8 @@ class RL4COLitModule(LightningModule, metaclass=abc.ABCMeta):
 
         self.shuffle_train_dataloader = shuffle_train_dataloader
         self.dataloader_num_workers = dataloader_num_workers
+    def on_train_start(self):
+        self.train_start_time = time.time()
 
     def instantiate_metrics(self, metrics: dict):
         """Dictionary of metrics to be logged at each phase"""

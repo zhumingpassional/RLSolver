@@ -10,8 +10,8 @@ import torch.nn.functional as F
 
 from einops import rearrange
 
-from rl4co_maxcut.models.nn.moe import MoE
-from rl4co_maxcut.utils import get_pylogger
+from rlsolver.methods.rl4co_maxcut.models.nn.moe import MoE
+from rlsolver.methods.rl4co_maxcut.utils import get_pylogger
 
 log = get_pylogger(__name__)
 

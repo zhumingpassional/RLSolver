@@ -9,12 +9,12 @@ from lightning.pytorch.core.saving import _load_from_checkpoint
 from tensordict import TensorDict
 from typing_extensions import Self
 
-from rl4co_maxcut.envs.common.base import RL4COEnvBase
-from rl4co_maxcut.models.rl.common.base import RL4COLitModule
-from rl4co_maxcut.models.rl.common.utils import RewardScaler
-from rl4co_maxcut.models.rl.reinforce.baselines import REINFORCEBaseline, get_reinforce_baseline
-from rl4co_maxcut.utils.lightning import get_lightning_device
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.envs.common.base import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.models.rl.common.base import RL4COLitModule
+from rlsolver.methods.rl4co_maxcut.models.rl.common.utils import RewardScaler
+from rlsolver.methods.rl4co_maxcut.models.rl.reinforce.baselines import REINFORCEBaseline, get_reinforce_baseline
+from rlsolver.methods.rl4co_maxcut.utils.lightning import get_lightning_device
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 
@@ -41,9 +41,9 @@ class REINFORCE(RL4COLitModule):
         **kwargs,
     ):
         super().__init__(env, policy, **kwargs)
+        self.train_start_time = None
 
         self.save_hyperparameters(logger=False)
-        self.train_start_time = None
 
         if baseline == "critic":
             log.warning(

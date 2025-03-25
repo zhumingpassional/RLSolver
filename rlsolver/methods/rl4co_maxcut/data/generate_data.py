@@ -5,8 +5,8 @@ import sys
 
 import numpy as np
 
-from rl4co_maxcut.data.utils import check_extension
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.data.utils import check_extension
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

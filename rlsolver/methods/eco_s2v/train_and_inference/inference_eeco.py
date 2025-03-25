@@ -33,19 +33,17 @@ def run(graph_folder="../../data/syn_BA",
         n_sims=1,
         mini_sims=10):  # 设置 mini_sims 以减少显存占用
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
-    result_folder = os.path.dirname(network_folder) # 保存结果的文件夹
+    network_result_save_path = network_folder + "/" +network_folder.split("/")[-1]+ ".json"
     networks = os.listdir(network_folder)
     obj_vs_time = {}
     data = {}
     for network_name in networks:
         if network_name.endswith(".json"):
-            with open(network_name,"r") as f:
-                data = f.read()
+            with open(os.path.join(network_folder, network_name),"r") as f:
+                data = json.load(f)
         if network_name.endswith(".pth"):
             network_time = network_name.split("_")[-1].split(".")[0]
             network_save_path = os.path.join(network_folder, network_name)
-            parts = network_save_path.split(".")
-            network_result_save_path = parts[0] + ".json"
             print("Testing network: ", network_save_path)
 
             network_fn = MPNN

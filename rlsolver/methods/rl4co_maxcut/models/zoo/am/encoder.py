@@ -5,10 +5,10 @@ import torch.nn as nn
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co_maxcut.envs import RL4COEnvBase
-from rl4co_maxcut.models.common.constructive import AutoregressiveEncoder
-from rl4co_maxcut.models.nn.env_embeddings import env_init_embedding
-from rl4co_maxcut.models.nn.graph.attnnet import GraphAttentionNetwork
+from rlsolver.methods.rl4co_maxcut.envs import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.models.common.constructive import AutoregressiveEncoder
+from rlsolver.methods.rl4co_maxcut.models.nn.env_embeddings import env_init_embedding
+from rlsolver.methods.rl4co_maxcut.models.nn.graph.attnnet import GraphAttentionNetwork
 
 
 class AttentionModelEncoder(AutoregressiveEncoder):

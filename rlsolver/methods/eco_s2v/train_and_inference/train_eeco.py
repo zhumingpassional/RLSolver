@@ -106,7 +106,7 @@ def run(save_loc, graph_save_loc):
     loss_save_path = pre_fix + "/losses.pkl"
     logger_save_path = pre_fix + f"/logger.json"
     sampling_speed_save_path = pre_fix + "/sampling_speed.json"
-    print('pre_fix:', pre_fix)
+    print('pre_fix:', pre_fix.split("/")[-1])
     
 
     ####################################################

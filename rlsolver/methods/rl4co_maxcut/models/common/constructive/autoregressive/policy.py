@@ -1,4 +1,4 @@
-from rl4co_maxcut.models.common.constructive.base import ConstructivePolicy
+from rlsolver.methods.rl4co_maxcut.models.common.constructive.base import ConstructivePolicy
 
 from .decoder import AutoregressiveDecoder
 from .encoder import AutoregressiveEncoder

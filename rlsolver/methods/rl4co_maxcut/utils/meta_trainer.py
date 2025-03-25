@@ -5,7 +5,7 @@ import copy
 from torch.optim import Adam
 
 from lightning import Callback
-from rl4co_maxcut import utils
+from rlsolver.methods.rl4co_maxcut import utils
 import random
 log = utils.get_pylogger(__name__)
 

@@ -11,7 +11,7 @@ from lightning.pytorch.loggers import Logger
 from lightning.pytorch.strategies import DDPStrategy, Strategy
 from lightning.pytorch.utilities.types import EVAL_DATALOADERS, TRAIN_DATALOADERS
 
-from rl4co_maxcut import utils
+from rlsolver.methods.rl4co_maxcut import utils
 
 log = utils.get_pylogger(__name__)
 

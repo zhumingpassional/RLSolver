@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from tensordict import TensorDict
 
-from rl4co_maxcut.utils.ops import gather_by_index
+from rlsolver.methods.rl4co_maxcut.utils.ops import gather_by_index
 
 
 def env_context_embedding(env_name: str, config: dict) -> nn.Module:
