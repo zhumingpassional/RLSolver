@@ -1,25 +1,16 @@
-import os
-import pickle
-
 import matplotlib.pyplot as plt
-import numpy as np
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import (load_graph_set, mk_dir, load_graph_set_from_folder, 
-                                           write_sampling_speed,write_sampling_speed,
-                                           cal_txt_name)
+from rlsolver.methods.eco_s2v.util import (cal_txt_name)
 from rlsolver.methods.eco_s2v.src.agents.dqn.eeco_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
-from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
-                                                         RandomBarabasiAlbertGraphGenerator,
+from rlsolver.methods.eco_s2v.src.envs.eeco_util import (RandomBarabasiAlbertGraphGenerator,
                                                          RandomErdosRenyiGraphGenerator,
                                                          EdgeType, RewardSignal, ExtraAction,
                                                          OptimisationTarget, SpinBasis, ValidationGraphGenerator,
                                                          DEFAULT_OBSERVABLES)
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
-from rlsolver.methods.eco_s2v.config.config import *
-import torch
-from rlsolver.methods.eco_s2v.plot import plot_scatter
+from rlsolver.methods.eco_s2v.config import *
 
 try:
     import seaborn as sns

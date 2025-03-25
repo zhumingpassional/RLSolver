@@ -3,13 +3,10 @@ import pickle
 import random
 import threading
 from collections import namedtuple
-from enum import Enum
-from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.config import *
 import os
-import string
 import numpy as np
 import torch
-from rlsolver.methods.eco_s2v.util import cal_txt_name
 import json
 
 Transition = namedtuple(

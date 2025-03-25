@@ -1,11 +1,10 @@
 import random
 from abc import ABC, abstractmethod
-from enum import Enum
 
 import networkx as nx
 import numpy as np
 import torch
-from rlsolver.methods.eco_s2v.config.config import *
+from rlsolver.methods.eco_s2v.config import *
 
 class EdgeType(Enum):
 
