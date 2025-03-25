@@ -5,8 +5,8 @@ from tensordict.tensordict import TensorDict
 from torch.distributions import Uniform
 import networkx as nx
 import numpy as np
-from rl4co_maxcut.envs.common.utils import Generator, get_sampler
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.envs.common.utils import Generator, get_sampler
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

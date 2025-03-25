@@ -1,8 +1,8 @@
-from rl4co_maxcut.utils.instantiators import instantiate_callbacks, instantiate_loggers
-from rl4co_maxcut.utils.pylogger import get_pylogger
-from rl4co_maxcut.utils.rich_utils import enforce_tags, print_config_tree
-from rl4co_maxcut.utils.trainer import RL4COTrainer
-from rl4co_maxcut.utils.utils import (
+from rlsolver.methods.rl4co_maxcut.utils.instantiators import instantiate_callbacks, instantiate_loggers
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.utils.rich_utils import enforce_tags, print_config_tree
+from rlsolver.methods.rl4co_maxcut.utils.trainer import RL4COTrainer
+from rlsolver.methods.rl4co_maxcut.utils.utils import (
     extras,
     get_metric_value,
     log_hyperparameters,

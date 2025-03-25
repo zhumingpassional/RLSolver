@@ -39,7 +39,7 @@ class MPNN(nn.Module):
         return norm.float()
     
     # @torch.autocast(device_type="cuda")
-    def forward(self, obs):
+    def forward(self, obs,use_tensor_core=False):
         if obs.dim() == 2:
             obs = obs.unsqueeze(0)
 
@@ -50,7 +50,10 @@ class MPNN(nn.Module):
 
         # Get graph adj matrix.
         adj = obs[:, :, self.n_obs_in:]
-        norm = self.get_normalisation(adj)
+        if use_tensor_core:
+            norm = self.get_normalisation(adj).half()
+        else:
+            norm = self.get_normalisation(adj)
         init_node_embeddings = self.node_init_embedding_layer(node_features)
         edge_embeddings = self.edge_embedding_layer(node_features, adj, norm)
 

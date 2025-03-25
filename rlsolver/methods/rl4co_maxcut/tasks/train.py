@@ -9,8 +9,8 @@ from lightning import Callback, LightningModule
 from lightning.pytorch.loggers import Logger
 from omegaconf import DictConfig
 
-from rl4co_maxcut import utils
-from rl4co_maxcut.utils import RL4COTrainer
+from rlsolver.methods.rl4co_maxcut import utils
+from rlsolver.methods.rl4co_maxcut.utils import RL4COTrainer
 
 pyrootutils.setup_root(__file__, indicator=".gitignore", pythonpath=True)
 

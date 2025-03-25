@@ -4,11 +4,11 @@ import torch.nn as nn
 
 from torch import Tensor
 
-from rl4co_maxcut.models.nn.mlp import MLP
-from rl4co_maxcut.models.nn.moe import MoE
-from rl4co_maxcut.models.nn.attention import MultiHeadAttention
-from rl4co_maxcut.models.nn.ops import Normalization, SkipConnection
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.models.nn.mlp import MLP
+from rlsolver.methods.rl4co_maxcut.models.nn.moe import MoE
+from rlsolver.methods.rl4co_maxcut.models.nn.attention import MultiHeadAttention
+from rlsolver.methods.rl4co_maxcut.models.nn.ops import Normalization, SkipConnection
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

@@ -7,8 +7,8 @@ import torch
 from tensordict.tensordict import TensorDict
 from torch import Tensor
 
-from rl4co_maxcut.utils.ops import batchify
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.utils.ops import batchify
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

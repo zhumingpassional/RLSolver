@@ -1,10 +1,10 @@
 # Base environment
-from rl4co_maxcut.envs.common.base import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.envs.common.base import RL4COEnvBase
 
 
 
 # Graph
-from rl4co_maxcut.envs.graph import  MaxCutEnv
+from rlsolver.methods.rl4co_maxcut.envs.graph import  MaxCutEnv
 
 
 

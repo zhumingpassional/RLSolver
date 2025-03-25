@@ -35,7 +35,7 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
         network.half()
     @torch.no_grad()
     def predict(network, states):
-        qs = network(states)
+        qs = network(states,USE_TENSOR_CORE)
         if qs.dim() == 1:
             actions = qs.argmax().item()
         else:

@@ -8,13 +8,13 @@ from einops import rearrange
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co_maxcut.envs import RL4COEnvBase
-from rl4co_maxcut.models.common.constructive.autoregressive.decoder import AutoregressiveDecoder
-from rl4co_maxcut.models.nn.attention import PointerAttention, PointerAttnMoE
-from rl4co_maxcut.models.nn.env_embeddings import env_context_embedding, env_dynamic_embedding
-from rl4co_maxcut.models.nn.env_embeddings.dynamic import StaticEmbedding
-from rl4co_maxcut.utils.ops import batchify, unbatchify
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.envs import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.models.common.constructive.autoregressive.decoder import AutoregressiveDecoder
+from rlsolver.methods.rl4co_maxcut.models.nn.attention import PointerAttention, PointerAttnMoE
+from rlsolver.methods.rl4co_maxcut.models.nn.env_embeddings import env_context_embedding, env_dynamic_embedding
+from rlsolver.methods.rl4co_maxcut.models.nn.env_embeddings.dynamic import StaticEmbedding
+from rlsolver.methods.rl4co_maxcut.utils.ops import batchify, unbatchify
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

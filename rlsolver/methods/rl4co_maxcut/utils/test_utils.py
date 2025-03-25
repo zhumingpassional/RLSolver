@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 
-from rl4co_maxcut.envs import (
+from rlsolver.methods.rl4co_maxcut.envs import (
     CVRPEnv,
     CVRPTWEnv,
     DPPEnv,

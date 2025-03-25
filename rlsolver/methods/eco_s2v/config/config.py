@@ -23,7 +23,7 @@ INFERENCE_GPU_ID = 0
 NUM_INFERENCE_SIMS = 50
 MINI_INFERENCE_SIMS = 50 
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000,10000]
-USE_TENSOR_CORE = False
+USE_TENSOR_CORE = True 
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
 NUM_TRAINED_NODES_IN_INFERENCE = 20
 # PREFIXES = ["BA_100_", "BA_200_", "BA_300_", "BA_400_", "BA_500_", "BA_600_", "BA_700_", "BA_800_", "BA_900_",
@@ -45,8 +45,8 @@ def calc_device(gpu_id: int):
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/network_best_BA_20spin.pth"
 NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "/network_best_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin.pth"
 DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
-RESULT_DIR = rlsolver_path + "/result"
-NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/eco"
+RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/"
+NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/"+"eco"
 INFERENCE_NETWORK_DIR = None
 
 UPDATE_FREQUENCY = 1

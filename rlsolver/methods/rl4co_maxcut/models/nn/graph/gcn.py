@@ -10,9 +10,9 @@ try:
     from torch_geometric.nn import GCNConv
 except ImportError:
     GCNConv = None
-from rl4co_maxcut.models.nn.env_embeddings import env_init_embedding
-from rl4co_maxcut.utils.ops import get_full_graph_edge_index
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.models.nn.env_embeddings import env_init_embedding
+from rlsolver.methods.rl4co_maxcut.utils.ops import get_full_graph_edge_index
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

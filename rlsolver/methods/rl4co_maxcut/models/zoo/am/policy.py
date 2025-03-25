@@ -2,9 +2,9 @@ from typing import Callable
 
 import torch.nn as nn
 
-from rl4co_maxcut.models.common.constructive.autoregressive.policy import AutoregressivePolicy
-from rl4co_maxcut.models.zoo.am.decoder import AttentionModelDecoder
-from rl4co_maxcut.models.zoo.am.encoder import AttentionModelEncoder
+from rlsolver.methods.rl4co_maxcut.models.common.constructive.autoregressive.policy import AutoregressivePolicy
+from rlsolver.methods.rl4co_maxcut.models.zoo.am.decoder import AttentionModelDecoder
+from rlsolver.methods.rl4co_maxcut.models.zoo.am.encoder import AttentionModelEncoder
 
 
 class AttentionModelPolicy(AutoregressivePolicy):

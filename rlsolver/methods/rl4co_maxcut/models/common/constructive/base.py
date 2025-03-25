@@ -7,14 +7,14 @@ import torch.nn as nn
 from tensordict import TensorDict
 from torch import Tensor
 
-from rl4co_maxcut.envs import RL4COEnvBase, get_env
-from rl4co_maxcut.utils.decoding import (
+from rlsolver.methods.rl4co_maxcut.envs import RL4COEnvBase, get_env
+from rlsolver.methods.rl4co_maxcut.utils.decoding import (
     DecodingStrategy,
     get_decoding_strategy,
     get_log_likelihood,
 )
-from rl4co_maxcut.utils.ops import calculate_entropy
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.utils.ops import calculate_entropy
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

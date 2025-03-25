@@ -1,6 +1,6 @@
 import abc
 
-from rl4co_maxcut.models.common.constructive.base import ConstructiveDecoder
+from rlsolver.methods.rl4co_maxcut.models.common.constructive.base import ConstructiveDecoder
 
 
 class AutoregressiveDecoder(ConstructiveDecoder, metaclass=abc.ABCMeta):

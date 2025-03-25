@@ -10,8 +10,8 @@ try:
 except ImportError:
     Batch = Data = None
 
-from rl4co_maxcut.utils.ops import get_distance_matrix, get_full_graph_edge_index, sparsify_graph
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.utils.ops import get_distance_matrix, get_full_graph_edge_index, sparsify_graph
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

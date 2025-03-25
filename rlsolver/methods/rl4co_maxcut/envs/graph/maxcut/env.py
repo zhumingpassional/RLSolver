@@ -5,9 +5,9 @@ import torch
 from tensordict.tensordict import TensorDict
 from torchrl.data import Bounded, Composite, Unbounded
 
-from rl4co_maxcut.envs.common.base import RL4COEnvBase
-from rl4co_maxcut.utils.ops import gather_by_index
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.envs.common.base import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.utils.ops import gather_by_index
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 from .generator import MaxCutGenerator
 

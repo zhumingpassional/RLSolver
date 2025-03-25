@@ -7,9 +7,9 @@ import torch.nn.functional as F
 
 from tensordict.tensordict import TensorDict
 
-from rl4co_maxcut.envs import RL4COEnvBase
-from rl4co_maxcut.utils.ops import batchify, gather_by_index, unbatchify, unbatchify_and_gather
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.envs import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.utils.ops import batchify, gather_by_index, unbatchify, unbatchify_and_gather
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

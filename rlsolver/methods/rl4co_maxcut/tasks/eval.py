@@ -6,8 +6,8 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
-from rl4co_maxcut.data.transforms import StateAugmentation
-from rl4co_maxcut.utils.ops import batchify, gather_by_index, sample_n_random_actions, unbatchify
+from rlsolver.methods.rl4co_maxcut.data.transforms import StateAugmentation
+from rlsolver.methods.rl4co_maxcut.utils.ops import batchify, gather_by_index, sample_n_random_actions, unbatchify
 
 
 def check_unused_kwargs(class_, kwargs):
@@ -420,7 +420,7 @@ if __name__ == "__main__":
 
     import torch
 
-    from rl4co_maxcut.envs import get_env
+    from rlsolver.methods.rl4co_maxcut.envs import get_env
 
     parser = argparse.ArgumentParser()
 

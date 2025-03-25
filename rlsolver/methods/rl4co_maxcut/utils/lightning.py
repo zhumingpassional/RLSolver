@@ -6,7 +6,7 @@ import torch
 from omegaconf import DictConfig
 
 # from rl4co.
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 

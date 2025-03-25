@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.distributions.normal import Normal
 
-from rl4co_maxcut.models.nn.mlp import MLP
+from rlsolver.methods.rl4co_maxcut.models.nn.mlp import MLP
 
 """
     Pytorch Implementation based on <https://arxiv.org/abs/1701.06538>

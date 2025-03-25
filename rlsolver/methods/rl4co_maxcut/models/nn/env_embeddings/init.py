@@ -3,8 +3,8 @@ import torch.nn as nn
 
 from tensordict.tensordict import TensorDict
 
-from rl4co_maxcut.models.nn.ops import PositionalEncoding
-from rl4co_maxcut.utils.ops import cartesian_to_polar
+from rlsolver.methods.rl4co_maxcut.models.nn.ops import PositionalEncoding
+from rlsolver.methods.rl4co_maxcut.utils.ops import cartesian_to_polar
 
 
 def env_init_embedding(env_name: str, config: dict) -> nn.Module:

@@ -9,9 +9,9 @@ from scipy.stats import ttest_rel
 from tensordict import TensorDict
 from torch.utils.data import DataLoader, Dataset
 
-from rl4co_maxcut.envs.common.base import RL4COEnvBase
-from rl4co_maxcut.models.rl.common.critic import CriticNetwork, create_critic_from_actor
-from rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.rl4co_maxcut.envs.common.base import RL4COEnvBase
+from rlsolver.methods.rl4co_maxcut.models.rl.common.critic import CriticNetwork, create_critic_from_actor
+from rlsolver.methods.rl4co_maxcut.utils.pylogger import get_pylogger
 
 log = get_pylogger(__name__)
 
