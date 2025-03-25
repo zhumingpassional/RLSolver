@@ -3,7 +3,7 @@ from torch.cuda import graph
 from rlsolver.methods.config import GraphType
 import os
 cur_path = os.path.dirname(os.path.abspath(__file__))
-rlsolver_path = os.path.join(cur_path, '../../../')
+rlsolver_path = os.path.join(cur_path, '../../')
 
 GRAPH_TYPE = GraphType.BA
 
