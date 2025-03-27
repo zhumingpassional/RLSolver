@@ -1,6 +1,6 @@
 import torch
 
-from rlsolver.methods.iSCO.config.tsp_config import *
+from rlsolver.methods.iSCO.config.config_tsp import *
 from rlsolver.methods.iSCO.util import math_util
 
 

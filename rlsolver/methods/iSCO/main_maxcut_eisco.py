@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(rlsolver_path))
 
 from absl import app
 from rlsolver.envs.env_eisco_maxcut import iSCO
-from rlsolver.methods.iSCO.config.maxcut_config import *
+from rlsolver.methods.iSCO.config.config_maxcut import *
 from rlsolver.methods.iSCO.util import maxcut_util
 import torch
 import time

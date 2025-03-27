@@ -1,4 +1,4 @@
-from rlsolver.methods.iSCO.config.tsp_config import *
+from rlsolver.methods.iSCO.config.config_tsp import *
 import os
 import torch
 import numpy as np

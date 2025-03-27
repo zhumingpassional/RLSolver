@@ -1,5 +1,5 @@
 import torch
-from rlsolver.methods.iSCO.config.mis_config import *
+from rlsolver.methods.iSCO.config.config_mis import *
 from torch.func import vmap
 from rlsolver.methods.iSCO.util import math_util
 

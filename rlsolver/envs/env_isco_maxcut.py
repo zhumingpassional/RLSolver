@@ -1,5 +1,5 @@
 import torch
-from rlsolver.methods.iSCO.config.maxcut_config import *
+from rlsolver.methods.iSCO.config.config_maxcut import *
 from torch.func import vmap
 from rlsolver.methods.iSCO.util import math_util
 
