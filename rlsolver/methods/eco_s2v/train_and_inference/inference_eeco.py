@@ -72,7 +72,7 @@ def run(graph_folder="../../data/syn_BA",
                     'basin_reward': 1. / NUM_TRAIN_NODES,
                     'reversible_spins': True,
                     'if_greedy': if_greedy,
-                    'use_tensor_core': USE_TENSOR_CORE
+                    'use_tensor_core': USE_TENSOR_CORE_IN_INFERENCE
                 }
 
             step_factor = 2
@@ -110,7 +110,7 @@ def run(graph_folder="../../data/syn_BA",
                             )
 
                             start_time = time.time()
-                            result, sol = eeco_test_network(network, test_env, USE_TENSOR_CORE, INFERENCE_DEVICE)
+                            result, sol = eeco_test_network(network, test_env, USE_TENSOR_CORE_IN_INFERENCE, INFERENCE_DEVICE)
 
                             if result['obj'] > best_obj:  # 记录最佳结果
                                 best_obj = result['obj']
