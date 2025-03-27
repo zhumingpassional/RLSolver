@@ -1,14 +1,20 @@
-import torch as th
-from torch.cuda import graph
-from rlsolver.methods.config import GraphType
+from enum import Enum
 import os
 cur_path = os.path.dirname(os.path.abspath(__file__))
 rlsolver_path = os.path.join(cur_path, '../../')
+from rlsolver.methods.config import GraphType
+from rlsolver.methods.util import calc_device
+class Alg(Enum):
+    eco = "eco"
+    s2v = "s2v"
+    eco_torch = 'eco_torch'
+    eeco = 'eeco'
 
+ALG = Alg.eeco
 GRAPH_TYPE = GraphType.BA
 
-GPU_ID = 0
-BUFFER_GPU_ID = 0
+GPU_ID_IN_TRAIN = 0
+GPU_ID_IN_BUFFER_OF_TRAIN = 0
 
 #训练的参数
 NUM_TRAIN_NODES = 200
@@ -19,28 +25,17 @@ NUM_VALIDATION_SIMS = 2 ** 2
 TEST_SAMPLING_SPEED = False
 
 #推理的参数
-INFERENCE_GPU_ID = 0
+GPU_ID_IN_INFERENCE = 0
 NUM_INFERENCE_SIMS = 50
 MINI_INFERENCE_SIMS = 50 
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000,10000]
-USE_TENSOR_CORE = True 
+USE_TENSOR_CORE_IN_INFERENCE = True
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
 NUM_TRAINED_NODES_IN_INFERENCE = 20
 # PREFIXES = ["BA_100_", "BA_200_", "BA_300_", "BA_400_", "BA_500_", "BA_600_", "BA_700_", "BA_800_", "BA_900_",
 #             "BA_1000_", "BA_1100_", "BA_1200_", "BA_2000_", "BA_3000_", "BA_4000_",
 #             "BA_5000_"]  # Replace with your desired prefixes
 
-from enum import Enum
-
-class Alg(Enum):
-    eco = "eco"
-    s2v = "s2v"
-    eco_torch = 'eco_torch'
-    eeco = 'eeco'
-
-ALG = Alg.eeco
-def calc_device(gpu_id: int):
-    return th.device(f'cuda:{gpu_id}' if th.cuda.is_available() and gpu_id >= 0 else 'cpu')
 
 # NETWORK_SAVE_PATH = "pretrained_agent/eco/eco_BA_20spin_best.pth"
 NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
@@ -50,9 +45,9 @@ NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/"+"tmp"
 INFERENCE_NETWORK_DIR = None
 
 UPDATE_FREQUENCY = 1
-TRAIN_DEVICE = calc_device(GPU_ID)
-INFERENCE_DEVICE = calc_device(INFERENCE_GPU_ID)
-BUFFER_DEVICE = calc_device(BUFFER_GPU_ID)
+TRAIN_DEVICE = calc_device(GPU_ID_IN_TRAIN)
+INFERENCE_DEVICE = calc_device(GPU_ID_IN_INFERENCE)
+BUFFER_DEVICE = calc_device(GPU_ID_IN_BUFFER_OF_TRAIN)
 
 if GRAPH_TYPE == GraphType.BA:
     if NUM_TRAIN_NODES == 20:

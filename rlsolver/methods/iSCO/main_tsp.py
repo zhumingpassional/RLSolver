@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(rlsolver_path))
 
 from absl import app
 from rlsolver.envs.env_isco_tsp import iSCO
-from rlsolver.methods.iSCO.config.tsp_config import *
+from rlsolver.methods.iSCO.config.config_tsp import *
 from rlsolver.methods.iSCO.util import tsp_util
 import torch
 import time
