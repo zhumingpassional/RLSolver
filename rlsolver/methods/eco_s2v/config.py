@@ -37,11 +37,11 @@ NUM_TRAINED_NODES_IN_INFERENCE = 20
 #             "BA_5000_"]  # Replace with your desired prefixes
 
 
-# NETWORK_SAVE_PATH = "pretrained_agent/eco/eco_BA_20spin_best.pth"
+# NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/eco_BA_20spin_best.pth"
 NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
 DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
-RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/"
-NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/"+"tmp"
+RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp"
+NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/"+""
 INFERENCE_NETWORK_DIR = None
 
 UPDATE_FREQUENCY = 1
