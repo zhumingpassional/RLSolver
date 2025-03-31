@@ -90,7 +90,7 @@ def run(save_loc, graph_save_loc):
                                 n_sims=n_validations)
 
     pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_" + str(
-        NUM_TRAIN_SIMS) + "_"
+        NUM_TRAIN_SIMS)
     pre_fix = cal_txt_name(pre_fix)
     network_save_path = pre_fix + "/network.pth"
     test_save_path = pre_fix + "/test_scores.pkl"

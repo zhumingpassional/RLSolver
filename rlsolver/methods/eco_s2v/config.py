@@ -41,7 +41,7 @@ NUM_TRAINED_NODES_IN_INFERENCE = 20
 NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
 DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp"
-NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/"+"eeco_BA_200_4_"
+NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/"+""
 INFERENCE_NETWORK_DIR = None
 
 UPDATE_FREQUENCY = 1
