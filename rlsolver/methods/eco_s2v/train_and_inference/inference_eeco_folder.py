@@ -138,7 +138,7 @@ def run(graph_folder="../../data/syn_BA",
     if best_network[1] is not None:
     # 复制最佳网络文件到目标文件夹
         best_network_path = os.path.join(network_folder, best_network[1])
-        target_path = network_folder.replace("tmp/", "") + "best.pth"
+        target_path = network_folder + "/best_network.pth"
         shutil.copy(best_network_path, target_path)  # 复制文件
 if __name__ == "__main__":
     run(graph_folder=DATA_DIR,
