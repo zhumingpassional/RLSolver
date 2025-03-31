@@ -193,7 +193,7 @@ class DQN:
         self.replay_buffer = ReplayBuffer(self.replay_buffer_size,sampling_patten=self.sampling_patten
                                           ,device=self.buffer_device,n_matrix=self.n_matrix
                                           ,matrix_index_cycle=matrix_index_cycle)
-        self.seed = int(random.randint(0, 1e6)) if seed is None else seed
+        self.seed = random.randint(0, 1000000) if seed is None else seed
         
         set_global_seed(self.seed, self.env)
         
