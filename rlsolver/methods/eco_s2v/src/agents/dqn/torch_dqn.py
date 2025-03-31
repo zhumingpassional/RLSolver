@@ -183,7 +183,7 @@ class DQN:
 
         self.replay_buffer = self.get_replay_buffer_for_env(self.env)
 
-        self.seed = random.randint(0, 1e6) if seed is None else seed
+        self.seed = random.randint(0, 1000000) if seed is None else seed
 
         for env in self.envs:
             set_global_seed(self.seed, env)
