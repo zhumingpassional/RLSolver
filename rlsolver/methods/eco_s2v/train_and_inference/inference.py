@@ -13,63 +13,6 @@ from rlsolver.methods.util import calc_txt_files_with_prefixes
 from rlsolver.methods.eco_s2v.src.envs.spinsystem import SpinSystemFactory
 from rlsolver.methods.eco_s2v.config import INFERENCE_DEVICE
 
-
-# def process_graph(graph_name, graph_save_loc, data_folder, network_save_path, device, network_fn, network_args,
-#                   env_args, batched, max_batch_size):
-#     start_time = time.time()
-#
-#     step_factor = 1
-#     graph_dict = os.path.join(graph_save_loc, graph_name).replace("\\", "/")
-#     graphs_test = load_graph_set_from_txt(graph_dict)
-#
-#     ####################################################
-#     # SETUP NETWORK TO TEST
-#     ####################################################
-#
-#     # test_env = ising_env.make("SpinSystem",
-#     #                           SingleGraphGenerator(graphs_test[0]),
-#     #                           graphs_test[0].shape[0] * step_factor,  # step_factor is 1 here
-#     #                           **env_args)
-#
-#     torch.device(device)
-#     print("Set torch default device to {}.".format(device))
-#
-#     network = network_fn(n_obs_in=test_env.observation_space.shape[1],
-#                          **network_args).to(device)
-#
-#     network.load_state_dict(torch.load(network_save_path, map_location=device))
-#     for param in network.parameters():
-#         param.requires_grad = False
-#     network.eval()
-#
-#     print("Successfully created agent with pre-trained MPNN.\nMPNN architecture\n\n{}".format(repr(network)))
-#
-#     ####################################################
-#     # TEST NETWORK ON VALIDATION GRAPHS
-#     ####################################################
-#     results, results_raw, history = test_network(network, env_args, graphs_test, device, step_factor, n_attempts=50,
-#                                                  # step_factor is 1
-#                                                  return_raw=True, return_history=True,
-#                                                  batched=batched, max_batch_size=max_batch_size)
-#     run_duration = time.time() - start_time
-#     results_fname = f"results_{os.path.splitext(graph_name)[0]}.pkl"
-#     results_raw_fname = f"results_{os.path.splitext(graph_name)[0]}_raw.pkl"
-#     history_fname = f"results_{os.path.splitext(graph_name)[0]}_history.pkl"
-#
-#     for res, fname, label in zip([results, results_raw, history],
-#                                  [results_fname, results_raw_fname, history_fname],
-#                                  ["results", "results_raw", "history"]):
-#         if label == "results":
-#             result = (res['sol'][0] + 1) / 2
-#             result = result.astype(int)
-#             obj = res['cut'][0]
-#             num_nodes = len(result)
-#             write_graph_result(obj, run_duration, num_nodes, ALG.value, result, graph_dict, plus1=True)
-#
-#         save_path = os.path.join(data_folder, fname).replace("\\", "/")
-#         # res.to_pickle(save_path)
-
-
 def run(save_loc="BA_40spin/eco",
         graph_save_loc="../../data/syn_BA",
         network_save_path=None,
@@ -129,34 +72,15 @@ def run(save_loc="BA_40spin/eco",
 
     if prefixes:
         file_names = calc_txt_files_with_prefixes(graph_save_loc, prefixes)
-        # # 对文件列表进行排序
-        # sorted_file_names = []
-        # for prefix in prefixes:
-        #     for file in file_names:
-        #         graph_name = os.path.basename(file)
-        #         if graph_name.startswith(prefix) and file not in sorted_file_names:
-        #             sorted_file_names.append(file)
-        # file_names = sorted_file_names
-        # file_names = read_nxgraphs(graph_save_loc, prefixes)
+
     else:
         file_names = os.listdir(graph_save_loc)
 
-    # device = 'cpu'
-    # with ProcessPoolExecutor(max_workers=max_parallel_jobs) as executor:
-    #     futures = [
-    #         executor.submit(process_graph, graph_name, graph_save_loc, data_folder, network_save_path,
-    #                         device, network_fn, network_args, env_args, batched, max_batch_size)
-    #         for graph_name in file_names
-    #     ]
-    #
-    #     # 等待所有任务完成
-    #     for future in futures:
-    #         future.result()
     for file in file_names:
         graph_name = os.path.basename(file)
         start_time = time.time()
 
-        step_factor = 1
+        step_factor = 2
         graph_dict = os.path.join(graph_save_loc, graph_name).replace("\\", "/")
         graphs_test = load_graph_set_from_txt(graph_dict)
 
@@ -167,10 +91,6 @@ def run(save_loc="BA_40spin/eco",
         test_env = SpinSystemFactory.get(SingleGraphGenerator(graphs_test[0]),
                                          graphs_test[0].shape[0] * step_factor,  # step_factor is 1 here
                                          **env_args)
-        # test_env = ising_env.make("SpinSystem",
-        #                           SingleGraphGenerator(graphs_test[0]),
-        #                           graphs_test[0].shape[0] * step_factor,  # step_factor is 1 here
-        #                           **env_args)
 
         torch.device(INFERENCE_DEVICE)
         print("Set torch default device to {}.".format(INFERENCE_DEVICE))

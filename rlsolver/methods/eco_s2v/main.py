@@ -8,7 +8,7 @@ from rlsolver.methods.eco_s2v.config import *
 
 save_loc = RESULT_DIR
 
-train_inference_network = 0  # 0: train, 1: inference
+train_inference_network = 1  # 0: train, 1: inference
 assert train_inference_network in [0, 1]
 
 if train_inference_network == 0:
@@ -19,9 +19,7 @@ if train_inference_network == 0:
     elif ALG == Alg.eco_torch:
         from rlsolver.methods.eco_s2v.train_and_inference.train_eco_torch import run
     elif ALG == Alg.eeco:
-        from rlsolver.methods.eco_s2v.train_and_inference.train_eco_a2c import run
-        # from rlsolver.methods.eco_s2v.train_and_inference.train_eeco import run
-
+        from rlsolver.methods.eco_s2v.train_and_inference.train_eeco import run
     else:
         raise ValueError('Algorithm not recognized')
     run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR)

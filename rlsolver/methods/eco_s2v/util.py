@@ -29,11 +29,11 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
     test_scores = test_env.get_best_cut()
     obj_vs_time["0"] = test_scores
 
-    if USE_TENSOR_CORE:
+    if USE_TENSOR_CORE_IN_INFERENCE:
         network.half()
     @torch.no_grad()
     def predict(network, states):
-        qs = network(states,USE_TENSOR_CORE)
+        qs = network(states, USE_TENSOR_CORE_IN_INFERENCE)
         if qs.dim() == 1:
             actions = qs.argmax().item()
         else:
@@ -43,14 +43,14 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
     done = torch.zeros(( test_env.n_sims), dtype=torch.bool, device=test_env.device)
     # obs = torch.cat((test_env.state, test_env.matrix_obs.unsqueeze(0).expand(test_env.n_sims,-1,-1)), dim=-2)
     state = test_env.get_observation()
-    if USE_TENSOR_CORE:
+    if USE_TENSOR_CORE_IN_INFERENCE:
         actions = predict(network,state.to(torch.float16)).squeeze(-1)
     else:
         actions = predict(network,state).squeeze(-1)
 
     for i in tqdm.tqdm(range(test_env.max_steps)):
         state, done = test_env.step(actions)
-        if USE_TENSOR_CORE:
+        if USE_TENSOR_CORE_IN_INFERENCE:
             actions = predict(network,state.to(torch.float16)).squeeze(-1)
         else:
             actions = predict(network,state).squeeze(-1)

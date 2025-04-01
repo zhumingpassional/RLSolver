@@ -59,7 +59,7 @@ def run(save_loc, graph_save_loc):
         train_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
                                                                    edge_type=EdgeType.DISCRETE)
 
-    validation_graph_generator = ValidationGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
+    validation_graph_generator = ValidationGraphGenerator(n_spins=n_spins_train, graph_type=GRAPH_TYPE,
                                                           edge_type=EdgeType.DISCRETE,
                                                           n_sims=NUM_VALIDATION_SIMS, seed=VALIDATION_SEED)
 

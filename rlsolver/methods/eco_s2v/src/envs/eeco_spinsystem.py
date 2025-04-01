@@ -5,14 +5,12 @@ import torch
 import numpy as np
 import torch.multiprocessing as mp
 
-from rlsolver.methods.eco_s2v.src.envs.eeco_util import (RewardSignal,
-                                                         ExtraAction,
-                                                         OptimisationTarget,
-                                                         Observable,
-                                                         SpinBasis,
-                                                         DEFAULT_OBSERVABLES,
-                                                         HistoryBuffer)
-
+from rlsolver.methods.eco_s2v.src.envs.eeco_util import HistoryBuffer
+                                                    
+from rlsolver.methods.eco_s2v.src.envs.util import (EdgeType, Observable,
+                                                         RewardSignal, ExtraAction,
+                                                         OptimisationTarget, SpinBasis,
+                                                         DEFAULT_OBSERVABLES)
 # A container for get_result function below. Works just like tuple, but prettier.
 ActionResult = namedtuple("action_result", ("snapshot", "observation", "reward", "is_done", "info"))
 
