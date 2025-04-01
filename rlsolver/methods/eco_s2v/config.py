@@ -10,14 +10,14 @@ class Alg(Enum):
     eco_torch = 'eco_torch'
     eeco = 'eeco'
 
-ALG = Alg.eco
+ALG = Alg.eeco
 GRAPH_TYPE = GraphType.BA
 
 GPU_ID_IN_TRAIN = 0
 GPU_ID_IN_BUFFER_OF_TRAIN = 0
 
 #训练的参数
-NUM_TRAIN_NODES = 100
+NUM_TRAIN_NODES = 200
 NUM_TRAIN_SIMS = 2 ** 2
 NUM_VALIDATION_NODES = 200
 VALIDATION_SEED = 10
