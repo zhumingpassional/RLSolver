@@ -2,14 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class MPNN(nn.Module):
+
+class MPNN_A2C(nn.Module):
     def __init__(self,
                  n_obs_in=7,
                  n_layers=3,
                  n_features=64,
                  tied_weights=False,
-                 n_hid_readout=[], ):
-
+                 n_hid_readout=[]):
         super().__init__()
 
         self.n_obs_in = n_obs_in
@@ -30,25 +30,32 @@ class MPNN(nn.Module):
             self.update_node_embedding_layer = nn.ModuleList(
                 [UpdateNodeEmbeddingLayer(n_features) for _ in range(self.n_layers)])
 
-        self.readout_layer = ReadoutLayer(n_features, n_hid_readout)
+        # Actor 网络输出层：输出动作概率分布
+        self.actor_head = nn.Sequential(
+            nn.Softmax(dim=-1) # 输出概率分布
+        )
 
-    @torch.no_grad()
+        # Critic 网络输出层：输出状态价值
+        self.critic_head = nn.Sequential(
+            nn.Linear(2 * n_features, n_features), # 同样需要根据 ReadoutLayer 输出调整输入维度
+            nn.ReLU(),
+            nn.Linear(n_features, 1) # 输出单个状态价值
+        )
+
+        self.readout_layer = ReadoutLayer(n_features, n_hid_readout) # 保留原有的 ReadoutLayer 作为共享部分
+
     def get_normalisation(self, adj):
         norm = torch.sum((adj != 0), dim=1).unsqueeze(-1)
         norm[norm == 0] = 1
         return norm.float()
-    
-    # @torch.autocast(device_type="cuda")
-    def forward(self, obs,use_tensor_core=False):
+
+    def forward(self, obs, use_tensor_core=False):
         if obs.dim() == 2:
             obs = obs.unsqueeze(0)
 
         obs.transpose_(-1, -2)
 
-        # Calculate features to be used in the MPNN
         node_features = obs[:, :, 0:self.n_obs_in]
-
-        # Get graph adj matrix.
         adj = obs[:, :, self.n_obs_in:]
         if use_tensor_core:
             norm = self.get_normalisation(adj).half()
@@ -57,7 +64,6 @@ class MPNN(nn.Module):
         init_node_embeddings = self.node_init_embedding_layer(node_features)
         edge_embeddings = self.edge_embedding_layer(node_features, adj, norm)
 
-        # Initialise embeddings.
         current_node_embeddings = init_node_embeddings
 
         if self.tied_weights:
@@ -69,16 +75,18 @@ class MPNN(nn.Module):
         else:
             for i in range(self.n_layers):
                 current_node_embeddings = self.update_node_embedding_layer[i](current_node_embeddings,
-                                                                              edge_embeddings,
-                                                                              norm,
-                                                                              adj)
+                                                                               edge_embeddings,
+                                                                               norm,
+                                                                               adj)
 
-        out = self.readout_layer(current_node_embeddings)
-        out = out.squeeze()
+        shared_features = self.readout_layer(current_node_embeddings) # 共享的特征表示
 
-        return out
+        # 从共享特征中分别计算策略和价值
+        action_probs = self.actor_head(shared_features)
+        state_values = self.critic_head(shared_features)
 
-
+        return action_probs, state_values
+    
 class EdgeAndNodeEmbeddingLayer(nn.Module):
 
     def __init__(self, n_obs_in, n_features):
@@ -165,24 +173,3 @@ class ReadoutLayer(nn.Module):
                 out = features
 
         return out
-
-class MPNN_A2C(nn.Module):
-    def __init__(self,
-                 n_obs_in=7,
-                 n_layers=3,
-                 n_features=64,
-                 tied_weights=False,
-                 n_hid_readout=[], ):
-
-        super().__init__()
-        self.n_obs_in = n_obs_in
-        self.n_layers = n_layers
-        self.n_features = n_features
-        self.tied_weights = tied_weights
-        self.actor = MPNN(n_obs_in, n_layers, n_features, tied_weights, n_hid_readout)
-        self.critic = MPNN(n_obs_in, n_layers, n_features, tied_weights, n_hid_readout)
-
-    def forward(self, obs,use_tensor_core=False):
-        logits = torch.softmax(self.actor(obs.clone(),use_tensor_core), dim=-1)
-        value = self.critic(obs.clone(),use_tensor_core).mean(dim=-1)
-        return logits, value

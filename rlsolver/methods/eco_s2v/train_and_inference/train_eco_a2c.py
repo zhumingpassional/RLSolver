@@ -2,14 +2,14 @@ import matplotlib.pyplot as plt
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
 from rlsolver.methods.eco_s2v.util import (cal_txt_name)
-from rlsolver.methods.eco_s2v.src.agents.dqn.eeco_dqn import DQN
+from rlsolver.methods.eco_s2v.src.agents.dqn.eeco_a2c import A2C as DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.eeco_util import (RandomBarabasiAlbertGraphGenerator,
                                                          RandomErdosRenyiGraphGenerator,
                                                          EdgeType, RewardSignal, ExtraAction,
                                                          OptimisationTarget, SpinBasis, ValidationGraphGenerator,
                                                          DEFAULT_OBSERVABLES)
-from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
+from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN_A2C
 from rlsolver.methods.eco_s2v.config import *
 
 try:
@@ -105,72 +105,32 @@ def run(save_loc, graph_save_loc):
     # SET UP AGENT
     ####################################################
 
-    nb_steps = 100000
+    nb_steps = 30000
 
-    network_fn = lambda: MPNN(n_obs_in=train_envs.observation_space.shape[1],
+    network_fn = lambda: MPNN_A2C(n_obs_in=train_envs.observation_space.shape[1],
                               n_layers=3,
                               n_features=64,
                               n_hid_readout=[],
                               tied_weights=False)
 
     args = {
-        'envs': train_envs,
+        'env': train_envs,
         'network': network_fn,
-        'init_network_params': None,
-        'init_weight_std': 0.01,
-        'double_dqn': True,
-        'clip_Q_targets': False,
-        'replay_start_size': REPLAY_START_SIZE ,
-        'replay_buffer_size': REPLAY_BUFFER_SIZE,
-        'gamma': gamma,
-        'update_learning_rate': False,
-        'initial_learning_rate': 1e-3,
-        'peak_learning_rate': 1e-4,
-        'peak_learning_rate_step': 15000,
-        'final_learning_rate': 1e-4,
-        'final_learning_rate_step': 200000,
-        # 'minibatch_size': int(NUM_TRAIN_SIMS*2),
-        'minibatch_size': 64,
-        'max_grad_norm': None,
-        'weight_decay': 0,
-        'update_exploration': False,
-        'initial_exploration_rate': 0.05,
-        'final_exploration_rate': 0.05,
-        'final_exploration_step': FINAL_EXPLORATION_STEP,
-        'adam_epsilon': 1e-8,
-        'logging': True,
-        'evaluate': True,
-        'update_target_frequency': int(UPDATE_TARGET_FREQUENCY/32),
-        'update_frequency': UPDATE_FREQUENCY,
-        'save_network_frequency': SAVE_NETWORK_FREQUENCY,
-        'loss': "mse",
-        'network_save_path': network_save_path,
-        'test_envs': test_envs,
-        'test_episodes': n_validations,
-        'test_frequency': TEST_FREQUENCY,
-        'test_save_path': test_save_path,
-        'test_metric': TestMetric.MAX_CUT,
-        'logger_save_path': logger_save_path,
-        'sampling_speed_save_path': sampling_speed_save_path,
-        'seed': None,
-        'test_sampling_speed': TEST_SAMPLING_SPEED,
-        'sampling_patten': "best_score",
-        'buffer_device': BUFFER_DEVICE,
+        'device': TRAIN_DEVICE,
     }
-    args['args'] = args
-    if TEST_SAMPLING_SPEED:
-        nb_steps = int(3000)
-        args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
-            'save_network_frequency'] = 1e6
-        args['replay_start_size'] = args['initial_exploration_rate'] =0
-        args['replay_buffer_size'] = NUM_TRAIN_SIMS
-        args['update_exploration'] = False
+    # if TEST_SAMPLING_SPEED:
+    #     nb_steps = int(3000)
+    #     args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
+    #         'save_network_frequency'] = 1e6
+    #     args['replay_start_size'] = args['initial_exploration_rate'] =0
+    #     args['replay_buffer_size'] = NUM_TRAIN_SIMS
+    #     args['update_exploration'] = False
     agent = DQN(**args)
     #############
     # TRAIN AGENT
     #############
     sampling_start_time = time.time()
-    agent.learn(timesteps=nb_steps, start_time=start, verbose=True)
+    agent.learn(total_timesteps=nb_steps)
 
 
 if __name__ == "__main__":
