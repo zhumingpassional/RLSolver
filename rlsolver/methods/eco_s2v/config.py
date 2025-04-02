@@ -13,10 +13,9 @@ class Alg(Enum):
 ALG = Alg.eeco
 GRAPH_TYPE = GraphType.BA
 
+#训练的参数
 GPU_ID_IN_TRAIN = 0
 GPU_ID_IN_BUFFER_OF_TRAIN = 0
-
-#训练的参数
 NUM_TRAIN_NODES = 200
 NUM_TRAIN_SIMS = 2 ** 2
 NUM_VALIDATION_NODES = 200
@@ -26,9 +25,9 @@ TEST_SAMPLING_SPEED = False
 
 #推理的参数
 GPU_ID_IN_INFERENCE = 0
-NUM_INFERENCE_INSTANCES = 3
+NUM_GENERATED_INSTANCES_IN_SELECT_BEST = 3
 NUM_INFERENCE_SIMS = 50
-MINI_INFERENCE_SIMS = 50 
+MINI_INFERENCE_SIMS = 50  # 如果NUM_INFERENCE_SIMS太大导致GPU内存爆掉，分拆成MINI_INFERENCE_SIMS个环境，跑多次凑够NUM_INFERENCE_SIMS
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000,10000]
 USE_TENSOR_CORE_IN_INFERENCE = True
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
@@ -38,12 +37,11 @@ NUM_TRAINED_NODES_IN_INFERENCE = 20
 #             "BA_5000_"]  # Replace with your desired prefixes
 
 
-NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
+NEURAL_NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
 DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp"
-NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/"+""
-
-INFERENCE_NETWORK_DIR = None
+NEURAL_NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/" + ""
+NEURAL_NETWORK_PREFIX = ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "spin"
 
 UPDATE_FREQUENCY = 1
 TRAIN_DEVICE = calc_device(GPU_ID_IN_TRAIN)
@@ -83,7 +81,7 @@ if GRAPH_TYPE == GraphType.BA:
         FINAL_EXPLORATION_STEP = 800000
         SAVE_NETWORK_FREQUENCY = 400000
         TEST_FREQUENCY = 50000
-    elif NUM_TRAIN_NODES == 200:
+    elif NUM_TRAIN_NODES >= 200:
         NB_STEPS = 1000000
         REPLAY_START_SIZE = NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
         REPLAY_BUFFER_SIZE = 5*NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
@@ -126,7 +124,7 @@ elif GRAPH_TYPE.value == GraphType.ER:
         FINAL_EXPLORATION_STEP = 800000
         SAVE_NETWORK_FREQUENCY = 400000
         TEST_FREQUENCY = 50000
-    elif NUM_TRAIN_NODES == 200:
+    elif NUM_TRAIN_NODES >= 200:
         NB_STEPS = 10000000
         REPLAY_START_SIZE = 3000
         REPLAY_BUFFER_SIZE = 70000

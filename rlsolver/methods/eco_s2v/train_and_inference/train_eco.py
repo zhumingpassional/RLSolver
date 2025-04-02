@@ -16,7 +16,8 @@ from rlsolver.methods.eco_s2v.config import *
 try:
     import seaborn as sns
 
-    plt.style.use('seaborn')
+    sns.set_style("whitegrid")
+    # plt.style.use('seaborn')
 except ImportError:
     pass
 
@@ -90,9 +91,11 @@ def run(save_loc, graph_save_loc):
     # SET UP FOLDERS FOR SAVING DATA
     ####################################################
 
-    pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES)
+    # pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES)
+    pre_fix = save_loc + "/" + NEURAL_NETWORK_PREFIX
     pre_fix = cal_txt_name(pre_fix)
-    network_save_path = pre_fix + "/network.pth"
+    # network_save_path = pre_fix + "/network.pth"
+    network_save_path = pre_fix + "/" + NEURAL_NETWORK_PREFIX + ".pth"
     test_save_path = pre_fix + "/test_scores.pkl"
     loss_save_path = pre_fix + "/losses.pkl"
     logger_save_path = pre_fix + f"/logger.json"

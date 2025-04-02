@@ -2,7 +2,7 @@ import sys
 import os
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
-rlsolver_path = os.path.join(cur_path, '../../../../rlsolver')
+rlsolver_path = os.path.join(cur_path, '../../../rlsolver')
 sys.path.append(os.path.dirname(rlsolver_path))
 
 import time
@@ -30,11 +30,11 @@ import json
 逻辑是先读网络文件夹中的网络，再读图文件夹中的图，对一张图开n个环境,取最大值，结果文件要以网络文件命名，结果文件中的内容是图的名称.
 在测试网络的过程中，为提高效率，图文件夹中只放一张图
 """
-def run(network_folder,n_sims,mini_sims,num_instances,alg,num_inference_nodes,inference_graph_type):
+def run(neural_network_folder, n_sims, mini_sims, num_generated_instances, alg, num_nodes, graph_type):
 
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
-    network_result_save_path = network_folder + "/" +network_folder.split("/")[-1]+ ".json"
-    networks = os.listdir(network_folder)
+    network_result_save_path = neural_network_folder + "/" + neural_network_folder.split("/")[-1] + ".json"
+    networks = os.listdir(neural_network_folder)
     total_result = []
     network_path = []
     obj_vs_time = {}
@@ -69,25 +69,25 @@ def run(network_folder,n_sims,mini_sims,num_instances,alg,num_inference_nodes,in
                     'if_greedy':False}
     if alg  == Alg.eeco:
         from rlsolver.methods.eco_s2v.src.envs.eeco_util import ValidationGraphGenerator
-        validation_graph_generator = ValidationGraphGenerator(n_spins=num_inference_nodes,graph_type=inference_graph_type,
-                                                edge_type=EdgeType.DISCRETE,device=INFERENCE_DEVICE,
-                                                n_sims=num_instances, seed=VALIDATION_SEED)
+        validation_graph_generator = ValidationGraphGenerator(n_spins=num_nodes, graph_type=graph_type,
+                                                              edge_type=EdgeType.DISCRETE, device=INFERENCE_DEVICE,
+                                                              n_sims=num_generated_instances, seed=VALIDATION_SEED)
     elif alg == Alg.s2v or alg == Alg.eco:
         from rlsolver.methods.eco_s2v.src.envs.util import ValidationGraphGenerator
-        validation_graph_generator = ValidationGraphGenerator(n_spins=num_inference_nodes,graph_type=inference_graph_type,
-                                                edge_type=EdgeType.DISCRETE,seed=VALIDATION_SEED,
-                                                n_sims=num_instances)
+        validation_graph_generator = ValidationGraphGenerator(n_spins=num_nodes, graph_type=graph_type,
+                                                              edge_type=EdgeType.DISCRETE, seed=VALIDATION_SEED,
+                                                              n_sims=num_generated_instances)
 
     graphs = validation_graph_generator.get()
     
     for network_name in networks:
         if network_name.endswith(".json"):
-            with open(os.path.join(network_folder, network_name),"r") as f:
+            with open(os.path.join(neural_network_folder, network_name), "r") as f:
                 data = json.load(f)
         if network_name.endswith(".pth"):
             network_time = network_name.split("_")[-1].split(".")[0]
             network_results=[]
-            network_save_path = os.path.join(network_folder, network_name)
+            network_save_path = os.path.join(neural_network_folder, network_name)
             network_path.append(network_name)
             network_fn = MPNN
             network_args = {
@@ -140,14 +140,14 @@ def run(network_folder,n_sims,mini_sims,num_instances,alg,num_inference_nodes,in
             obj_vs_time = dict(sorted(obj_vs_time.items(), key=lambda item: item[1]))
     data['obj_vs_time'] = obj_vs_time
     best_network = network_path[np.argmax(np.array(total_result))]
-    best_network_path = os.path.join(network_folder, best_network.replace('.pth', '_best.pth'))
-    shutil.copy(os.path.join(network_folder,best_network), best_network_path)
+    best_network_path = os.path.join(neural_network_folder, best_network.replace('.pth', '_best.pth'))
+    shutil.copy(os.path.join(neural_network_folder, best_network), best_network_path)
     with open(network_result_save_path,'w') as f:
         json.dump(data,f, indent=4)
         
 
 if __name__ == "__main__":
-    run(network_folder=NETWORK_FOLDER,n_sims=NUM_INFERENCE_SIMS,
-        mini_sims=MINI_INFERENCE_SIMS,num_instances=NUM_INFERENCE_INSTANCES,
-        alg=ALG,num_inference_nodes=NUM_TRAIN_NODES,
-        inference_graph_type=GRAPH_TYPE)
+    run(neural_network_folder=NEURAL_NETWORK_FOLDER, n_sims=NUM_INFERENCE_SIMS,
+        mini_sims=MINI_INFERENCE_SIMS, num_generated_instances=NUM_GENERATED_INSTANCES_IN_SELECT_BEST,
+        alg=ALG, num_nodes=NUM_TRAIN_NODES,
+        graph_type=GRAPH_TYPE)

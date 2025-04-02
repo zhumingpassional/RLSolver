@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 # from numba.cuda.cudadrv.nvrtc import NVRTC
 
 import rlsolver.methods.eco_s2v.src.envs.core as ising_env
-from rlsolver.methods.eco_s2v.util import write_sampling_speed, load_graph_set_from_folder,plot_scatter
+from rlsolver.methods.eco_s2v.util import write_sampling_speed, load_graph_set_from_folder
 from rlsolver.methods.eco_s2v.src.agents.dqn.torch_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.torch_util import (SetGraphGenerator,
@@ -18,7 +18,8 @@ from rlsolver.methods.eco_s2v.plot import plot_scatter
 try:
     import seaborn as sns
 
-    plt.style.use('seaborn')
+    sns.set_style("whitegrid")
+    # plt.style.use('seaborn')
 except ImportError:
     pass
 
@@ -89,8 +90,10 @@ def run(save_loc, graph_save_loc):
     # SET UP FOLDERS FOR SAVING DATA
     ####################################################
 
-    pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_"
-    network_save_path = pre_fix + "network.pth"
+    # pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_"
+    pre_fix = save_loc + "/" + NEURAL_NETWORK_PREFIX
+    # network_save_path = pre_fix + "network.pth"
+    network_save_path = pre_fix + "/" + NEURAL_NETWORK_PREFIX + ".pth"
     test_save_path = pre_fix + "test_scores.pkl"
     loss_save_path = pre_fix + "losses.pkl"
     logger_save_path  = pre_fix+"logger.txt"
