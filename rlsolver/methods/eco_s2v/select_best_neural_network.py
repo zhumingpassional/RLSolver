@@ -2,8 +2,8 @@ import sys
 import os
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
-rlsolver_path = os.path.join(cur_path, '../../../../rlsolver')
-sys.path.append(os.path.dirname(rlsolver_path))
+# rlsolver_path = os.path.join(cur_path, '../../../../rlsolver')
+# sys.path.append(os.path.dirname(rlsolver_path))
 
 import time
 import torch
@@ -147,7 +147,7 @@ def run(network_folder,n_sims,mini_sims,num_instances,alg,num_inference_nodes,in
         
 
 if __name__ == "__main__":
-    run(network_folder=NETWORK_FOLDER,n_sims=NUM_INFERENCE_SIMS,
-        mini_sims=MINI_INFERENCE_SIMS,num_instances=NUM_INFERENCE_INSTANCES,
-        alg=ALG,num_inference_nodes=NUM_TRAIN_NODES,
+    run(network_folder=NETWORK_FOLDER, n_sims=NUM_INFERENCE_SIMS,
+        mini_sims=MINI_INFERENCE_SIMS, num_instances=NUM_GENERATED_INSTANCES_IN_SELECT_BEST,
+        alg=ALG, num_inference_nodes=NUM_TRAIN_NODES,
         inference_graph_type=GRAPH_TYPE)
