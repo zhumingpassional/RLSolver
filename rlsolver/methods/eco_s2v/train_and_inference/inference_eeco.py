@@ -32,7 +32,7 @@ def run(graph_folder="../../data/syn_BA",
         n_sims=1,
         mini_sims=10):  # 设置 mini_sims 以减少显存占用
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
-    network_save_path = NETWORK_SAVE_PATH
+    network_save_path = NEURAL_NETWORK_SAVE_PATH
 
     print("Testing network: ", network_save_path)
 
