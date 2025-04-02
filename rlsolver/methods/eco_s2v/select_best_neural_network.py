@@ -30,7 +30,7 @@ import json
 逻辑是先读网络文件夹中的网络，再读图文件夹中的图，对一张图开n个环境,取最大值，结果文件要以网络文件命名，结果文件中的内容是图的名称.
 在测试网络的过程中，为提高效率，图文件夹中只放一张图
 """
-def run(neural_network_folder, n_sims, mini_sims, num_instances, alg, num_nodes, graph_type):
+def run(neural_network_folder, n_sims, mini_sims, num_generated_instances, alg, num_nodes, graph_type):
 
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
     network_result_save_path = neural_network_folder + "/" + neural_network_folder.split("/")[-1] + ".json"
@@ -71,12 +71,12 @@ def run(neural_network_folder, n_sims, mini_sims, num_instances, alg, num_nodes,
         from rlsolver.methods.eco_s2v.src.envs.eeco_util import ValidationGraphGenerator
         validation_graph_generator = ValidationGraphGenerator(n_spins=num_nodes, graph_type=graph_type,
                                                               edge_type=EdgeType.DISCRETE, device=INFERENCE_DEVICE,
-                                                              n_sims=num_instances, seed=VALIDATION_SEED)
+                                                              n_sims=num_generated_instances, seed=VALIDATION_SEED)
     elif alg == Alg.s2v or alg == Alg.eco:
         from rlsolver.methods.eco_s2v.src.envs.util import ValidationGraphGenerator
         validation_graph_generator = ValidationGraphGenerator(n_spins=num_nodes, graph_type=graph_type,
                                                               edge_type=EdgeType.DISCRETE, seed=VALIDATION_SEED,
-                                                              n_sims=num_instances)
+                                                              n_sims=num_generated_instances)
 
     graphs = validation_graph_generator.get()
     
@@ -148,6 +148,6 @@ def run(neural_network_folder, n_sims, mini_sims, num_instances, alg, num_nodes,
 
 if __name__ == "__main__":
     run(neural_network_folder=NEURAL_NETWORK_FOLDER, n_sims=NUM_INFERENCE_SIMS,
-        mini_sims=MINI_INFERENCE_SIMS, num_instances=NUM_GENERATED_INSTANCES_IN_SELECT_BEST,
+        mini_sims=MINI_INFERENCE_SIMS, num_generated_instances=NUM_GENERATED_INSTANCES_IN_SELECT_BEST,
         alg=ALG, num_nodes=NUM_TRAIN_NODES,
         graph_type=GRAPH_TYPE)
