@@ -13,10 +13,9 @@ class Alg(Enum):
 ALG = Alg.eeco
 GRAPH_TYPE = GraphType.BA
 
+#训练的参数
 GPU_ID_IN_TRAIN = 0
 GPU_ID_IN_BUFFER_OF_TRAIN = 0
-
-#训练的参数
 NUM_TRAIN_NODES = 200
 NUM_TRAIN_SIMS = 2 ** 2
 NUM_VALIDATION_NODES = 200
@@ -42,7 +41,7 @@ NEURAL_NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" 
 DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp"
 NEURAL_NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/" + ""
-
+NEURAL_NETWORK_PREFIX = ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "spin"
 
 UPDATE_FREQUENCY = 1
 TRAIN_DEVICE = calc_device(GPU_ID_IN_TRAIN)
