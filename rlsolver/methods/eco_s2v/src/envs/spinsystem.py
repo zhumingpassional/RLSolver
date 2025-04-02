@@ -114,7 +114,6 @@ class SpinSystemBase(ABC):
 
         # Ensure first observable is the spin state.
         # This allows us to access the spins as self.state[0,:self.n_spins.]
-        assert observables[0] == Observable.SPIN_STATE, "First observable must be Observation.SPIN_STATE."
 
         self.observables = list(enumerate(observables))
 

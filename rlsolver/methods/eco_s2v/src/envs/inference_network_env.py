@@ -4,7 +4,7 @@ from operator import matmul
 import torch
 import numpy as np
 
-from rlsolver.methods.eco_s2v.src.envs.eeco_util import (RewardSignal,
+from rlsolver.methods.eco_s2v.src.envs.util import (RewardSignal,
                                                          ExtraAction,
                                                          OptimisationTarget,
                                                          Observable,

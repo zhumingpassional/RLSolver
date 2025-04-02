@@ -57,7 +57,7 @@ def run(save_loc, graph_save_loc):
         train_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
                                                                    edge_type=EdgeType.DISCRETE)
         
-    validation_graph_generator = ValidationGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
+    validation_graph_generator = ValidationGraphGenerator(n_spins=n_spins_train, graph_type=GRAPH_TYPE,
                                                           edge_type=EdgeType.DISCRETE,
                                                           n_sims=NUM_VALIDATION_SIMS, seed=VALIDATION_SEED)
     
@@ -97,13 +97,13 @@ def run(save_loc, graph_save_loc):
     loss_save_path = pre_fix + "/losses.pkl"
     logger_save_path = pre_fix + f"/logger.json"
     sampling_speed_save_path = pre_fix + "/sampling_speed.json"
-    print('pre_fix:', pre_fix)
+    print('pre_fix:', pre_fix.split("/")[-1])
 
     ####################################################
     # SET UP AGENT
     ####################################################
 
-    nb_steps = 10000
+    nb_steps = 1000000
 
     network_fn = lambda: MPNN(n_obs_in=train_envs[0].observation_space.shape[1],
                               n_layers=3,

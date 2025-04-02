@@ -5,10 +5,10 @@ from rlsolver.methods.eco_s2v.util import (cal_txt_name)
 from rlsolver.methods.eco_s2v.src.agents.dqn.eeco_dqn import DQN
 from rlsolver.methods.eco_s2v.src.agents.dqn.utils import TestMetric
 from rlsolver.methods.eco_s2v.src.envs.eeco_util import (RandomBarabasiAlbertGraphGenerator,
-                                                         RandomErdosRenyiGraphGenerator,
-                                                         EdgeType, RewardSignal, ExtraAction,
-                                                         OptimisationTarget, SpinBasis, ValidationGraphGenerator,
-                                                         DEFAULT_OBSERVABLES)
+                                                         RandomErdosRenyiGraphGenerator, ValidationGraphGenerator,
+                                                         )
+from rlsolver.methods.eco_s2v.src.envs.util import (EdgeType, RewardSignal, ExtraAction,
+                                                    OptimisationTarget, SpinBasis,DEFAULT_OBSERVABLES)
 from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 from rlsolver.methods.eco_s2v.config import *
 
@@ -58,13 +58,9 @@ def run(save_loc, graph_save_loc):
         train_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
                                                                    edge_type=EdgeType.DISCRETE, n_sims=NUM_TRAIN_SIMS,device=TRAIN_DEVICE)
 
-    validation_graph_generator = ValidationGraphGenerator(n_spins=NUM_VALIDATION_NODES, m_insertion_edges=4,
-                                                          edge_type=EdgeType.DISCRETE,
-                                                          n_sims=NUM_VALIDATION_SIMS, seed=VALIDATION_SEED)
-    # validation_graph_generator = RandomBarabasiAlbertGraphGenerator(n_spins=n_spins_train, m_insertion_edges=4,
-    #                                                       edge_type=EdgeType.DISCRETE,
-    #                                                       n_sims=NUM_VALIDATION_SIMS, 
-    #                                                       seed=VALIDATION_SEED,device=TRAIN_DEVICE)    
+    validation_graph_generator = ValidationGraphGenerator(n_spins=NUM_VALIDATION_NODES,graph_type=GRAPH_TYPE,
+                                                        edge_type=EdgeType.DISCRETE,device=TRAIN_DEVICE,
+                                                        n_sims=NUM_VALIDATION_SIMS, seed=VALIDATION_SEED) 
 
     ####
     # Pre-generated test graphs
@@ -89,8 +85,7 @@ def run(save_loc, graph_save_loc):
                                 **env_args, device=TRAIN_DEVICE,
                                 n_sims=n_validations)
 
-    pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_" + str(
-        NUM_TRAIN_SIMS)
+    pre_fix = save_loc + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_" + str(NUM_TRAIN_SIMS)
     pre_fix = cal_txt_name(pre_fix)
     network_save_path = pre_fix + "/network.pth"
     test_save_path = pre_fix + "/test_scores.pkl"

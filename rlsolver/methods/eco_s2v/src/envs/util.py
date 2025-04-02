@@ -4,6 +4,7 @@ from enum import Enum
 
 import networkx as nx
 import numpy as np
+from rlsolver.methods.config import GraphType
 
 
 class EdgeType(Enum):
@@ -323,17 +324,21 @@ class SingleGraphGenerator(GraphGenerator):
 
 
 class ValidationGraphGenerator(GraphGenerator):
-    def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=2 ** 3, seed=None):
+    def __init__(self, n_spins=20,graph_type=GraphType.BA,edge_type=EdgeType.DISCRETE, n_sims=2 ** 3, seed=None):
         super().__init__(n_spins, edge_type, False)
         self.n_sims = n_sims
         self.seed = seed
-        self.m_insertion_edges = m_insertion_edges
+        self.graph_type = graph_type
+        self.n_spins = n_spins
 
     def get(self):
         adj = []
         for i in range(self.n_sims):
             if self.seed is not None:
-                g = nx.barabasi_albert_graph(self.n_spins, self.m_insertion_edges, seed=self.seed)
+                if self.graph_type == GraphType.BA:
+                    g = nx.barabasi_albert_graph(self.n_spins, 4, seed=self.seed)
+                elif self.graph_type == GraphType.ER:
+                    g = nx.erdos_renyi_graph(self.n_spins, 0.15, seed=self.seed)
                 adj_matrix = nx.to_numpy_array(g)
                 np.fill_diagonal(adj_matrix, 0)
                 adj.append(adj_matrix)

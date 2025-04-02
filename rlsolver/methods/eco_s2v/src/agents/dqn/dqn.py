@@ -284,8 +284,14 @@ class DQN:
         if self.test_sampling_speed:
             last_record_time = time.time()
             logger.add_scalar('sampling_speed', 0,start_time)
-        last_record_obj_time = time.time()
-            
+
+        path = self.network_save_path
+        path_main, path_ext = os.path.splitext(path)
+        if path_ext == '':
+            path_ext += '.pth'
+        self.save(path_main +"_0"+ path_ext)
+        last_record_obj_time = time.time()      
+
         # Initialise the state
         state = torch.as_tensor(self.env.reset())
         score = 0
@@ -392,32 +398,26 @@ class DQN:
                     raise NotImplementedError("{} is not a recognised TestMetric".format(self.test_metric))
                 if self.logging:
                     logger.add_scalar('Episode_score', test_score, (total_time,timestep-training_ready_step))
-                if best_network:
-                    path = self.network_save_path
-                    path_main, path_ext = os.path.splitext(path)
-                    path_main += "_best"
-                    if path_ext == '':
-                        path_ext += '.pth'
-                    self.save(path_main + path_ext)
+                # if best_network:
+                #     path = self.network_save_path
+                #     path_main, path_ext = os.path.splitext(path)
+                #     path_main += "_best"
+                #     if path_ext == '':
+                #         path_ext += '.pth'
+                #     self.save(path_main + path_ext)
 
                 test_scores.append([timestep + 1, test_score])
 
             if (time.time() - last_record_obj_time >= self.save_network_frequency) and is_training_ready and not self.test_sampling_speed:
                 total_time += time.time() - start_time
 
-                path = self.network_save_path
-                path_main, path_ext = os.path.splitext(path)
-                path_main += ('_'+str(int(total_time) + 1))
-                if path_ext == '':
-                    path_ext += '.pth'
+                path_main_ = path_main+ '_'+str(int(total_time))
                 if self.logging:
                     logger.add_scalar('Loss', loss, (total_time,timestep-training_ready_step))
-                self.save(path_main + path_ext)
+
+                self.save(path_main_ + path_ext)
                 start_time = time.time()
                 last_record_obj_time = time.time()
-
-
-                start_time = time.time()
         if self.logging:
             logger.save()
 

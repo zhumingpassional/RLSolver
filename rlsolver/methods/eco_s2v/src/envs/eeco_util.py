@@ -5,59 +5,9 @@ import networkx as nx
 import numpy as np
 import torch
 from rlsolver.methods.eco_s2v.config import *
-
-
-class EdgeType(Enum):
-    UNIFORM = 1
-    DISCRETE = 2
-    RANDOM = 3
-
-
-class RewardSignal(Enum):
-    DENSE = 1
-    BLS = 2
-    SINGLE = 3
-    CUSTOM_BLS = 4
-
-
-class ExtraAction(Enum):
-    PASS = 1
-    RANDOMISE = 2
-    NONE = 3
-
-
-class OptimisationTarget(Enum):
-    CUT = 1
-    ENERGY = 2
-
-
-class SpinBasis(Enum):
-    SIGNED = 1
-    BINARY = 2
-
-
-class Observable(Enum):
-    # Local observations that differ between nodes.
-    SPIN_STATE = 1
-    IMMEDIATE_REWARD_AVAILABLE = 2
-    TIME_SINCE_FLIP = 3
-
-    # Global observations that are the same for all nodes.
-    EPISODE_TIME = 4
-    TERMINATION_IMMANENCY = 5
-    NUMBER_OF_GREEDY_ACTIONS_AVAILABLE = 6
-    DISTANCE_FROM_BEST_SCORE = 7
-    DISTANCE_FROM_BEST_STATE = 8
-
-
-DEFAULT_OBSERVABLES = [Observable.SPIN_STATE,
-                       Observable.IMMEDIATE_REWARD_AVAILABLE,
-                       Observable.TIME_SINCE_FLIP,
-                       Observable.DISTANCE_FROM_BEST_SCORE,
-                       Observable.DISTANCE_FROM_BEST_STATE,
-                       Observable.NUMBER_OF_GREEDY_ACTIONS_AVAILABLE,
-                       Observable.TERMINATION_IMMANENCY]
-
+from rlsolver.methods.config import GraphType
+from rlsolver.methods.eco_s2v.src.envs.util import (EdgeType, RewardSignal, ExtraAction,
+                                                    OptimisationTarget, SpinBasis,DEFAULT_OBSERVABLES,Observable)
 
 class GraphGenerator(ABC):
 
@@ -427,18 +377,23 @@ class SingleGraphGenerator(GraphGenerator):
 
 
 class ValidationGraphGenerator(GraphGenerator):
-    def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=2 ** 3, seed=None):
+    def __init__(self, device,n_spins=20, edge_type=EdgeType.DISCRETE, n_sims=2 ** 3, seed=None,graph_type=GraphType.BA):
         super().__init__(n_spins, edge_type, False, n_sims)
         self.seed = seed
-        self.m_insertion_edges = m_insertion_edges
-        self.device = TRAIN_DEVICE
+        self.device = device
+        self.graph_type = graph_type
+        self.n_sims = n_sims
+        self.n_spins = n_spins
         self.adj = torch.empty((self.n_sims, self.n_spins, self.n_spins), device=self.device, dtype=torch.float)
 
     def get(self):
         adj = torch.empty((self.n_sims, self.n_spins, self.n_spins), device=self.device, dtype=torch.float)
         for i in range(self.n_sims):
             if self.seed is not None:
-                g = nx.barabasi_albert_graph(self.n_spins, self.m_insertion_edges, seed=self.seed)
+                if self.graph_type == GraphType.BA:
+                    g = nx.barabasi_albert_graph(self.n_spins, 4, seed=self.seed)
+                elif self.graph_type == GraphType.ER:
+                    g = nx.erdos_renyi_graph(self.n_spins, 0.15, seed=self.seed)
                 adj[i] = torch.tensor(nx.to_numpy_array(g), dtype=torch.float32, device=self.device).fill_diagonal_(0)
         return adj
 
