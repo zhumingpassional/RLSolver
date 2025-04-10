@@ -123,7 +123,7 @@ def plot_sampling_speed(folder_path, max_time, window_size=5, xticks_stride=5, s
             plt.plot(times, avg_speeds, label=label)
 
     # 设置图表的标签和标题
-    plt.xlabel('Time (second)', fontsize=14)
+    plt.xlabel('Timestep', fontsize=14)
     plt.ylabel('Sampling Speed (samples/second)', fontsize=14)
     # plt.title('Sampling Speed vs Time for Different n_sims')
 

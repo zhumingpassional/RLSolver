@@ -39,7 +39,7 @@ class SpinSystemFactory(object):
             device=None,
             n_sims=None,
             if_greedy=False,
-            use_tensor_core=True):
+            use_tensor_core=False):
 
         if graph_generator.biased:
             return SpinSystemBiased(graph_generator, max_steps,

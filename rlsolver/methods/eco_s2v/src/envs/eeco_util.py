@@ -407,10 +407,10 @@ class SetGraphGenerator(GraphGenerator):
         else:
             raise NotImplementedError("All graphs in SetGraphGenerator must have the same dimension.")
 
-        if all([torch.isin(m, torch.tensor([0, 1], device=INFERENCE_DEVICE)).all().item() for m in matrices]):
+        if all([torch.isin(m, torch.tensor([0, 1], device=device)).all().item() for m in matrices]):
 
             edge_type = EdgeType.UNIFORM
-        elif all([torch.isin(m, torch.tensor([0, -1, 1], device=TRAIN_DEVICE)).all().item() for m in matrices]):
+        elif all([torch.isin(m, torch.tensor([0, -1, 1], device=device)).all().item() for m in matrices]):
             edge_type = EdgeType.DISCRETE
         else:
             edge_type = EdgeType.RANDOM
@@ -488,10 +488,10 @@ class PerturbedGraphGenerator(GraphGenerator):
         return self.pad_matrix(m) if with_padding else m
  
 class HistoryBuffer():
-    def __init__(self,n_sims):
+    def __init__(self,n_sims,device):
         self.n_sims = n_sims
         self.buffer = None
-        self.device=TRAIN_DEVICE
+        self.device=device
 
     def pack_spins(self,spins):
         n_sims, spin_dim = spins.shape

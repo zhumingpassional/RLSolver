@@ -2,6 +2,29 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+class MPNN_A2C(nn.Module):
+    def __init__(self,
+                 n_obs_in=7,
+                 n_layers=3,
+                 n_features=64,
+                 tied_weights=False,
+                 n_hid_readout=[], ):
+
+        super().__init__()
+        self.n_obs_in = n_obs_in
+        self.n_layers = n_layers
+        self.n_features = n_features
+        self.tied_weights = tied_weights
+        self.actor = MPNN(n_obs_in, n_layers, n_features, tied_weights, n_hid_readout)
+        self.critic = MPNN(n_obs_in, n_layers, n_features, tied_weights, n_hid_readout)
+
+    def forward(self, obs,use_tensor_core=False):
+        logits = torch.softmax(self.actor(obs.clone(),use_tensor_core), dim=-1)
+        value = self.critic(obs.clone(),use_tensor_core).mean(dim=-1)
+        return logits, value
+    
+
 class MPNN(nn.Module):
     def __init__(self,
                  n_obs_in=7,
@@ -39,8 +62,7 @@ class MPNN(nn.Module):
         return norm.float()
     
     # @torch.autocast(device_type="cuda")
-    def forward(self, obs_,use_tensor_core=False):
-        obs = obs_.clone()
+    def forward(self, obs,use_tensor_core=False):
         if obs.dim() == 2:
             obs = obs.unsqueeze(0)
 

@@ -206,7 +206,7 @@ class SpinSystemBase(ABC):
         self._reset_graph_observables()
 
         if self.stag_punishment is not None or self.basin_reward is not None:
-            self.history_buffer = HistoryBuffer(n_sims=self.n_sims)
+            self.history_buffer = HistoryBuffer(n_sims=self.n_sims,device=self.device)
 
         return self.get_observation()
 

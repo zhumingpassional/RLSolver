@@ -155,7 +155,7 @@ def run(save_loc, graph_save_loc):
     }
     args['args'] = args
     if TEST_SAMPLING_SPEED:
-        nb_steps = int(1e5)
+        nb_steps = int(1e10)
         args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
             'save_network_frequency'] = 1e6
         args['replay_start_size'] = args['initial_exploration_rate'] =0
