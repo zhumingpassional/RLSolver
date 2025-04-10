@@ -11,8 +11,9 @@ import tqdm
 
 from rlsolver.methods.jumanji.agents.AgentPPO import AgentA2C
 from rlsolver.methods.jumanji.config import *
+from rlsolver.methods.jumanji.train.config import Config
 from rlsolver.methods.jumanji.train_and_inference.inference import inference
-
+from rlsolver.methods.jumanji.agents.AgentPPO import AgentA2C
 from rlsolver.methods.eco_s2v.src.envs.eeco_spinsystem import SpinSystemFactory
 
 from rlsolver.methods.eco_s2v.src.envs.util import (SetGraphGenerator,
@@ -77,7 +78,17 @@ def run(save_loc,graph_save_loc):
                                 int(n_spins_test * step_fact),
                                 **env_args, device=TRAIN_DEVICE,
                                 n_sims=n_validations)
-    agent = AgentA2C(device=TRAIN_DEVICE, n_sims=NUM_TRAIN_SIMS)
+    env_args_ = {
+    'env_name': 'maxcut',
+    'num_envs': NUM_TRAIN_SIMS,
+    'num_nodes': NUM_TRAIN_NODES,
+    'state_dim': 2,
+    'action_dim': 1,   
+    'if_discrete': True,
+    }
+    args = Config(AgentA2C,"maxcut" ,env_args_)
+    args.gpu_id = GPU_ID
+    agent = args.agent_class(args.net_dims, args.state_dim, args.action_dim, gpu_id=args.gpu_id, args=args)
     path_main, path_ext = os.path.splitext(network_save_path)
     if path_ext == '':
         path_ext += '.pth'
@@ -102,11 +113,12 @@ def run(save_loc,graph_save_loc):
         if (time.time() - last_record_time >= TEST_FREQUENCY) and not TEST_SAMPLING_SPEED:
             total_time += time.time() - start_time
             test_score = torch.mean(agent.inference(env=test_envs,max_steps=NUM_VALIDATION_NODES * step_fact)).item()
-            obj_vs_time[f'{test_score}'] = test_score
+            obj_vs_time[f'{total_time}'] = test_score
+            last_record_time = time.time()
             if test_score > best_score:
                 agent.save(path_main +"_best"+ path_ext)
                 start_time = time.time()
-
+                
         if TEST_SAMPLING_SPEED:
             sampling_speed_vs_timestep[f'{i}'] = (NUM_TRAIN_SIMS * HERIZON_LENGTH)/(time.time()-last_record_time)
             last_record_time =time.time()

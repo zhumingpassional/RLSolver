@@ -4,9 +4,9 @@ import torch as th
 from torch import nn
 from torch.nn.utils import clip_grad_norm_
 from typing import Union, Optional
-from rlsolver.methods.jumanji.config import *
 
-
+from rlsolver.methods.jumanji.train.config import Config
+from rlsolver.methods.jumanji.train.replay_buffer import ReplayBuffer
 TEN = th.Tensor
 
 '''agent'''
@@ -24,12 +24,19 @@ class AgentBase:
     """
 
     def __init__(self, net_dims: [int], state_dim: int, action_dim: int, gpu_id: int = 0, args: Config = Config()):
+        self.if_discrete: bool = args.if_discrete
+        self.if_off_policy: bool = args.if_off_policy
+
+        self.net_dims = net_dims  # the networks dimension of each layer
+        self.state_dim = state_dim  # feature number of state
+        self.action_dim = action_dim  # feature number of continuous action or number of discrete action
 
         self.gamma = args.gamma  # discount factor of future rewards
         self.max_step = args.max_step  # limits the maximum number of steps an agent can take in a trajectory.
-        self.num_envs = NUM_TRAIN_SIMS  # the number of sub envs in vectorized env. `num_envs=1` in single env.
+        self.num_envs = args.num_envs  # the number of sub envs in vectorized env. `num_envs=1` in single env.
         self.batch_size = args.batch_size  # num of transitions sampled from replay buffer.
         self.repeat_times = args.repeat_times  # repeatedly update network using ReplayBuffer
+        self.reward_scale = args.reward_scale  # an approximate target reward usually be closed to 256
         self.learning_rate = args.learning_rate  # the learning rate for network updating
         self.if_off_policy = args.if_off_policy  # whether off-policy or on-policy of DRL algorithm
         self.clip_grad_norm = args.clip_grad_norm  # clip the gradient after normalization
@@ -38,6 +45,7 @@ class AgentBase:
         self.buffer_init_size = args.buffer_init_size  # train after samples over buffer_init_size for off-policy
 
         self.explore_noise_std = getattr(args, 'explore_noise_std', 0.05)  # standard deviation of exploration noise
+        self.last_state: Optional[TEN] = None  # last state of the trajectory. shape == (num_envs, state_dim)
         self.device = th.device(f"cuda:{gpu_id}" if (th.cuda.is_available() and (gpu_id >= 0)) else "cpu")
 
         '''network'''
@@ -59,10 +67,64 @@ class AgentBase:
         self.save_attr_names = {'act', 'act_target', 'act_optimizer', 'cri', 'cri_target', 'cri_optimizer'}
 
     def explore_env(self, env, horizon_len: int) -> tuple[TEN, TEN, TEN, TEN, TEN]:
-        return self._explore_vec_env(env=env, horizon_len=horizon_len)
+        if self.if_vec_env:
+            return self._explore_vec_env(env=env, horizon_len=horizon_len)
+        else:
+            return self._explore_one_env(env=env, horizon_len=horizon_len)
 
     def explore_action(self, state: TEN) -> TEN:
-        return self.act.get_action(state)
+        return self.act.get_action(state, action_std=self.explore_noise_std)
+
+    def _explore_one_env(self, env, horizon_len: int) -> tuple[TEN, TEN, TEN, TEN, TEN]:
+        """
+        Collect trajectories through the actor-environment interaction for a **single** environment instance.
+
+        env: RL training environment. env.reset() env.step(). It should be a vector env.
+        horizon_len: collect horizon_len step while exploring to update networks
+        return: `(states, actions, rewards, undones, unmasks)` for off-policy
+            `num_envs == 1`
+            `states.shape == (horizon_len, num_envs, state_dim)`
+            `actions.shape == (horizon_len, num_envs, action_dim)`
+            `rewards.shape == (horizon_len, num_envs)`
+            `undones.shape == (horizon_len, num_envs)`
+            `unmasks.shape == (horizon_len, num_envs)`
+        """
+        states = th.zeros((horizon_len, self.state_dim), dtype=th.float32).to(self.device)
+        actions = th.zeros((horizon_len, self.action_dim), dtype=th.float32).to(self.device) \
+            if not self.if_discrete else th.zeros(horizon_len, dtype=th.int32).to(self.device)
+        rewards = th.zeros(horizon_len, dtype=th.float32).to(self.device)
+        terminals = th.zeros(horizon_len, dtype=th.bool).to(self.device)
+        truncates = th.zeros(horizon_len, dtype=th.bool).to(self.device)
+
+        state = self.last_state
+        for t in range(horizon_len):
+            action = self.explore_action(state)[0]
+            # if_discrete == False  action.shape (1, action_dim) -> (action_dim, )
+            # if_discrete == True   action.shape (1, ) -> ()
+
+            states[t] = state
+            actions[t] = action
+
+            ary_action = action.detach().cpu().numpy()
+            ary_state, reward, terminal, truncate, _ = env.step(ary_action)
+            if terminal or truncate:
+                ary_state, info_dict = env.reset()
+            state = th.as_tensor(ary_state, dtype=th.float32, device=self.device).unsqueeze(0)
+
+            rewards[t] = reward
+            terminals[t] = terminal
+            truncates[t] = truncate
+
+        self.last_state = state  # state.shape == (1, state_dim) for a single env.
+        '''add dim1=1 below for workers buffer_items concat'''
+        states = states.view((horizon_len, 1, self.state_dim))
+        actions = actions.view((horizon_len, 1, self.action_dim if not self.if_discrete else 1))
+        actions = actions.view((horizon_len, 1, self.action_dim)) \
+            if not self.if_discrete else actions.view((horizon_len, 1))
+        rewards = (rewards * self.reward_scale).view((horizon_len, 1))
+        undones = th.logical_not(terminals).view((horizon_len, 1))
+        unmasks = th.logical_not(truncates).view((horizon_len, 1))
+        return states, actions, rewards, undones, unmasks
 
     def _explore_vec_env(self, env, horizon_len: int) -> tuple[TEN, TEN, TEN, TEN, TEN]:
         """
@@ -78,15 +140,18 @@ class AgentBase:
             `undones.shape == (horizon_len, num_envs)`
             `unmasks.shape == (horizon_len, num_envs)`
         """
-        states = th.zeros((horizon_len, self.num_envs, NUM_TRAIN_NODES+7,NUM_TRAIN_NODES), dtype=th.float32).to(self.device)
-        actions = th.zeros((horizon_len, self.num_envs), dtype=th.long).to(self.device)
+        states = th.zeros((horizon_len, self.num_envs, self.state_dim), dtype=th.float32).to(self.device)
+        actions = th.zeros((horizon_len, self.num_envs, self.action_dim), dtype=th.float32).to(self.device) \
+            if not self.if_discrete else th.zeros((horizon_len, self.num_envs), dtype=th.int32).to(self.device)
         rewards = th.zeros((horizon_len, self.num_envs), dtype=th.float32).to(self.device)
         terminals = th.zeros((horizon_len, self.num_envs), dtype=th.bool).to(self.device)
         truncates = th.zeros((horizon_len, self.num_envs), dtype=th.bool).to(self.device)
 
-        state = env.get_observation()  # last_state.shape == (num_envs, state_dim)
+        state = self.last_state  # last_state.shape == (num_envs, state_dim)
         for t in range(horizon_len):
-            action,logprobs = self.explore_action(state)
+            action = self.explore_action(state)
+            # if_discrete == False  action.shape (num_envs, action_dim)
+            # if_discrete == True   action.shape (num_envs, )
 
             states[t] = state  # state.shape == (num_envs, state_dim)
             actions[t] = action
@@ -98,17 +163,24 @@ class AgentBase:
             truncates[t] = truncate
 
         self.last_state = state
+        rewards *= self.reward_scale
         undones = th.logical_not(terminals)
         unmasks = th.logical_not(truncates)
-        return states, actions, logprobs, rewards, undones, unmasks
+        return states, actions, rewards, undones, unmasks
 
     def update_net(self, buffer: Union[ReplayBuffer, tuple]) -> tuple[float, ...]:
         objs_critic = []
         objs_actor = []
 
-        obj_critic, obj_actor = self.update_objectives(buffer=buffer, update_t=update_t)
-        objs_critic.append(obj_critic)
-        objs_actor.append(obj_actor) if isinstance(obj_actor, float) else None
+        if self.lambda_fit_cum_r != 0:
+            buffer.update_cum_rewards(get_cumulative_rewards=self.get_cumulative_rewards)
+
+        th.set_grad_enabled(True)
+        update_times = int(buffer.cur_size * self.repeat_times / self.batch_size)
+        for update_t in range(update_times):
+            obj_critic, obj_actor = self.update_objectives(buffer=buffer, update_t=update_t)
+            objs_critic.append(obj_critic)
+            objs_actor.append(obj_actor) if isinstance(obj_actor, float) else None
         th.set_grad_enabled(False)
 
         obj_avg_critic = np.nanmean(objs_critic) if len(objs_critic) else 0.0
@@ -266,6 +338,26 @@ class CriticBase(nn.Module):
         return values  # Q values
 
 
+"""utils"""
+
+
+def build_mlp(dims: [int], activation: nn = None, if_raw_out: bool = True) -> nn.Sequential:
+    """
+    build MLP (MultiLayer Perceptron)
+
+    net_dims: the middle dimension, `net_dims[-1]` is the output dimension of this network
+    activation: the activation function
+    if_remove_out_layer: if remove the activation function of the output layer.
+    """
+    if activation is None:
+        activation = nn.GELU
+    net_list = []
+    for i in range(len(dims) - 1):
+        net_list.extend([nn.Linear(dims[i], dims[i + 1]), activation()])
+    if if_raw_out:
+        del net_list[-1]  # delete the activation function of the output layer to keep raw output
+    return nn.Sequential(*net_list)
+
 
 def layer_init_with_orthogonal(layer, std=1.0, bias_const=1e-6):
     th.nn.init.orthogonal_(layer.weight, std)
@@ -280,3 +372,76 @@ class NnReshape(nn.Module):
     def forward(self, x):
         return x.view((x.size(0),) + self.args)
 
+
+class DenseNet(nn.Module):  # plan to hyper-param: layer_number
+    def __init__(self, lay_dim):
+        super().__init__()
+        self.dense1 = nn.Sequential(nn.Linear(lay_dim * 1, lay_dim * 1), nn.Hardswish())
+        self.dense2 = nn.Sequential(nn.Linear(lay_dim * 2, lay_dim * 2), nn.Hardswish())
+        self.inp_dim = lay_dim
+        self.out_dim = lay_dim * 4
+
+    def forward(self, x1):  # x1.shape==(-1, lay_dim*1)
+        x2 = th.cat((x1, self.dense1(x1)), dim=1)
+        return th.cat(
+            (x2, self.dense2(x2)), dim=1
+        )  # x3  # x2.shape==(-1, lay_dim*4)
+
+
+class ConvNet(nn.Module):  # pixel-level state encoder
+    def __init__(self, inp_dim, out_dim, image_size=224):
+        super().__init__()
+        if image_size == 224:
+            self.net = nn.Sequential(  # size==(batch_size, inp_dim, 224, 224)
+                nn.Conv2d(inp_dim, 32, (5, 5), stride=(2, 2), bias=False),
+                nn.ReLU(inplace=True),  # size=110
+                nn.Conv2d(32, 48, (3, 3), stride=(2, 2)),
+                nn.ReLU(inplace=True),  # size=54
+                nn.Conv2d(48, 64, (3, 3), stride=(2, 2)),
+                nn.ReLU(inplace=True),  # size=26
+                nn.Conv2d(64, 96, (3, 3), stride=(2, 2)),
+                nn.ReLU(inplace=True),  # size=12
+                nn.Conv2d(96, 128, (3, 3), stride=(2, 2)),
+                nn.ReLU(inplace=True),  # size=5
+                nn.Conv2d(128, 192, (5, 5), stride=(1, 1)),
+                nn.ReLU(inplace=True),  # size=1
+                NnReshape(-1),  # size (batch_size, 1024, 1, 1) ==> (batch_size, 1024)
+                nn.Linear(192, out_dim),  # size==(batch_size, out_dim)
+            )
+        elif image_size == 112:
+            self.net = nn.Sequential(  # size==(batch_size, inp_dim, 112, 112)
+                nn.Conv2d(inp_dim, 32, (5, 5), stride=(2, 2), bias=False),
+                nn.ReLU(inplace=True),  # size=54
+                nn.Conv2d(32, 48, (3, 3), stride=(2, 2)),
+                nn.ReLU(inplace=True),  # size=26
+                nn.Conv2d(48, 64, (3, 3), stride=(2, 2)),
+                nn.ReLU(inplace=True),  # size=12
+                nn.Conv2d(64, 96, (3, 3), stride=(2, 2)),
+                nn.ReLU(inplace=True),  # size=5
+                nn.Conv2d(96, 128, (5, 5), stride=(1, 1)),
+                nn.ReLU(inplace=True),  # size=1
+                NnReshape(-1),  # size (batch_size, 1024, 1, 1) ==> (batch_size, 1024)
+                nn.Linear(128, out_dim),  # size==(batch_size, out_dim)
+            )
+        else:
+            assert image_size in {224, 112}
+
+    def forward(self, x):
+        # assert x.shape == (batch_size, inp_dim, image_size, image_size)
+        x = x.permute(0, 3, 1, 2)
+        x = x / 128.0 - 1.0
+        return self.net(x)
+
+    @staticmethod
+    def check():
+        inp_dim = 3
+        out_dim = 32
+        batch_size = 2
+        image_size = [224, 112][1]
+        # from elegantrl.net import Conv2dNet
+        net = ConvNet(inp_dim, out_dim, image_size)
+
+        image = th.ones((batch_size, image_size, image_size, inp_dim), dtype=th.uint8) * 255
+        print(image.shape)
+        output = net(image)
+        print(output.shape)
