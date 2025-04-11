@@ -358,11 +358,11 @@ class DQN:
             else:
                 state = state_next
 
-            if self.test_sampling_speed and (time.time() - last_record_time >= 1):  # 每1秒记录一次
+            if self.test_sampling_speed and (timestep + 1) % 100 == 0:  # 每100步记录一次
                 logger.add_scalar('sampling_speed', timestep, time.time())
                 last_record_time = time.time()  # 更新记录时间
-                if time.time() - start_time > 200:
-                    break
+                # if time.time() - start_time > 200:
+                #     break
 
             if not self.test_sampling_speed:
                 if is_training_ready:

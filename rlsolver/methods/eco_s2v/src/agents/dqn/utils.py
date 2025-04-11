@@ -377,6 +377,7 @@ class Logger:
         self.result = {}
         self.result['args'] = str(args['args'])
         self.result['n_sims'] = n_sims
+        self.result['alg'] = ALG.value
 
     def add_scalar(self, name, data, timestep):
         """
@@ -420,7 +421,8 @@ class Logger:
                     sampling_per_second = {}
                     for i in range(1, len(values)):
                         current_speed = self.result['n_sims']*(values[i][0] - values[i - 1][0]) / (values[i][1] - values[i - 1][1])
-                        sampling_per_second[f'{values[i-1][1]-values[0][1]}']=current_speed
+                        # sampling_per_second[f'{values[i-1][1]-values[0][1]}']=current_speed
+                        sampling_per_second[f'{values[i - 1][0]}']=current_speed
                     self.result['sampling_speed'] = sampling_per_second
             json.dump(self.result, output, indent=4)
             print(f"result saved to {self.save_path}")

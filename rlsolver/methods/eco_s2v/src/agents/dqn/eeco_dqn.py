@@ -340,11 +340,11 @@ class DQN:
             else:
                 state = state_next
         
-            if self.test_sampling_speed and (time.time() - last_record_sampling_time >= 1):  # 每1秒记录一次
+            if self.test_sampling_speed and (timestep + 1) % 100 == 0:  # 每100步记录一次
                 logger.add_scalar('sampling_speed', timestep, time.time())
                 last_record_sampling_time = time.time()  # 更新记录时间
-                if time.time() - start_time > 200:
-                    break
+                # if time.time() - start_time > 200:
+                #     break
 
             if not self.test_sampling_speed:
                 if is_training_ready:
@@ -389,13 +389,8 @@ class DQN:
                     else:
                         logger.add_scalar('Episode_score', test_score, (total_time,timestep-training_ready_step))
 
-                # if best_network:
-                #     path = self.network_save_path
-                #     path_main, path_ext = os.path.splitext(path)
-                #     path_main += "_best"
-                #     if path_ext == '':
-                #         path_ext += '.pth'
-                #     self.save(path_main + path_ext)
+                if best_network:
+                    self.save(path_main +"_0"+ path_ext)
 
                 test_scores.append([timestep + 1, test_score])
 

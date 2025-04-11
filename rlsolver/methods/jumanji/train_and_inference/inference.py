@@ -2,65 +2,51 @@ import sys
 import os
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
-rlsolver_path = os.path.join(cur_path, '../../../../rlsolver')
+rlsolver_path = os.path.join(cur_path, '../../../../')
 sys.path.append(os.path.dirname(rlsolver_path))
 
 import time
+import json
 import torch
 import networkx as nx
-import shutil
+
+from rlsolver.methods.jumanji.agents.AgentPPO import AgentA2C
 from rlsolver.methods.eco_s2v.src.envs.inference_network_env import SpinSystemFactory
-from rlsolver.methods.eco_s2v.util import eeco_test_network, load_graph_from_txt
 from rlsolver.methods.eco_s2v.src.envs.eeco_util import (SetGraphGenerator,
                                                          RewardSignal, ExtraAction,
                                                          OptimisationTarget, SpinBasis,
                                                          DEFAULT_OBSERVABLES)
-from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
+from rlsolver.methods.eco_s2v.util import load_graph_from_txt
 
+from rlsolver.methods.eco_s2v.src.envs.eeco_util import (RandomBarabasiAlbertGraphGenerator,
+                                                         RandomErdosRenyiGraphGenerator, ValidationGraphGenerator,
+                                                         )
+from rlsolver.methods.jumanji.agents.AgentPPO import AgentA2C
+from rlsolver.methods.jumanji.train.config import *
 from rlsolver.methods.util_result import write_graph_result
-from rlsolver.methods.eco_s2v.config import *
-import json
 
-def run(graph_folder="../../data/syn_BA",
-        if_greedy=False,
-        n_sims=1,
-        mini_sims=10):  # 设置 mini_sims 以减少显存占用
+def run(graph_folder,n_sims,mini_sims):
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
     network_save_path = NEURAL_NETWORK_SAVE_PATH
 
     print("Testing network: ", network_save_path)
-
-    network_fn = MPNN
-    network_args = {
-        'n_layers': 3,
-        'n_features': 64,
-        'n_hid_readout': [],
-        'tied_weights': False
-    }
-    network = network_fn(n_obs_in=7, **network_args).to(INFERENCE_DEVICE)
-
-    network.load_state_dict(torch.load(network_save_path, map_location=INFERENCE_DEVICE))
-    for param in network.parameters():
+    agent = AgentA2C(device=TRAIN_DEVICE, n_sims=NUM_TRAIN_SIMS,)
+    agent.act.load_state_dict(torch.load(network_save_path, map_location=INFERENCE_DEVICE))
+    for param in agent.act.parameters():
         param.requires_grad = False
-    network.eval()
-
-    if ALG == Alg.eeco:
-        env_args = {
-            'observables': DEFAULT_OBSERVABLES,
-            'reward_signal': RewardSignal.BLS,
-            'extra_action': ExtraAction.NONE,
-            'optimisation_target': OptimisationTarget.CUT,
-            'spin_basis': SpinBasis.BINARY,
-            'norm_rewards': True,
-            'memory_length': None,
-            'horizon_length': None,
-            'stag_punishment': None,
-            'basin_reward': 1. / NUM_TRAIN_NODES,
-            'reversible_spins': True,
-            'if_greedy': if_greedy,
-            'use_tensor_core': USE_TENSOR_CORE_IN_INFERENCE
-        }
-
+    agent.act.eval()
+    env_args = {'observables': DEFAULT_OBSERVABLES,
+                'reward_signal': RewardSignal.BLS,
+                'extra_action': ExtraAction.NONE,
+                'optimisation_target': OptimisationTarget.CUT,
+                'spin_basis': SpinBasis.BINARY,
+                'norm_rewards': True,
+                'memory_length': None,
+                'horizon_length': None,
+                'stag_punishment': None,
+                'basin_reward': 1. / NUM_TRAIN_NODES,
+                'reversible_spins': True,
+                }
     step_factor = 2
     files = os.listdir(graph_folder)
 
@@ -75,7 +61,7 @@ def run(graph_folder="../../data/syn_BA",
                 g_array = nx.to_numpy_array(g)
                 g_tensor = torch.tensor(g_array, dtype=torch.float, device=INFERENCE_DEVICE)
                 graphs.append(g_tensor)
-
+        start_time=time.time()
         if len(graphs) > 0:
             for i, graph_tensor in enumerate(graphs):
                 test_graph_generator = SetGraphGenerator(graph_tensor, device=INFERENCE_DEVICE)
@@ -94,19 +80,19 @@ def run(graph_folder="../../data/syn_BA",
                         device=INFERENCE_DEVICE,
                         n_sims=current_mini_sims,  # 只处理 mini_sims 个环境
                     )
+                    agent.num_envs = current_mini_sims
+                    agent.n_spins = graph_tensor.shape[0]
+                sol = agent.inference(env=test_env,max_steps=graph_tensor.shape[0] * step_factor)
+                obj,obj_index = torch.max(test_env.best_score,dim=0)
+                if obj > best_obj:
+                    best_obj = obj.item()
+                    best_sol = test_env.best_spins[obj_index]
+                run_duration = time.time()-start_time
+                best_sol = ((best_sol+1)/2).to(torch.int).cpu().numpy()
+                write_graph_result(best_obj, run_duration, best_sol.shape[0], 'jumanji', best_sol, file_list[i], plus1=False)
 
-                    start_time = time.time()
-                    result, sol = eeco_test_network(network, test_env, USE_TENSOR_CORE_IN_INFERENCE, INFERENCE_DEVICE)
 
-                    if result['obj'] > best_obj:  # 记录最佳结果
-                        best_obj = result['obj']
-                        best_sol = result['sol']
-                run_duration = time.time() - start_time
-                sol = (best_sol + 1)/2
-                write_graph_result(best_obj, run_duration, sol.shape[0], ALG.value, sol.to(torch.int), file_list[i], plus1=True)
-
-if __name__ == "__main__":
-    run(graph_folder='../../../rlsolver/data/syn_BA',
-        if_greedy=False,
-        n_sims=NUM_INFERENCE_SIMS,
-        mini_sims=MINI_INFERENCE_SIMS)
+def inference(agent,env,stpes):
+    env.reset()
+    agent._explore_vec_env(env=env, horizon_len=stpes)
+    return env.best_score

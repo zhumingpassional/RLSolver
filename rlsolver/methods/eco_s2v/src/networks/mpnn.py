@@ -39,7 +39,8 @@ class MPNN(nn.Module):
         return norm.float()
     
     # @torch.autocast(device_type="cuda")
-    def forward(self, obs,use_tensor_core=False):
+    def forward(self, obs_,use_tensor_core=False):
+        obs = obs_.clone()
         if obs.dim() == 2:
             obs = obs.unsqueeze(0)
 
