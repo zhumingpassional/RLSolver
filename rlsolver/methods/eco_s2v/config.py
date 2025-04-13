@@ -10,7 +10,7 @@ class Alg(Enum):
     eco_torch = 'eco_torch'
     eeco = 'eeco'
 
-ALG = Alg.eeco
+ALG = Alg.s2v
 GRAPH_TYPE = GraphType.BA
 
 #训练的参数

@@ -6,8 +6,7 @@ rlsolver_path = os.path.join(cur_path, '../../../')
 sys.path.append(os.path.dirname(rlsolver_path))
 
 from rlsolver.methods.rl4co_maxcut.envs.graph import MaxCutEnv, MaxCutGenerator
-from rlsolver.methods.rl4co_maxcut.models.nn.graph.gcn import GCNEncoder
-from rlsolver.methods.rl4co_maxcut.models import AttentionModelPolicy, AttentionModel
+from rlsolver.methods.rl4co_maxcut.models import S2VModelPolicy, S2VModel
 from rlsolver.methods.rl4co_maxcut.utils import RL4COTrainer
 from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary
 
@@ -15,24 +14,17 @@ from lightning.pytorch.callbacks import ModelCheckpoint, RichModelSummary
 # Instantiate generator and environment
 generator = MaxCutGenerator(n_spins=20)
 env = MaxCutEnv(generator)
-gcn_encoder = GCNEncoder(
-    env_name='maxcut', 
-    embed_dim=64,
-    num_layers=3,
-)
 
 # Create policy and RL model
-policy = AttentionModelPolicy(env_name=env.name, embed_dim=64,num_encoder_layers=6)
+policy = S2VModelPolicy(env_name=env.name, embed_dim=64,num_encoder_layers=6)
 
-model = AttentionModel(env,policy,batch_size=64,train_data_size=90000, optimizer_kwargs={"lr": 1e-4},policy_kwargs={
-        'encoder': gcn_encoder
-    })
+model = S2VModel(env,policy,batch_size=64,train_data_size=9000, optimizer_kwargs={"lr": 1e-4})
 
 
 checkpoint_callback = ModelCheckpoint(
-    dirpath="checkpoints",  # 保存路径
+    dirpath=rlsolver_path+"rlsolver/methods/rl4co_maxcut/checkpoints",  # 保存路径
     filename="maxcut_step_{step:06d}",  # 按步数保存
-    every_n_train_steps=50,  # 每 1000 步保存一次
+    every_n_train_steps=50,  # 每 50 步保存一次
     save_top_k=-1,  # 保存所有模型
     save_last=False,  # 保存最后一个模型
     mode="max",  # 最大化 reward
@@ -40,5 +32,5 @@ checkpoint_callback = ModelCheckpoint(
 rich_model_summary = RichModelSummary(max_depth=3)  # model summary callback
 callbacks = [checkpoint_callback, rich_model_summary]
 
-trainer = RL4COTrainer(max_epochs=1, accelerator="gpu",precision="16-mixed",callbacks=callbacks,devices=[4])
+trainer = RL4COTrainer(max_epochs=2, accelerator="gpu",precision="16-mixed",callbacks=callbacks,devices=[7])
 trainer.fit(model)

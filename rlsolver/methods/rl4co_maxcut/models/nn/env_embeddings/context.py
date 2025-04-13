@@ -4,6 +4,7 @@ import torch.nn as nn
 from tensordict import TensorDict
 
 from rlsolver.methods.rl4co_maxcut.utils.ops import gather_by_index
+from rlsolver.methods.eco_s2v.src.networks.mpnn import MPNN
 
 
 def env_context_embedding(env_name: str, config: dict) -> nn.Module:
@@ -399,9 +400,12 @@ class MAXCUTContext(nn.Module):
 
     def __init__(self, embed_dim, linear_bias=True):
         super(MAXCUTContext, self).__init__()
-        self.state_embedding = nn.Linear(embed_dim, embed_dim, bias=linear_bias)
+        self.mpnn = MPNN(n_obs_in=1,
+                              n_layers=3,
+                              n_features=64,
+                              n_hid_readout=[],
+                              tied_weights=False)
 
     def forward(self, embeddings, td):
-        cut_improvement = torch.clamp(td['greedy_change'],min=0)
-        c_i = torch.softmax(cut_improvement, dim=-1)
-        return self.state_embedding((embeddings * c_i.unsqueeze(-1)).sum(-2))
+        state = torch.cat((td['state'].unsqueeze(-2), td['adj']), dim=-2) 
+        return self.mpnn(state)

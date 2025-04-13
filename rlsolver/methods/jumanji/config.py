@@ -7,11 +7,11 @@ rlsolver_path = os.path.join(cur_path, '../../')
 
 GRAPH_TYPE = GraphType.BA
 
-GPU_ID = 0
+GPU_ID = 7
 
-NUM_TRAIN_NODES = 24
+NUM_TRAIN_NODES = 100
 NUM_TRAIN_SIMS = 2 ** 4
-NUM_VALIDATION_NODES = 24
+NUM_VALIDATION_NODES = 100
 HERIZON_LENGTH = int(NUM_TRAIN_NODES/2)
 VALIDATION_SEED = 10
 NUM_VALIDATION_SIMS = 2 ** 4
@@ -32,7 +32,7 @@ RESULT_DIR = rlsolver_path + "/methods/jumanji/pretrained_agent/tmp"
 NETWORK_FOLDER = rlsolver_path + "/methods/jumanji/pretrained_agent/tmp/"+""
 
 SAVE_NETWORK_FREQUENCY = 10
-TEST_FREQUENCY = 100
+TEST_FREQUENCY = 10
 
 
 

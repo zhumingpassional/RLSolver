@@ -22,7 +22,7 @@ from rlsolver.methods.eco_s2v.src.envs.eeco_util import (RandomBarabasiAlbertGra
                                                          RandomErdosRenyiGraphGenerator, ValidationGraphGenerator,
                                                          )
 from rlsolver.methods.jumanji.agents.AgentPPO import AgentA2C
-from rlsolver.methods.jumanji.train.config import *
+from rlsolver.methods.jumanji.config import *
 from rlsolver.methods.util_result import write_graph_result
 
 def run(graph_folder,n_sims,mini_sims):

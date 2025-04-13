@@ -42,14 +42,17 @@ class MaxCutEnv(RL4COEnvBase):
         td["state"] = state
         # We are done if we choose enough locations
         done = td["i"] >= (td["to_choose"] - 1)
-        action_mask = torch.ones_like(td["state"], dtype=torch.bool)  # 允许所有动作
+        action_mask = state.clone() #已经选过的动作不允许再次选择
 
         # The reward is calculated outside via get_reward for efficiency, so we set it to zero here
         reward = torch.zeros_like(done)
         # sim_indices = torch.arange(batch_size,device=td.device)
-        state_ = state*2-1
-        greedy_change = (torch.matmul(td["adj"], state_.to(torch.float).unsqueeze(-1)).squeeze(-1) * state_.to(torch.float))
+        state_ = (state*2-1).to(torch.float)
         # Update distances
+        obj = ((1 / 4) * (torch.matmul(td['adj'],state_.unsqueeze(-1)).squeeze(-1) * -state_).sum(dim=-1) + (1 / 4)
+                        * torch.sum(td['adj'],dim=(-1,-2)))
+        best_obj_ = td["best_obj"].clone() 
+        best_obj = torch.where(obj>best_obj_,obj,best_obj_)
 
         td.update(
             {   "state":state,
@@ -59,7 +62,7 @@ class MaxCutEnv(RL4COEnvBase):
                 "done": done,
                 "adj": td["adj"],
                 "action_mask" : action_mask,
-                "greedy_change": greedy_change,
+                "best_obj" : best_obj,
             }
         )
         return td
@@ -67,10 +70,8 @@ class MaxCutEnv(RL4COEnvBase):
     def _reset(self, td: Optional[TensorDict] = None, batch_size=None) -> TensorDict:
 
         self.to(td.device)
-        # state_ = torch.randint(0, 2, (*batch_size, self.generator.n_spins), dtype=torch.bool, device=td.device)
         state_ = torch.ones((*batch_size,self.generator.n_spins), dtype=torch.bool,device=td.device)
-        greedy_change = (torch.matmul(td["adj"], state_.to(torch.float).unsqueeze(-1)).squeeze(-1) * state_.to(torch.float))
-
+        best_obj = torch.zeros(batch_size, device=td.device)
         return TensorDict(
             {
                 # given information
@@ -81,7 +82,7 @@ class MaxCutEnv(RL4COEnvBase):
                     *batch_size, dtype=torch.int64, device=td.device
                 ),
                 "action_mask" : torch.ones_like(td["state"], dtype=torch.bool),
-                "greedy_change": greedy_change,
+                "best_obj": best_obj,
             },
             batch_size=batch_size,
         )        
@@ -95,12 +96,7 @@ class MaxCutEnv(RL4COEnvBase):
         )
 
     def _get_reward(self, td: TensorDict,actions) -> torch.Tensor:
-        # breakpoint()
-        state = td['state'].to(torch.float)*2-1
-        obj = 0.1*((1 / 4) * (torch.matmul(td['adj'],state.unsqueeze(-1)).squeeze(-1) * -state).sum(dim=-1) + (1 / 4)
-                        * torch.sum(td['adj'],dim=(-1,-2)))
-        
-        # print(state.shape,td['adj'].shape)
+        obj = td['best_obj']/td['adj'].shape[-1]
         return obj
 
     @staticmethod
@@ -116,11 +112,3 @@ class MaxCutEnv(RL4COEnvBase):
     @staticmethod
     def get_num_starts(td):
         return td["action_mask"].shape[-1]
-
-    @staticmethod
-    def select_start_nodes(td, num_starts):
-        num_loc = td["action_mask"].shape[-1]
-        return (
-            torch.arange(num_starts, device=td.device).repeat_interleave(td.shape[0])
-            % num_loc
-        )
