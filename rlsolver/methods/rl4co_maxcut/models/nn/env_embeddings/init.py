@@ -41,7 +41,7 @@ def env_init_embedding(env_name: str, config: dict) -> nn.Module:
         "mtvrp": MTVRPInitEmbedding,
         "shpp": TSPInitEmbedding,
         "flp": FLPInitEmbedding,
-        "maxcut": MAXCUTInitEmbdeeing,
+        "maxcut": MaxCutInitEmbedding,
     }
 
     if env_name not in embedding_registry:
@@ -575,11 +575,8 @@ class FLPInitEmbedding(nn.Module):
         hdim = self.projection(td["locs"])
         return hdim
     
-class MAXCUTInitEmbdeeing(nn.Module):
+class MaxCutInitEmbedding(nn.Module):
     def __init__(self, embed_dim: int):
         super().__init__()
-        self.init_embed = nn.Linear(1, embed_dim, bias=True)
     def forward(self, td: TensorDict):
-        adj = td['adj']
-        hdim = torch.sum(self.init_embed(adj.unsqueeze(-1)),dim=-2).squeeze()
-        return hdim
+        return td['adj']

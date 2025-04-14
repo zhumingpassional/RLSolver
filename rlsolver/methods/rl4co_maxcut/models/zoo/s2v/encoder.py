@@ -8,10 +8,8 @@ from torch import Tensor
 from rlsolver.methods.rl4co_maxcut.envs import RL4COEnvBase
 from rlsolver.methods.rl4co_maxcut.models.common.constructive import AutoregressiveEncoder
 from rlsolver.methods.rl4co_maxcut.models.nn.env_embeddings import env_init_embedding
-from rlsolver.methods.rl4co_maxcut.models.nn.graph.attnnet import GraphAttentionNetwork
 
-
-class AttentionModelEncoder(AutoregressiveEncoder):
+class S2VModelEncoder(AutoregressiveEncoder):
     """Graph Attention Encoder as in Kool et al. (2019).
     First embed the input and then process it with a Graph Attention Network.
 
@@ -30,18 +28,11 @@ class AttentionModelEncoder(AutoregressiveEncoder):
 
     def __init__(
         self,
-        embed_dim: int = 128,
         init_embedding: nn.Module = None,
         env_name: str = "tsp",
-        num_heads: int = 8,
-        num_layers: int = 3,
-        normalization: str = "batch",
-        feedforward_hidden: int = 512,
-        net: nn.Module = None,
-        sdpa_fn=None,
-        moe_kwargs: dict = None,
+        embed_dim: int = 128,
     ):
-        super(AttentionModelEncoder, self).__init__()
+        super(S2VModelEncoder, self).__init__()
 
         if isinstance(env_name, RL4COEnvBase):
             env_name = env_name.name
@@ -51,20 +42,6 @@ class AttentionModelEncoder(AutoregressiveEncoder):
             env_init_embedding(self.env_name, {"embed_dim": embed_dim})
             if init_embedding is None
             else init_embedding
-        )
-
-        self.net = (
-            GraphAttentionNetwork(
-                num_heads,
-                embed_dim,
-                num_layers,
-                normalization,
-                feedforward_hidden,
-                sdpa_fn=sdpa_fn,
-                moe_kwargs=moe_kwargs,
-            )
-            if net is None
-            else net
         )
 
     def forward(
@@ -83,9 +60,9 @@ class AttentionModelEncoder(AutoregressiveEncoder):
         """
         # Transfer to embedding space
         init_h = self.init_embedding(td)
-        # breakpoint()
+
         # Process embedding
-        h = self.net(init_h, mask)
+        h = init_h.clone()
 
         # Return latent representation and initial embedding
         return h, init_h

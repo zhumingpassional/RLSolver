@@ -9,9 +9,8 @@ from rlsolver.methods.rl4co_maxcut.models.common.constructive.base import (
     ConstructivePolicy,
 )
 
-
-
 from rlsolver.methods.rl4co_maxcut.models.rl.common.base import RL4COLitModule
 from rlsolver.methods.rl4co_maxcut.models.rl.reinforce.baselines import REINFORCEBaseline, get_reinforce_baseline
 from rlsolver.methods.rl4co_maxcut.models.rl.reinforce.reinforce import REINFORCE
-from rlsolver.methods.rl4co_maxcut.models.zoo.am import AttentionModel, AttentionModelPolicy
+from rlsolver.methods.rl4co_maxcut.models.zoo.s2v import S2VModel, S2VModelPolicy
+
