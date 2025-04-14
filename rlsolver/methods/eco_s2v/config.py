@@ -17,7 +17,7 @@ GRAPH_TYPE = GraphType.BA
 GPU_ID_IN_TRAIN = 0
 GPU_ID_IN_BUFFER_OF_TRAIN = 0
 NUM_TRAIN_NODES = 200
-NUM_TRAIN_SIMS = 2 ** 2
+NUM_TRAIN_SIMS = 2 ** 6
 NUM_VALIDATION_NODES = 200
 VALIDATION_SEED = 10
 NUM_VALIDATION_SIMS = 2 ** 2
@@ -28,6 +28,9 @@ GPU_ID_IN_INFERENCE = 0
 NUM_GENERATED_INSTANCES_IN_SELECT_BEST = 3
 NUM_INFERENCE_SIMS = 50
 MINI_INFERENCE_SIMS = 50  # 如果NUM_INFERENCE_SIMS太大导致GPU内存爆掉，分拆成MINI_INFERENCE_SIMS个环境，跑多次凑够NUM_INFERENCE_SIMS
+
+LOCAL_SEARCH_FREQUENCY = 100
+
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000,10000]
 USE_TENSOR_CORE_IN_INFERENCE = True
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
@@ -36,8 +39,8 @@ NUM_TRAINED_NODES_IN_INFERENCE = 20
 #             "BA_1000_", "BA_1100_", "BA_1200_", "BA_2000_", "BA_3000_", "BA_4000_",
 #             "BA_5000_"]  # Replace with your desired prefixes
 
-
-NEURAL_NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
+NEURAL_NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/network_best_BA_200spin.pth"
+# NEURAL_NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
 DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp"
 NEURAL_NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/" + ""
@@ -87,8 +90,8 @@ if GRAPH_TYPE == GraphType.BA:
         REPLAY_BUFFER_SIZE = 5*NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
         UPDATE_TARGET_FREQUENCY = 4000
         FINAL_EXPLORATION_STEP = 800000
-        SAVE_NETWORK_FREQUENCY = 10
-        TEST_FREQUENCY = 4000000
+        SAVE_NETWORK_FREQUENCY = 20
+        TEST_FREQUENCY = 400
     else:
         raise ValueError("parameters are not set")
 elif GRAPH_TYPE.value == GraphType.ER:
