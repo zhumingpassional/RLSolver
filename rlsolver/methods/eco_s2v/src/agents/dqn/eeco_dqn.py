@@ -338,8 +338,6 @@ class DQN:
 
             else:
                 state = state_next
-            del action, reward, state_next,done
-            # torch.cuda.empty_cache()
 
             if self.test_sampling_speed and (timestep + 1) % 100 == 0:  # 每100步记录一次
                 logger.add_scalar('sampling_speed', timestep, time.time())
@@ -549,7 +547,6 @@ class DQN:
                                                            self.test_episodes), end="")
         test_env.matrix_obs,test_env.state = None,None
 
-        # torch.cuda.empty_cache()
         return torch.mean(test_scores)
 
     def save(self, path='network.pth'):
