@@ -493,11 +493,38 @@ class HistoryBuffer():
         self.buffer = None
         self.device=device
 
-    def pack_spins(self,spins):
-        n_sims, spin_dim = spins.shape
-        assert spin_dim % 8 == 0, "spin_dim 必须是 8 的倍数"
-        return spins.view(n_sims, -1, 8).mul(2**torch.arange(7, -1, -1, device=spins.device)).sum(dim=2).to(torch.uint8)
+    # def pack_spins(self,spins):
+    #     n_sims, spin_dim = spins.shape
+    #     assert spin_dim % 8 == 0, "spin_dim 必须是 8 的倍数"
+    #     return spins.view(n_sims, -1, 8).mul(2**torch.arange(7, -1, -1, device=spins.device)).sum(dim=2).to(torch.uint8)
+    
+    def pack_spins(self, spins_0):
+        """
+        Packs a 0/1 spin tensor into uint8 for efficient storage.
+        Handles cases where spin_dim is not a multiple of 8 by padding with zeros.
+        """
+        n_sims, spin_dim = spins_0.shape
 
+        # Calculate padding if necessary
+        remainder = spin_dim % 8
+        if remainder != 0:
+            padding_needed = 8 - remainder
+            # Create a padding tensor of zeros
+            padding = torch.zeros(n_sims, padding_needed, dtype=spins_0.dtype, device=spins_0.device)
+            # Concatenate padding to the original spins
+            spins_padded = torch.cat([spins_0, padding], dim=1)
+            # The new dimension is now guaranteed to be a multiple of 8
+            packed_dim = (spin_dim + padding_needed) // 8
+        else:
+            # No padding needed
+            spins_padded = spins_0
+            packed_dim = spin_dim // 8
+
+        packed_spins = spins_padded.view(n_sims, packed_dim, 8)\
+                                    .mul(2**torch.arange(7, -1, -1, device=spins_padded.device))\
+                                    .sum(dim=2)\
+                                    .to(torch.uint8)
+        return packed_spins
     def update(self, spins):
         """
         记录新的 spins，并返回哪些是新状态

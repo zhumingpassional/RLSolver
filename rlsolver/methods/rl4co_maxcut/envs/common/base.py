@@ -334,7 +334,9 @@ class RL4COEnvBase(EnvBase, metaclass=abc.ABCMeta):
         """
         self.__dict__.update(state)
         self.rng = torch.manual_seed(0)
-        self.rng.set_state(state["rng"])
+        self.rng.set_state(state["rng"].to('cpu'))
+        # self.rng.set_state(state["rng"])
+
 
 
 class ImprovementEnvBase(RL4COEnvBase, metaclass=abc.ABCMeta):

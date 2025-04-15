@@ -237,7 +237,6 @@ class ConstructivePolicy(nn.Module):
                 td,
                 action=actions[..., step] if actions is not None else None,
             )
-            # breakpoint()
             td = env.step(td)["next"]
             step += 1
             if step > max_steps:

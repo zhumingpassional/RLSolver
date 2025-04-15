@@ -54,7 +54,7 @@ class MaxCutGenerator(Generator):
             {
                 "adj": adj,
                 "to_choose": torch.ones(*batch_size, dtype=torch.long) * self.n_spins,
-                "state": torch.ones((*batch_size,self.n_spins), dtype=torch.long)
+                "state": torch.ones((*batch_size,self.n_spins), dtype=torch.bool)
             },
             batch_size=batch_size
         )

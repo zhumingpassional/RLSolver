@@ -21,7 +21,7 @@ from rlsolver.methods.eco_s2v.config import *
 # TESTING ON GRAPHS
 ####################################################
 
-def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
+def eeco_test_network(network, test_env, if_tensor_core=True,device=None,local_search_frequency=LOCAL_SEARCH_FREQUENCY):
     start_time_1 = time.time()
     result = {}
     obj_vs_time = {}
@@ -50,6 +50,11 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
 
     for i in tqdm.tqdm(range(test_env.max_steps)):
         state, done = test_env.step(actions)
+        
+        if (i + 1) % local_search_frequency == 0:
+            spins = local_search(state)
+            state[:,0,:] = spins
+
         if USE_TENSOR_CORE_IN_INFERENCE:
             actions = predict(network,state.to(torch.float16)).squeeze(-1)
         else:
@@ -62,6 +67,17 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None):
     for key, value in obj_vs_time.items():
         obj_vs_time[key] = value.item()
     return result,sol.cpu().numpy()
+
+def local_search(state):
+    spins = state[:,0,:]*2-1
+    matrix = state[:,7:,:]
+    delta_score = (torch.matmul(spins,matrix[0])* spins)
+    max_score_change,max_indices = torch.max(delta_score,dim=-1)
+    flip_condition = max_score_change > 0
+    batch_indices = torch.arange(spins.size(0), device=spins.device)
+    # delta_score_temp = delta_score[batch_indices,max_indices]
+    spins[batch_indices,max_indices] = (-1 * flip_condition.to(torch.float32))
+    return (spins + 1) / 2
 
 def test_network(network, env_args, graphs_test, device=None, step_factor=1, batched=True,
                  n_attempts=50, return_raw=False, return_history=False, max_batch_size=None):

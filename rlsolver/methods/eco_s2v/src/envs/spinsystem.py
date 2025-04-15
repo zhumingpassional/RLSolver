@@ -617,47 +617,7 @@ class SpinSystemUnbiased(SpinSystemBase):
         matrix = self.matrix.astype('float64')
         return self.__calc_over_range_jit(list_spins, matrix)
 
-    @staticmethod
-    @jit(float64(float64[:], float64[:, :], int64), nopython=True)
-    def _calculate_energy_change(new_spins, matrix, action):
-        return -2 * new_spins[action] * matmul(new_spins.T, matrix[:, action])
-
-    @staticmethod
-    @jit(float64(float64[:], float64[:, :], int64), nopython=True)
-    def _calculate_cut_change(new_spins, matrix, action):
-        return -1 * new_spins[action] * matmul(new_spins.T, matrix[:, action])
-
-    @staticmethod
-    @jit(float64(float64[:], float64[:, :]), nopython=True)
-    def _calculate_energy_jit(spins, matrix):
-        return - matmul(spins.T, matmul(matrix, spins)) / 2
-
-    @staticmethod
-    @jit(parallel=True)
-    def __calc_over_range_jit(list_spins, matrix):
-        energy = 1e50
-        best_spins = None
-
-        for spins in list_spins:
-            spins = spins.astype('float64')
-            # This is self._calculate_energy_jit without calling to the class or self so jit can do its thing.
-            current_energy = - matmul(spins.T, matmul(matrix, spins)) / 2
-            if current_energy < energy:
-                energy = current_energy
-                best_spins = spins
-        return energy, best_spins
-
-    @staticmethod
-    @jit(float64[:](float64[:], float64[:, :]), nopython=True)
-    def _get_immeditate_energies_avaialable_jit(spins, matrix):
-        return 2 * spins * matmul(matrix, spins)
-
-    @staticmethod
-    @jit(float64[:](float64[:], float64[:, :]), nopython=True)
-    def _get_immeditate_cuts_avaialable_jit(spins, matrix):
-        return spins * matmul(matrix, spins)
-
-
+ 
 class SpinSystemBiased(SpinSystemBase):
 
     def calculate_energy(self, spins=None):

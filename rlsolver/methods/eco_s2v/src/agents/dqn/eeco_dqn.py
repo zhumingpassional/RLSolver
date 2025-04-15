@@ -316,7 +316,6 @@ class DQN:
             score += reward
             # Store transition in replay buffer
             self.replay_buffer.add(state.half(), action, reward.half(), state_next.half(), done,score)
-            
 
             if done[0]:
                 # Reinitialise the state
@@ -339,7 +338,7 @@ class DQN:
 
             else:
                 state = state_next
-        
+
             if self.test_sampling_speed and (timestep + 1) % 100 == 0:  # 每100步记录一次
                 logger.add_scalar('sampling_speed', timestep, time.time())
                 last_record_sampling_time = time.time()  # 更新记录时间
@@ -546,6 +545,7 @@ class DQN:
         if self.test_metric == TestMetric.ENERGY_ERROR:
             print("\n{}/{} graphs solved optimally".format(np.count_nonzero(np.array(test_scores) == 0),
                                                            self.test_episodes), end="")
+        test_env.matrix_obs,test_env.state = None,None
 
         return torch.mean(test_scores)
 

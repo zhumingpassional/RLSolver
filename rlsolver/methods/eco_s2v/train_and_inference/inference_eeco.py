@@ -24,9 +24,9 @@ import json
 def run(graph_folder="../../data/syn_BA",
         if_greedy=False,
         n_sims=1,
-        mini_sims=10):  # 设置 mini_sims 以减少显存占用
+        mini_sims=10,
+        network_save_path=NEURAL_NETWORK_SAVE_PATH):  # 设置 mini_sims 以减少显存占用
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
-    network_save_path = NEURAL_NETWORK_SAVE_PATH
 
     print("Testing network: ", network_save_path)
 
@@ -58,7 +58,7 @@ def run(graph_folder="../../data/syn_BA",
             'basin_reward': 1. / NUM_TRAIN_NODES,
             'reversible_spins': True,
             'if_greedy': if_greedy,
-            'use_tensor_core': USE_TENSOR_CORE_IN_INFERENCE
+            'use_tensor_core': False
         }
 
     step_factor = 2
@@ -96,7 +96,8 @@ def run(graph_folder="../../data/syn_BA",
                     )
 
                     start_time = time.time()
-                    result, sol = eeco_test_network(network, test_env, USE_TENSOR_CORE_IN_INFERENCE, INFERENCE_DEVICE)
+                    result, sol = eeco_test_network(network, test_env, USE_TENSOR_CORE_IN_INFERENCE,
+                                                    INFERENCE_DEVICE,local_search_frequency=LOCAL_SEARCH_FREQUENCY)
 
                     if result['obj'] > best_obj:  # 记录最佳结果
                         best_obj = result['obj']

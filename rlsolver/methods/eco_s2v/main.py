@@ -29,10 +29,10 @@ if train_inference_network == 1:
     if ALG == Alg.eeco:
         from rlsolver.methods.eco_s2v.train_and_inference.inference_eeco import run
         run(graph_folder=DATA_DIR,
-            network_folder=NEURAL_NETWORK_FOLDER,
             if_greedy=False,
             n_sims=NUM_INFERENCE_SIMS,
-            mini_sims=MINI_INFERENCE_SIMS)
+            mini_sims=MINI_INFERENCE_SIMS,
+            network_save_path=NEURAL_NETWORK_SAVE_PATH)
     else:
         from rlsolver.methods.eco_s2v.train_and_inference.inference import run
         run(save_loc=RESULT_DIR, graph_save_loc=DATA_DIR, network_save_path=NEURAL_NETWORK_SAVE_PATH,
