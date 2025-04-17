@@ -129,7 +129,8 @@ def run(neural_network_folder, n_sims, mini_sims, num_generated_instances, alg, 
                             n_sims=current_mini_sims,  # 只处理 mini_sims 个环境
                         )
 
-                        result, sol = eeco_test_network(network, test_env, USE_TENSOR_CORE_IN_INFERENCE, INFERENCE_DEVICE)
+                        result, sol = eeco_test_network(network, test_env, USE_TENSOR_CORE_IN_INFERENCE, INFERENCE_DEVICE
+                                                        ,local_search_frequency=LOCAL_SEARCH_FREQUENCY)
 
                         if result['obj'] > best_obj:  # 记录最佳结果
                             best_obj = result['obj']

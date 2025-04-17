@@ -5,10 +5,12 @@ rlsolver_path = os.path.join(cur_path, '../../')
 from rlsolver.methods.config import GraphType
 from rlsolver.methods.util import calc_device
 class Alg(Enum):
-    eco = "eco"
-    s2v = "s2v"
+    eco = 'eco'
+    s2v = 's2v'
     eco_torch = 'eco_torch'
     eeco = 'eeco'
+    jumanji = 'jumanji'
+    rl4co = 'rl4co'
 
 ALG = Alg.eeco
 GRAPH_TYPE = GraphType.BA
@@ -27,8 +29,9 @@ TEST_SAMPLING_SPEED = False
 GPU_ID_IN_INFERENCE = 0
 NUM_GENERATED_INSTANCES_IN_SELECT_BEST = 3
 NUM_INFERENCE_SIMS = 50
+USE_LOCAL_SEARCH = True
+LOCAL_SEARCH_FREQUENCY = 30
 MINI_INFERENCE_SIMS = 50  # 如果NUM_INFERENCE_SIMS太大导致GPU内存爆掉，分拆成MINI_INFERENCE_SIMS个环境，跑多次凑够NUM_INFERENCE_SIMS
-LOCAL_SEARCH_FREQUENCY = 100
 NUM_INFERENCE_NODES = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 2000, 3000, 4000, 5000,10000]
 USE_TENSOR_CORE_IN_INFERENCE = True
 INFERENCE_PREFIXES = [GRAPH_TYPE.value + "_" + str(i) + "_" for i in NUM_INFERENCE_NODES]
@@ -134,4 +137,11 @@ elif GRAPH_TYPE.value == GraphType.ER:
         TEST_FREQUENCY = 50000
     else:
         raise ValueError("parameters are not set")
-    
+
+#jumanji
+HERIZON_LENGTH = int(NUM_TRAIN_NODES/2)
+JUMANJI_TEST_FREQUENCY = 10 #每次test的时间间隔
+
+#rl4co
+RL4CO_GRAPH_DIR = rlsolver_path + "/data/syn_BA/BA_100_ID0.txt"
+RL4CO_CHECKOUT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/rl4co_maxcut/checkpoints/maxcut_step_step=000250.ckpt"
