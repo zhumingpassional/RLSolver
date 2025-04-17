@@ -12,13 +12,13 @@ class Alg(Enum):
     jumanji = 'jumanji'
     rl4co = 'rl4co'
 
-ALG = Alg.rl4co
+ALG = Alg.eeco
 GRAPH_TYPE = GraphType.BA
 
 #训练的参数
 GPU_ID_IN_TRAIN = 0
 GPU_ID_IN_BUFFER_OF_TRAIN = 0
-NUM_TRAIN_NODES = 20
+NUM_TRAIN_NODES = 200
 NUM_TRAIN_SIMS = 2 ** 2
 NUM_VALIDATION_NODES = 200
 VALIDATION_SEED = 10
@@ -39,8 +39,7 @@ NUM_TRAINED_NODES_IN_INFERENCE = 20
 #             "BA_1000_", "BA_1100_", "BA_1200_", "BA_2000_", "BA_3000_", "BA_4000_",
 #             "BA_5000_"]  # Replace with your desired prefixes
 
-NEURAL_NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/_BA_20_4_m/network_best.pth"
-# NEURAL_NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
+NEURAL_NETWORK_SAVE_PATH = rlsolver_path + "/methods/eco_s2v/pretrained_agent/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAINED_NODES_IN_INFERENCE) + "spin_best.pth"
 DATA_DIR = rlsolver_path + "/data/syn_" + GRAPH_TYPE.value
 RESULT_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp"
 NEURAL_NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/" + ""
