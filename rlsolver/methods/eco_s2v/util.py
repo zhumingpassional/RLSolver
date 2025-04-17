@@ -51,7 +51,7 @@ def eeco_test_network(network, test_env, if_tensor_core=True,device=None,local_s
     for i in tqdm.tqdm(range(test_env.max_steps)):
         state, done = test_env.step(actions)
         
-        if (i + 1) % local_search_frequency == 0:
+        if (i + 1) % local_search_frequency == 0 and USE_LOCAL_SEARCH:
             spins = local_search(state)
             state[:,0,:] = spins
 
