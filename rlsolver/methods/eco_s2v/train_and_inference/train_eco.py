@@ -24,7 +24,7 @@ except ImportError:
 import time
 
 
-def run(save_loc, graph_save_loc):
+def run(save_loc):
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
 
     ####################################################
