@@ -86,7 +86,7 @@ def run(save_loc,graph_save_loc):
     'if_discrete': True,
     }
     args = Config(AgentA2C,"maxcut" ,env_args_)
-    args.gpu_id = GPU_ID_IN_TRAIN
+    args.gpu_id = TRAIN_GPU_ID
     agent = args.agent_class(args.net_dims, args.state_dim, args.action_dim, gpu_id=args.gpu_id, args=args)
     path_main, path_ext = os.path.splitext(network_save_path)
     if path_ext == '':

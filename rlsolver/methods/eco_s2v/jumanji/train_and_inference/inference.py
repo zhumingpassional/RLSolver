@@ -40,7 +40,7 @@ def run(graph_folder,n_sims,mini_sims):
     'if_discrete': True,
     }
     args = Config(AgentA2C,"maxcut" ,env_args_)
-    args.gpu_id = GPU_ID_IN_INFERENCE
+    args.gpu_id = INFERENCE_GPU_ID
     agent = args.agent_class(args.net_dims, args.state_dim, args.action_dim, gpu_id=args.gpu_id, args=args)
  
     # agent = AgentA2C(device=TRAIN_DEVICE, n_sims=NUM_TRAIN_SIMS,)

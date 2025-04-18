@@ -35,6 +35,6 @@ def run(save_loc,graph_save_loc):
     callbacks = [checkpoint_callback, rich_model_summary]
 
     trainer = RL4COTrainer(max_epochs=2, accelerator="gpu",
-                           precision="16-mixed",callbacks=callbacks,
-                           devices=[GPU_ID_IN_TRAIN],default_root_dir=save_loc+"/rl4co_maxcut")
+                           precision="16-mixed", callbacks=callbacks,
+                           devices=[TRAIN_GPU_ID], default_root_dir=save_loc + "/rl4co_maxcut")
     trainer.fit(model)

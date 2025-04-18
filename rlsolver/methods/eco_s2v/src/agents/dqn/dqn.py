@@ -234,7 +234,7 @@ class DQN:
         self.test_save_path = test_save_path
         self.test_metric = test_metric
 
-        self.losses_save_path = RESULT_DIR + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_" + "losses.pkl"
+        self.losses_save_path = NEURAL_NETWORK_DIR + "/" + ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_" + "losses.pkl"
 
         if not self.acting_in_reversible_spin_env:
             for env in self.envs:
