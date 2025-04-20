@@ -14,6 +14,8 @@ from rlsolver.methods.eco_s2v.config import *
 
 def run(save_loc,graph_save_loc):
     # Instantiate generator and environment
+    pre_fix = save_loc + "/" + NEURAL_NETWORK_PREFIX
+
     generator = MaxCutGenerator(n_spins=NUM_TRAIN_NODES)
     env = MaxCutEnv(generator)
 
@@ -24,8 +26,8 @@ def run(save_loc,graph_save_loc):
 
 
     checkpoint_callback = ModelCheckpoint(
-        dirpath=save_loc+"/rl4co_maxcut/checkpoints",  # 保存路径
-        filename="maxcut_step_{step:06d}",  # 按步数保存
+        dirpath=pre_fix,  # 保存路径
+        filename=NEURAL_NETWORK_PREFIX+"_{step:06d}",  # 按步数保存
         every_n_train_steps=50,  # 每 50 步保存一次
         save_top_k=-1,  # 保存所有模型
         save_last=False,  # 保存最后一个模型
