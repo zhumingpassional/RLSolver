@@ -69,7 +69,7 @@ class REINFORCE(RL4COLitModule):
             out = self.calculate_loss(td, batch, out)
             if self.train_start_time is not None:
                 elapsed_time = time.time() - self.train_start_time
-                self.log("train/reward_vs_time", td['reward'].mean(), on_step=True, prog_bar=True)
+                # self.log("train/reward_vs_time", td['reward'].mean(), on_step=True, prog_bar=True)
                 self.log("train/time", elapsed_time, on_step=True, prog_bar=True)
 
         metrics = self.log_metrics(out, phase, dataloader_idx=dataloader_idx)

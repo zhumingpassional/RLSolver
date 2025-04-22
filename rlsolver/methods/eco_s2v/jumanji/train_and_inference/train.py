@@ -27,9 +27,9 @@ from rlsolver.methods.eco_s2v.util import cal_txt_name
 
 def run(save_loc,graph_save_loc):
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
-    pre_fix = save_loc + "/" + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "_" + str(NUM_TRAIN_SIMS)
+    pre_fix = save_loc + "/" + NEURAL_NETWORK_PREFIX
     pre_fix = cal_txt_name(pre_fix)
-    network_save_path = pre_fix + "/network.pth"
+    network_save_path = pre_fix + "/" + NEURAL_NETWORK_PREFIX + ".pth"
     logger_save_path = pre_fix + f"/logger.json"
     sampling_speed_save_path = pre_fix + "/sampling_speed.json"
     print('pre_fix:', pre_fix.split("/")[-1])
