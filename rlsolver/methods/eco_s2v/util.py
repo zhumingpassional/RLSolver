@@ -76,7 +76,7 @@ def local_search(state):
     flip_condition = max_score_change > 0
     batch_indices = torch.arange(spins.size(0), device=spins.device)
     # delta_score_temp = delta_score[batch_indices,max_indices]
-    spins[batch_indices,max_indices] = (-1 * flip_condition.to(torch.float32))
+    spins[batch_indices,max_indices] *= (-1 * flip_condition.to(torch.float32))
     return (spins + 1) / 2
 
 def test_network(network, env_args, graphs_test, device=None, step_factor=1, batched=True,

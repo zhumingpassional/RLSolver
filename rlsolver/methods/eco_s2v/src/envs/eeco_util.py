@@ -388,13 +388,15 @@ class ValidationGraphGenerator(GraphGenerator):
 
     def get(self):
         adj = torch.empty((self.n_sims, self.n_spins, self.n_spins), device=self.device, dtype=torch.float)
+        seed = self.seed
         for i in range(self.n_sims):
             if self.seed is not None:
                 if self.graph_type == GraphType.BA:
-                    g = nx.barabasi_albert_graph(self.n_spins, 4, seed=self.seed)
+                    g = nx.barabasi_albert_graph(self.n_spins, 4, seed=seed)
                 elif self.graph_type == GraphType.ER:
-                    g = nx.erdos_renyi_graph(self.n_spins, 0.15, seed=self.seed)
+                    g = nx.erdos_renyi_graph(self.n_spins, 0.15, seed=seed)
                 adj[i] = torch.tensor(nx.to_numpy_array(g), dtype=torch.float32, device=self.device).fill_diagonal_(0)
+                seed += 1     
         return adj
 
 

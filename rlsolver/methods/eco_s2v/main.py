@@ -8,7 +8,7 @@ from rlsolver.methods.eco_s2v.config import *
 
 save_loc = NEURAL_NETWORK_DIR
 
-train_inference_network = 1  # 0: train, 1: inference
+train_inference_network = 0  # 0: train, 1: inference
 assert train_inference_network in [0, 1]
 
 if train_inference_network == 0:
@@ -33,8 +33,6 @@ if train_inference_network == 1:
     if ALG == Alg.eeco:
         from rlsolver.methods.eco_s2v.train_and_inference.inference_eeco import run
         run(graph_folder=DATA_DIR,
-            network_folder=NEURAL_NETWORK_FOLDER,
-            if_greedy=False,
             n_sims=NUM_INFERENCE_SIMS,
             mini_sims=MINI_INFERENCE_SIMS)
     elif ALG == Alg.eco or ALG == Alg.s2v:

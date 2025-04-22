@@ -7,6 +7,7 @@ import networkx as nx
 import numpy as np
 from rlsolver.methods.eco_s2v.rl4co_maxcut.envs.common.utils import Generator, get_sampler
 from rlsolver.methods.eco_s2v.rl4co_maxcut.utils.pylogger import get_pylogger
+from rlsolver.methods.eco_s2v.config import *
 
 log = get_pylogger(__name__)
 
@@ -36,7 +37,9 @@ class MaxCutGenerator(Generator):
         self.p_connection = p_connection
     
     def _generate(self, batch_size) -> TensorDict:
+        # adj = torch.zeros((*batch_size, self.n_spins, self.n_spins),device=TRAIN_DEVICE)
         adj = torch.zeros((*batch_size, self.n_spins, self.n_spins))
+
         if self.graph_type == 'BA':
             for i in range(self.m_insertion_edges + 1):
                 adj[:, i, :i + 1] = 1
