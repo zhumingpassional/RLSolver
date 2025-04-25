@@ -80,84 +80,48 @@ class RandomGraphGenerator(GraphGenerator):
 
 
 class RandomErdosRenyiGraphGenerator(GraphGenerator):
-
-    def __init__(self, n_spins=20, p_connection=[0.1, 0], edge_type=EdgeType.DISCRETE):
-        super().__init__(n_spins, edge_type, False)
-
-        if type(p_connection) not in [list, tuple]:
-            p_connection = [p_connection, 0]
-        assert len(p_connection) == 2, "p_connection must have length 2"
+    def __init__(self, n_spins=20, p_connection=0.2, edge_type=EdgeType.DISCRETE, n_sims=8, device="cuda"):
+        super().__init__(n_spins, edge_type, False, n_sims)
         self.p_connection = p_connection
+        self.device = device
 
         if self.edge_type == EdgeType.UNIFORM:
-            self.get_connection_mask = lambda: np.ones((self.n_spins, self.n_spins))
+            self.get_connection_mask = lambda: torch.ones((self.n_spins, self.n_spins), device=self.device)
         elif self.edge_type == EdgeType.DISCRETE:
             def get_connection_mask():
-                mask = 2. * np.random.randint(2, size=(self.n_spins, self.n_spins)) - 1.
-                mask = np.tril(mask) + np.triu(mask.T, 1)
+                mask = 2. * torch.randint(0, 2, (self.n_spins, self.n_spins), device=self.device) - 1.
+                mask = torch.tril(mask) + torch.triu(mask.T, 1)
                 return mask
-
             self.get_connection_mask = get_connection_mask
         elif self.edge_type == EdgeType.RANDOM:
             def get_connection_mask():
-                mask = 2. * np.random.rand(self.n_spins, self.n_spins) - 1
-                mask = np.tril(mask) + np.triu(mask.T, 1)
+                mask = 2. * torch.randint(0, 2, (self.n_sims, self.n_spins, self.n_spins), dtype=torch.float32, device=self.device) - 1
+                mask = torch.tril(mask, diagonal=0) + torch.triu(mask.transpose(1, 2), diagonal=1)
                 return mask
-
             self.get_connection_mask = get_connection_mask
         else:
             raise NotImplementedError()
 
+    def generate_er_graph(self):
+
+        # 对于每个 batch，生成 n_spins x n_spins 的邻接矩阵
+        adj = (torch.rand(self.n_sims, self.n_spins, self.n_spins, device=self.device) < self.p_connection).float()
+
+        # 对角线置零（无自环）
+        adj = adj * (1 - torch.eye(self.n_spins, device=self.device).unsqueeze(0))
+
+        # 对称化处理（无向图）
+        adj = torch.triu(adj, diagonal=1)
+        adj = adj + adj.transpose(1, 2)
+
+        return adj
+
     def get(self, with_padding=False):
-
-        p = np.clip(np.random.normal(*self.p_connection), 0, 1)
-
-        g = nx.erdos_renyi_graph(self.n_spins, p)
-        adj = np.multiply(nx.to_numpy_array(g), self.get_connection_mask())
-
-        # No self-connections (this modifies adj in-place).
-        np.fill_diagonal(adj, 0)
-
+        adj = self.generate_er_graph()
+        adj = adj * self.get_connection_mask()
         return self.pad_matrix(adj) if with_padding else adj
 
 
-# class RandomBarabasiAlbertGraphGenerator(GraphGenerator):
-
-#     def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=2 ** 3):
-#         super().__init__(n_spins, edge_type, False, n_sims)
-
-#         self.m_insertion_edges = m_insertion_edges
-#         self.device = TRAIN_DEVICE
-#         if self.edge_type == EdgeType.UNIFORM:
-#             self.get_connection_mask = lambda: torch.ones((self.n_spins, self.n_spins), device=self.device)
-#         elif self.edge_type == EdgeType.DISCRETE:
-#             def get_connection_mask():
-#                 mask = 2. * torch.randint(0, 2, (self.n_spins, self.n_spins), device=self.device) - 1.
-#                 mask = torch.tril(mask) + torch.triu(mask.T, 1)
-#                 return mask
-
-#             self.get_connection_mask = get_connection_mask
-#         elif self.edge_type == EdgeType.RANDOM:
-#             def get_connection_mask():
-#                 mask = 2. * torch.randint(0, 2, (self.n_sims, n_spins, n_spins), dtype=torch.float32,
-#                                           device=self.device) - 1
-#                 mask = torch.tril(mask, diagonal=0) + torch.triu(mask.transpose(1, 2), diagonal=1)
-#                 return mask
-
-#             self.get_connection_mask = get_connection_mask
-#         else:
-#             raise NotImplementedError()
-
-#     def get(self, with_padding=False):
-#         adj = torch.empty((self.n_sims, self.n_spins, self.n_spins), device=self.device, dtype=torch.float)
-#         for i in range(self.n_sims):
-#             g = nx.barabasi_albert_graph(self.n_spins, self.m_insertion_edges)
-#             # g = nx.erdos_renyi_graph(self.n_spins, p)
-
-#             adj[i] = torch.tensor(nx.to_numpy_array(g), dtype=torch.float32, device=self.device).fill_diagonal_(0)
-
-#         adj = adj * self.get_connection_mask()
-#         return self.pad_matrix(adj) if with_padding else adj
 class RandomBarabasiAlbertGraphGenerator(GraphGenerator):
     def __init__(self, n_spins=20, m_insertion_edges=4, edge_type=EdgeType.DISCRETE, n_sims=8, device="cuda"):
         super().__init__(n_spins, edge_type, False, n_sims)
