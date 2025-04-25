@@ -96,7 +96,7 @@ if GRAPH_TYPE == GraphType.BA:
         TEST_FREQUENCY = 4000000
     else:
         raise ValueError("parameters are not set")
-elif GRAPH_TYPE.value == GraphType.ER:
+elif GRAPH_TYPE == GraphType.ER:
     if NUM_TRAIN_NODES == 20:
         NB_STEPS = 2500000
         REPLAY_START_SIZE = 500
