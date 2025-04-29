@@ -259,14 +259,17 @@ class DQN:
         return self.replay_buffers[env.action_space.n]
 
     def get_random_replay_buffer(self):
+        return random.sample(sorted(self.replay_buffers.items()), k=1)[0][1]
         # for key, value in self.replay_buffers.items():
         #     print("key: \n", key)
         #     print("value: ")
         #     value.print()
-        res = random.sample(sorted(self.replay_buffers.items()), k=1)[0][1]
+        # res = random.sample(self.replay_buffers.items(), k=1)[0][1]
+        # items = self.replay_buffers.items()
+        # res = random.sample(items, k=1)[0][1]
         # print("type of res:", type(res))
         # print("res:", res.print())
-        return res
+        # return res
 
     def learn(self, start_time, timesteps, verbose=False):
 
@@ -533,7 +536,8 @@ class DQN:
                 x = (states[0, :] == self.allowed_action_state).nonzero()
                 actions = x[qs[x].argmax().item()].item()
             else:
-                disallowed_actions_mask = (states[:, :, 0] != self.allowed_action_state)
+                # disallowed_actions_mask = (states[:, :, 0] != self.allowed_action_state)
+                disallowed_actions_mask = (states[:, 0, :] != self.allowed_action_state)
                 qs_allowed = qs.masked_fill(disallowed_actions_mask, -10000)
                 actions = qs_allowed.argmax(1, True).squeeze(1).cpu().numpy()
             return actions

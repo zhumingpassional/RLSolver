@@ -23,10 +23,10 @@ if train_inference_network == 0:
     elif ALG == Alg.jumanji:
         from rlsolver.methods.eco_s2v.jumanji.train_and_inference.train import run
     elif ALG == Alg.rl4co:
-        from rlsolver.methods.eco_s2v.rl4co_maxcut.train_maxcut import run
+        from rlsolver.methods.eco_s2v.rl4co.train import run
     else:
         raise ValueError('Algorithm not recognized')
-    run(save_loc=NEURAL_NETWORK_DIR, graph_save_loc=DATA_DIR)
+    run(save_loc=NEURAL_NETWORK_DIR)
 
 
 if train_inference_network == 1:
@@ -43,7 +43,7 @@ if train_inference_network == 1:
         from rlsolver.methods.eco_s2v.jumanji.train_and_inference.inference import run
         run(graph_folder=DATA_DIR,n_sims=NUM_INFERENCE_SIMS,mini_sims=MINI_INFERENCE_SIMS)
     elif ALG == Alg.rl4co:
-        from rlsolver.methods.eco_s2v.rl4co_maxcut.inference_maxcut import run  
+        from rlsolver.methods.eco_s2v.rl4co.inference import run
         run(graph_dir=RL4CO_GRAPH_DIR,n_sims=NUM_INFERENCE_SIMS)
     else:
         raise ValueError('Algorithm not recognized')

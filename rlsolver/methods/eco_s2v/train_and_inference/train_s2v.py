@@ -23,7 +23,7 @@ except ImportError:
 import time
 
 
-def run(save_loc, graph_save_loc):
+def run(save_loc):
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
 
     ####################################################
@@ -97,7 +97,6 @@ def run(save_loc, graph_save_loc):
     # network_save_path = pre_fix + "/network.pth"
     network_save_path = pre_fix + "/" + NEURAL_NETWORK_PREFIX + ".pth"
     test_save_path = pre_fix + "/test_scores.pkl"
-    loss_save_path = pre_fix + "/losses.pkl"
     logger_save_path = pre_fix + f"/logger.json"
     sampling_speed_save_path = pre_fix + "/sampling_speed.json"
     print('pre_fix:', pre_fix.split("/")[-1])
@@ -182,4 +181,4 @@ def run(save_loc, graph_save_loc):
 
 
 if __name__ == "__main__":
-    run()
+    run(save_loc=NEURAL_NETWORK_DIR)
