@@ -1,6 +1,6 @@
 import sys
 import os
-
+import time
 cur_path = os.path.dirname(os.path.abspath(__file__))
 rlsolver_path = os.path.join(cur_path, '../../../')
 sys.path.append(os.path.dirname(rlsolver_path))
@@ -11,6 +11,7 @@ save_loc = NEURAL_NETWORK_DIR
 train_inference_network = 0  # 0: train, 1: inference
 assert train_inference_network in [0, 1]
 
+start_time = time.time()
 if train_inference_network == 0:
     if ALG == Alg.eco:
         from rlsolver.methods.eco_s2v.train_and_inference.train_eco import run
@@ -47,3 +48,5 @@ if train_inference_network == 1:
         run(graph_dir=RL4CO_GRAPH_DIR,n_sims=NUM_INFERENCE_SIMS)
     else:
         raise ValueError('Algorithm not recognized')
+running_duration = time.time() - start_time
+print("running_duration: ", running_duration)
