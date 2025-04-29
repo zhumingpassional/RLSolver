@@ -177,4 +177,4 @@ def run(save_loc):
 
 
 if __name__ == "__main__":
-    run()
+    run(save_loc=NEURAL_NETWORK_DIR)

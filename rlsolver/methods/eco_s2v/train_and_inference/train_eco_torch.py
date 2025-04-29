@@ -26,7 +26,7 @@ except ImportError:
 import time
 
 
-def run(save_loc, graph_save_loc):
+def run(save_loc):
     print("\n----- Running {} -----\n".format(os.path.basename(__file__)))
 
     ####################################################
@@ -65,7 +65,7 @@ def run(save_loc, graph_save_loc):
     ####
     # Pre-generated test graphs
     ####
-    graphs_test = load_graph_set_from_folder(graph_save_loc)
+    graphs_test = load_graph_set_from_folder(NEURAL_NETWORK_SAVE_PATH)
     graphs_test = [torch.tensor(m,dtype=torch.float,device=TRAIN_DEVICE) for m in graphs_test]
     n_tests = len(graphs_test)
 
@@ -173,4 +173,4 @@ def run(save_loc, graph_save_loc):
 
 
 if __name__ == "__main__":
-    run()
+    run(save_loc=NEURAL_NETWORK_DIR)

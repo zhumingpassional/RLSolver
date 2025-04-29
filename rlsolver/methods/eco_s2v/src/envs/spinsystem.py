@@ -4,7 +4,7 @@ from operator import matmul
 
 import numpy as np
 import torch.multiprocessing as mp
-from numba import jit, float64, int64
+# from numba import jit, float64, int64
 
 from rlsolver.methods.eco_s2v.src.envs.util import (EdgeType,
                                                              RewardSignal,
@@ -487,9 +487,11 @@ class SpinSystemBase(ABC):
             state[0, :] = (1 - state[0, :]) / 2
 
         if self.gg.biased:
-            return np.vstack((state, self.matrix_obs, self.bias_obs))
+            obs = np.vstack((state, self.matrix_obs, self.bias_obs))
+            return obs
         else:
-            return np.vstack((state, self.matrix_obs))
+            obs = np.vstack((state, self.matrix_obs))
+            return obs
 
     def get_immeditate_rewards_avaialable(self, spins=None):
         if spins is None:
@@ -618,22 +620,22 @@ class SpinSystemUnbiased(SpinSystemBase):
         return self.__calc_over_range_jit(list_spins, matrix)
 
     @staticmethod
-    @jit(float64(float64[:], float64[:, :], int64), nopython=True)
+    # @jit(float64(float64[:], float64[:, :], int64), nopython=True)
     def _calculate_energy_change(new_spins, matrix, action):
         return -2 * new_spins[action] * matmul(new_spins.T, matrix[:, action])
 
     @staticmethod
-    @jit(float64(float64[:], float64[:, :], int64), nopython=True)
+    # @jit(float64(float64[:], float64[:, :], int64), nopython=True)
     def _calculate_cut_change(new_spins, matrix, action):
         return -1 * new_spins[action] * matmul(new_spins.T, matrix[:, action])
 
     @staticmethod
-    @jit(float64(float64[:], float64[:, :]), nopython=True)
+    # @jit(float64(float64[:], float64[:, :]), nopython=True)
     def _calculate_energy_jit(spins, matrix):
         return - matmul(spins.T, matmul(matrix, spins)) / 2
 
     @staticmethod
-    @jit(parallel=True)
+    # @jit(parallel=True)
     def __calc_over_range_jit(list_spins, matrix):
         energy = 1e50
         best_spins = None
@@ -648,12 +650,12 @@ class SpinSystemUnbiased(SpinSystemBase):
         return energy, best_spins
 
     @staticmethod
-    @jit(float64[:](float64[:], float64[:, :]), nopython=True)
+    # @jit(float64[:](float64[:], float64[:, :]), nopython=True)
     def _get_immeditate_energies_avaialable_jit(spins, matrix):
         return 2 * spins * matmul(matrix, spins)
 
     @staticmethod
-    @jit(float64[:](float64[:], float64[:, :]), nopython=True)
+    # @jit(float64[:](float64[:], float64[:, :]), nopython=True)
     def _get_immeditate_cuts_avaialable_jit(spins, matrix):
         return spins * matmul(matrix, spins)
  
@@ -685,22 +687,22 @@ class SpinSystemBiased(SpinSystemBase):
         return self.__calc_over_range_jit(list_spins, matrix, bias)
 
     @staticmethod
-    @jit(nopython=True)
+    # @jit(nopython=True)
     def _calculate_energy_change(new_spins, matrix, bias, action):
         return 2 * new_spins[action] * (matmul(new_spins.T, matrix[:, action]) + bias[action])
 
     @staticmethod
-    @jit(nopython=True)
+    # @jit(nopython=True)
     def _calculate_cut_change(new_spins, matrix, bias, action):
         raise NotImplementedError("MaxCut not defined/implemented for biased SpinSystems.")
 
     @staticmethod
-    @jit(nopython=True)
+    # @jit(nopython=True)
     def _calculate_energy_jit(spins, matrix, bias):
         return matmul(spins.T, matmul(matrix, spins)) / 2 + matmul(spins.T, bias)
 
     @staticmethod
-    @jit(parallel=True)
+    # @jit(parallel=True)
     def __calc_over_range_jit(list_spins, matrix, bias):
         energy = 1e50
         best_spins = None
@@ -715,11 +717,11 @@ class SpinSystemBiased(SpinSystemBase):
         return energy, best_spins
 
     @staticmethod
-    @jit(nopython=True)
+    # @jit(nopython=True)
     def _get_immeditate_energies_avaialable_jit(spins, matrix, bias):
         return - (2 * spins * (matmul(matrix, spins) + bias))
 
     @staticmethod
-    @jit(nopython=True)
+    # @jit(nopython=True)
     def _get_immeditate_cuts_avaialable_jit(spins, matrix, bias):
         raise NotImplementedError("MaxCut not defined/implemented for biased SpinSystems.")
