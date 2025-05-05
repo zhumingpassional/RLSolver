@@ -21,6 +21,7 @@ GRAPH_TYPE = GraphType.BA
 #训练的参数
 TRAIN_GPU_ID = -1
 BUFFER_GPU_ID = TRAIN_GPU_ID
+USE_TWO_DEVICES_IN_ECOS2V = False # CPU for sampling, GPU for training neural network.
 NUM_TRAIN_NODES = 20
 NUM_TRAIN_SIMS = 2 ** 2
 NUM_VALIDATION_NODES = 200

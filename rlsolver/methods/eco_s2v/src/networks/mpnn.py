@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from ...config import *
 
 class MPNN(nn.Module):
     def __init__(self,
@@ -55,6 +56,10 @@ class MPNN(nn.Module):
             norm = self.get_normalisation(adj).half()
         else:
             norm = self.get_normalisation(adj)
+        if USE_TENSOR_CORE:
+            node_features = node_features.to(TRAIN_DEVICE)
+            norm = norm.to(TRAIN_DEVICE)
+            adj = adj.to(TRAIN_DEVICE)
         init_node_embeddings = self.node_init_embedding_layer(node_features)
         edge_embeddings = self.edge_embedding_layer(node_features, adj, norm)
 
