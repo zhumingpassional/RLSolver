@@ -1,8 +1,6 @@
 from enum import Enum
 import os
 
-from pytorch_lightning.utilities.types import TRAIN_DATALOADERS
-
 cur_path = os.path.dirname(os.path.abspath(__file__))
 rlsolver_path = os.path.join(cur_path, '../../')
 from rlsolver.methods.config import GraphType
@@ -15,15 +13,19 @@ class Alg(Enum):
     jumanji = 'jumanji'
     rl4co = 'rl4co'
 
-ALG = Alg.eco
+TRAIN_INFERENCE = 0  # 0: train, 1: inference
+assert TRAIN_INFERENCE in [0, 1]
+
+ALG = Alg.eeco # Alg
 GRAPH_TYPE = GraphType.BA
 
 #训练的参数
-TRAIN_GPU_ID = -1
+TRAIN_GPU_ID = 0
+SAMPLE_GPU_ID_IN_ECOS2V = -1 if ALG in [Alg.eco, Alg.s2v] else None
+USE_TWO_DEVICES_IN_ECOS2V = True if ALG in [Alg.eco, Alg.s2v] else False
 BUFFER_GPU_ID = TRAIN_GPU_ID
-USE_TWO_DEVICES_IN_ECOS2V = False # CPU for sampling, GPU for training neural network.
-NUM_TRAIN_NODES = 20
-NUM_TRAIN_SIMS = 2 ** 2
+NUM_TRAIN_NODES = 200
+NUM_TRAIN_SIMS = 2 ** 8
 NUM_VALIDATION_NODES = 200
 VALIDATION_SEED = 10
 NUM_VALIDATION_SIMS = 2 ** 2
@@ -49,14 +51,15 @@ NEURAL_NETWORK_DIR = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp"
 NEURAL_NETWORK_FOLDER = rlsolver_path + "/methods/eco_s2v/pretrained_agent/tmp/" + ""
 NEURAL_NETWORK_PREFIX = ALG.value + "_" + GRAPH_TYPE.value + "_" + str(NUM_TRAIN_NODES) + "spin"
 
-UPDATE_FREQUENCY = 1
+UPDATE_FREQUENCY = 32
 TRAIN_DEVICE = calc_device(TRAIN_GPU_ID)
+SAMPLES_DEVICE_IN_ECOS2V = calc_device(SAMPLE_GPU_ID_IN_ECOS2V)
 INFERENCE_DEVICE = calc_device(INFERENCE_GPU_ID)
 BUFFER_DEVICE = calc_device(BUFFER_GPU_ID)
 
 if GRAPH_TYPE == GraphType.BA:
     if NUM_TRAIN_NODES == 20:
-        NB_STEPS = 2500000
+        NB_STEPS = 250000
         REPLAY_START_SIZE = 500
         REPLAY_BUFFER_SIZE = 5000
         UPDATE_TARGET_FREQUENCY = 1000
@@ -64,15 +67,15 @@ if GRAPH_TYPE == GraphType.BA:
         SAVE_NETWORK_FREQUENCY = 50 # seconds
         TEST_FREQUENCY = 10000
     elif NUM_TRAIN_NODES == 40:
-        NB_STEPS = 2500000
+        NB_STEPS = 250000
         REPLAY_START_SIZE = 500
         REPLAY_BUFFER_SIZE = 5000
         UPDATE_TARGET_FREQUENCY = 1000
         FINAL_EXPLORATION_STEP = 150000
         SAVE_NETWORK_FREQUENCY = 50 # seconds
         TEST_FREQUENCY = 10000
-    elif NUM_TRAIN_NODES == 60:
-        NB_STEPS = 5000000
+    elif NUM_TRAIN_NODES == 60 or NUM_TRAIN_NODES == 80:
+        NB_STEPS = 500000
         REPLAY_START_SIZE = 500
         REPLAY_BUFFER_SIZE = 5000
         UPDATE_TARGET_FREQUENCY = 1000
@@ -80,7 +83,7 @@ if GRAPH_TYPE == GraphType.BA:
         SAVE_NETWORK_FREQUENCY = 50 # seconds
         TEST_FREQUENCY = 20000
     elif NUM_TRAIN_NODES == 100:
-        NB_STEPS = 8000000
+        NB_STEPS = 800000
         REPLAY_START_SIZE = 1500
         REPLAY_BUFFER_SIZE = 10000
         UPDATE_TARGET_FREQUENCY = 2500
@@ -88,7 +91,7 @@ if GRAPH_TYPE == GraphType.BA:
         SAVE_NETWORK_FREQUENCY = 500 # seconds
         TEST_FREQUENCY = 50000
     elif NUM_TRAIN_NODES >= 200:
-        NB_STEPS = 1000000
+        NB_STEPS = 900000
         REPLAY_START_SIZE = NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
         REPLAY_BUFFER_SIZE = 5*NUM_TRAIN_NODES*2*NUM_TRAIN_SIMS
         UPDATE_TARGET_FREQUENCY = 4000

@@ -56,7 +56,7 @@ class MPNN(nn.Module):
             norm = self.get_normalisation(adj).half()
         else:
             norm = self.get_normalisation(adj)
-        if USE_TENSOR_CORE:
+        if use_tensor_core:
             node_features = node_features.to(TRAIN_DEVICE)
             norm = norm.to(TRAIN_DEVICE)
             adj = adj.to(TRAIN_DEVICE)
