@@ -371,7 +371,7 @@ class Logger:
     def __init__(self,save_path,args,n_sims):
         self._memory = {}
         self._saves = 0
-        self._maxsize = 1000000
+        self._maxsize = NB_STEPS
         self._dumps = 0
         self.save_path = save_path
         self.result = {}
@@ -390,40 +390,31 @@ class Logger:
 
         self._saves += 1
         if self._saves == self._maxsize - 1:
-            with open('log_data_' + str((self._dumps + 1) * self._maxsize) + '.pkl', 'wb') as output:
-                pickle.dump(self._memory, output, pickle.HIGHEST_PROTOCOL)
+            # with open('log_data_' + str((self._dumps + 1) * self._maxsize) + '.pkl', 'wb') as output:
+            #     pickle.dump(self._memory, output, pickle.HIGHEST_PROTOCOL)
             self._dumps += 1
             self._saves = 0
             self._memory = {}
 
     def save(self):
-        result = {}
+        self.result = {}
         # 保存所有内存中的数据到txt文件
         if not os.path.exists(os.path.dirname(self.save_path)):
             os.makedirs(os.path.dirname(self.save_path))
+        keys = ["step_vs_num_samples_per_second", "step_vs_obj", "time_vs_obj", "step_vs_loss", "time_vs_loss"]
         with open(self.save_path, 'w') as output:
             for key, values in self._memory.items():
-                if key == "Episode_score":
-                    obj_vs_time = {}
+                if key in keys:
+                    tmp_dict = {}
                     for value in values:
-                        obj = value[0]  # obj是第一个元素
-                        time, time_step = value[1]# 元组中的时间和time_step
-                        obj_vs_time[f'{time}'] = [obj, time_step]
-                    self.result['obj_vs_time'] = obj_vs_time
-                if key == "Loss":
-                    loss_dict = {}
-                    for value in values:
-                        loss = value[0]  # obj是第一个元素
-                        time, time_step = value[1]# 元组中的时间和time_step
-                        loss_dict[f'{time}'] = [loss, time_step]
-                    self.result['Loss'] = loss_dict
-                if key == "sampling_speed":
-                    sampling_per_second = {}
-                    for i in range(1, len(values)):
-                        current_speed = self.result['n_sims']*(values[i][0] - values[i - 1][0]) / (values[i][1] - values[i - 1][1])
-                        # sampling_per_second[f'{values[i-1][1]-values[0][1]}']=current_speed
-                        sampling_per_second[f'{values[i - 1][0]}']=current_speed
-                    self.result['sampling_speed'] = sampling_per_second
-            json.dump(self.result, output, indent=4)
+                        if type(value[1]) == torch.Tensor:
+                            value[1] = value[1].tolist()
+                        tmp_dict[f'{value[0]}'] = value[1]
+                    self.result[key] = tmp_dict
+            # for key, value in self.result.items():
+            #     tmp_dict = {}
+            #     tmp_dict[key] = value
+            #     json.dump(tmp_dict, output, ensure_ascii=True, indent=4)
+            json.dump(self.result, output, ensure_ascii=True, indent=4)
             print(f"result saved to {self.save_path}")
 

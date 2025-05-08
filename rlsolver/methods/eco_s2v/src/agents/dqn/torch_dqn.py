@@ -66,7 +66,7 @@ class DQN:
     evaluate : Whether to test the agent during training.
     test_envs : List of test environments.  None means the training environments (envs) are used.
     test_episodes : Number of episodes at each test point.
-    test_frequency : Frequency of tests.
+    test_obj_frequency : Frequency of tests.
     test_save_path : Folder into which the test scores are saved.
     test_metric : The metric used to quantify performance.
 
@@ -125,7 +125,7 @@ class DQN:
         evaluate=True,
         test_envs=None,
         test_episodes=20,
-        test_frequency=10000,
+        test_obj_frequency=10000,
         test_save_path='test_scores',
         test_metric=TestMetric.ENERGY_ERROR,
 
@@ -220,7 +220,7 @@ class DQN:
                 test_envs = [test_envs]
             self.test_envs = test_envs
         self.test_episodes = int(test_episodes)
-        self.test_frequency = test_frequency
+        self.test_obj_frequency = test_obj_frequency
         self.test_save_path = test_save_path
         self.test_metric = test_metric
 
@@ -342,7 +342,7 @@ class DQN:
                     if timestep % self.update_target_frequency == 0:
                         self.target_network.load_state_dict(self.network.state_dict())
 
-            if (timestep+1) % self.test_frequency == 0 and self.evaluate and is_training_ready:
+            if (timestep+1) % self.test_obj_frequency == 0 and self.evaluate and is_training_ready:
                 total_time += time.time() - start_time
                 test_score = self.evaluate_agent()
                 start_time = time.time()

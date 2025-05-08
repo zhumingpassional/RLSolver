@@ -109,7 +109,7 @@ def run(save_loc,graph_save_loc):
             logging_tuple = agent.update_net(buffer)
         th.set_grad_enabled(False)
 
-        if (time.time() - last_record_time >= JUMANJI_TEST_FREQUENCY) and not TEST_SAMPLING_SPEED:
+        if (time.time() - last_record_time >= JUMANJI_TEST_OBJ_FREQUENCY) and not TEST_SAMPLING_SPEED:
             total_time += time.time() - start_time
             test_score = th.mean(agent.inference(env=test_envs,max_steps=NUM_VALIDATION_NODES * step_fact)).item()
             obj_vs_time[f'{total_time}'] = test_score
@@ -118,9 +118,9 @@ def run(save_loc,graph_save_loc):
                 agent.save(path_main +"_best"+ path_ext)
                 start_time = time.time()
                 
-        if TEST_SAMPLING_SPEED:
-            sampling_speed_vs_timestep[f'{i}'] = (NUM_TRAIN_SIMS * HERIZON_LENGTH)/(time.time()-last_record_time)
-            last_record_time =time.time()
+        # if TEST_SAMPLING_SPEED:
+        #     sampling_speed_vs_timestep[f'{i}'] = (NUM_TRAIN_SIMS * HERIZON_LENGTH)/(time.time()-last_record_time)
+        #     last_record_time =time.time()
 
         result_dict = {}
         result_dict['alg'] = "jumanji"

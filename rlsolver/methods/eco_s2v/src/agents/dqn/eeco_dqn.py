@@ -71,7 +71,7 @@ class DQN:
     evaluate : Whether to test the agent during training.
     test_envs : List of test environments.  None means the training environments (envs) are used.
     test_episodes : Number of episodes at each test point.
-    test_frequency : Frequency of tests.
+    test_obj_frequency : Frequency of tests.
     test_save_path : Folder into which the test scores are saved.
     test_metric : The metric used to quantify performance.
 
@@ -131,7 +131,7 @@ class DQN:
             evaluate=True,
             test_envs=None,
             test_episodes=20,
-            test_frequency=10000,
+            test_obj_frequency=10,
             test_save_path='test_scores',
             test_metric=TestMetric.ENERGY_ERROR,
 
@@ -230,7 +230,7 @@ class DQN:
                 test_envs = [test_envs]
             self.test_envs = test_envs
         self.test_episodes = int(test_episodes)
-        self.test_frequency = test_frequency
+        self.test_obj_frequency = test_obj_frequency
         self.test_save_path = test_save_path
         self.test_metric = test_metric
 
@@ -256,6 +256,7 @@ class DQN:
         return random.sample(self.replay_buffers.items(), k=1)[0][1]
 
     def learn(self, timesteps, start_time = None,verbose=False):
+        start_time_of_learn = time.time()
         total_time = 0
 
         if self.logging:
@@ -267,9 +268,6 @@ class DQN:
                 logger = Logger(save_path=self.sampling_speed_save_path
                                 ,args=self.args,
                                 n_sims = self.env.n_sims)
-        if self.test_sampling_speed:
-            last_record_sampling_time = time.time()
-            logger.add_scalar('sampling_speed', 0,start_time)
         path = self.network_save_path
         path_main, path_ext = os.path.splitext(path)
         if path_ext == '':
@@ -288,6 +286,7 @@ class DQN:
         is_training_ready = False
         if_buffer_full = False
         for timestep in range(timesteps):
+            start_time_this_step = time.time()
             if timestep*self.env.n_sims>=self.replay_buffer_size:
                 if_buffer_full = True
             if not is_training_ready:
@@ -317,6 +316,10 @@ class DQN:
             # Store transition in replay buffer
             self.replay_buffer.add(state.half(), action, reward.half(), state_next.half(), done,score)
 
+            if self.test_sampling_speed:  # save log
+                num_samples_per_second = (time.time() - start_time_this_step) / self.env.n_sims
+                logger.add_scalar('step_vs_num_samples_per_second', timestep, num_samples_per_second)
+
             if done[0]:
                 # Reinitialise the state
                 if verbose:
@@ -327,54 +330,34 @@ class DQN:
                         torch.mean(score),
                         loss_str,
                         round(time.time() - t1, 3),))
-                
                 t1 = time.time()
                 state = self.env.reset()
                 self.replay_buffer.record_matrix(state[:, 7:, :])
                 score = torch.zeros((self.env.n_sims), device=self.device, dtype=torch.float)
                 losses_eps = []
-                
-                
-
             else:
                 state = state_next
-
-            if self.test_sampling_speed and (timestep + 1) % 100 == 0:  # 每100步记录一次
-                logger.add_scalar('sampling_speed', timestep, time.time())
-                last_record_sampling_time = time.time()  # 更新记录时间
-                # if time.time() - start_time > 200:
-                #     break
-
-            if not self.test_sampling_speed:
-                if is_training_ready:
-
-                    # Update the main network
-                    if timestep % self.update_frequency == 0:
-
-                        # Sample a batch of transitions
-                        # transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
-                        if if_buffer_full:
-                            transitions = self.replay_buffer.sample(self.minibatch_size)
-                        else: 
-                            transitions = self.replay_buffer.sample(self.minibatch_size, timestep*self.env.n_sims)
-
-                        # Train on selected batch
-                        loss = self.train_step(transitions)
-
-                        losses.append([timestep, loss])
-                        losses_eps.append(loss)
-
-                        # if self.logging:
-                        #     logger.add_scalar('Loss', loss, timestep)
-
-                    # Periodically update target network
-                    if timestep % self.update_target_frequency == 0:
-                        self.target_network.load_state_dict(self.network.state_dict())
-            if ((timestep + 1) % self.test_frequency == 0 and self.evaluate and is_training_ready) or timestep==0 and not self.test_sampling_speed:
-                total_time += time.time() - start_time
+            if is_training_ready:
+                # Update the main network
+                if timestep % self.update_frequency == 0:
+                    # Sample a batch of transitions
+                    # transitions = self.get_random_replay_buffer().sample(self.minibatch_size, self.device)
+                    if if_buffer_full:
+                        transitions = self.replay_buffer.sample(self.minibatch_size)
+                    else:
+                        transitions = self.replay_buffer.sample(self.minibatch_size, (timestep + 1)*self.env.n_sims)
+                    # Train on selected batch
+                    loss = self.train_step(transitions)
+                    losses.append([timestep, loss])
+                    losses_eps.append(loss)
+                # Periodically update target network
+                if timestep % self.update_target_frequency == 0:
+                    self.target_network.load_state_dict(self.network.state_dict())
+            if ((timestep + 1) % self.test_obj_frequency == 0 and self.evaluate and is_training_ready) or timestep==0:
+                total_time += time.time() - start_time_of_learn
                 test_score = self.evaluate_agent()
                 start_time = time.time()
-                print('\nTest score: {}\n'.format(torch.round(test_score * 1000) / 1000))
+                print('\nTest score: {:.2f}\n'.format(test_score))
                 if self.test_metric in [TestMetric.FINAL_CUT, TestMetric.MAX_CUT, TestMetric.CUMULATIVE_REWARD]:
                     best_network = all([test_score > score for t, score in test_scores])
                 elif self.test_metric in [TestMetric.ENERGY_ERROR, TestMetric.BEST_ENERGY]:
@@ -384,27 +367,29 @@ class DQN:
                 
                 if self.logging:
                     if timestep == 0:
-                        logger.add_scalar('Episode_score', test_score, (0,0))
+                        logger.add_scalar('step_vs_obj', 0, test_score)
+                        logger.add_scalar('time_vs_obj', 0, test_score)
                     else:
-                        logger.add_scalar('Episode_score', test_score, (total_time,timestep-training_ready_step))
+                        logger.add_scalar('step_vs_obj', timestep - training_ready_step, test_score)
+                        logger.add_scalar('time_vs_obj', total_time, test_score)
 
                 if best_network:
                     self.save(path_main +"_0"+ path_ext)
 
                 test_scores.append([timestep + 1, test_score])
 
-            if (time.time() - last_record_obj_time >= self.save_network_frequency) and is_training_ready and not self.test_sampling_speed:
-                total_time += time.time() - start_time
+            curr_time = time.time()
+            if (curr_time - last_record_obj_time >= self.save_network_frequency) and is_training_ready:
+                total_time += curr_time - start_time
 
-                path_main_ = path_main+ '_'+str(int(total_time))
+                path_main_ = path_main+ '_' + str(int(total_time))
                 if self.logging:
-                    logger.add_scalar('Loss', loss, (total_time,timestep-training_ready_step))
+                    logger.add_scalar('step_vs_loss', timestep - training_ready_step, loss)
+                    logger.add_scalar('time_vs_loss', total_time, loss)
 
                 self.save(path_main_ + path_ext)
-                start_time = time.time()
-                last_record_obj_time = time.time()
-
-        
+                start_time = curr_time
+                last_record_obj_time = curr_time
         if self.logging:
             logger.save()
     @torch.no_grad()
@@ -514,7 +499,7 @@ class DQN:
             return actions
 
     @torch.no_grad()
-    def evaluate_agent(self, batch_size=None):
+    def evaluate_agent(self):
         """
         Evaluates agent's current performance.  Run multiple evaluations at once
         so the network predictions can be done in batches.

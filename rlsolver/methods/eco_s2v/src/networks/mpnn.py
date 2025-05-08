@@ -38,7 +38,7 @@ class MPNN(nn.Module):
         norm = torch.sum((adj != 0), dim=1).unsqueeze(-1)
         norm[norm == 0] = 1
         return norm.float()
-    
+
     # @torch.autocast(device_type="cuda")
     def forward(self, obs_,use_tensor_core=False):
         obs = obs_.clone()
@@ -56,10 +56,11 @@ class MPNN(nn.Module):
             norm = self.get_normalisation(adj).half()
         else:
             norm = self.get_normalisation(adj)
-        if use_tensor_core:
+        if use_tensor_core or ALG in [Alg.eco, Alg.s2v]:
             node_features = node_features.to(TRAIN_DEVICE)
             norm = norm.to(TRAIN_DEVICE)
             adj = adj.to(TRAIN_DEVICE)
+        # node_features = node_features.to(TRAIN_DEVICE)  # added in eco s2v
         init_node_embeddings = self.node_init_embedding_layer(node_features)
         edge_embeddings = self.edge_embedding_layer(node_features, adj, norm)
 
