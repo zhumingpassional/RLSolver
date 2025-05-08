@@ -101,7 +101,6 @@ def run(save_loc):
     # network_save_path = pre_fix + "/network.pth"
     network_save_path = pre_fix + "/" + NEURAL_NETWORK_PREFIX + ".pth"
     test_save_path = pre_fix + "/test_scores.pkl"
-    loss_save_path = pre_fix + "/losses.pkl"
     logger_save_path = pre_fix + f"/logger.json"
     sampling_speed_save_path = pre_fix + "/sampling_speed.json"
     print('pre_fix:', pre_fix)
@@ -150,7 +149,7 @@ def run(save_loc):
         'network_save_path': network_save_path,
         'test_envs': test_envs,
         'test_episodes': n_validations,
-        'test_frequency': TEST_FREQUENCY,
+        'test_obj_frequency': TEST_OBJ_FREQUENCY,
         'test_save_path': test_save_path,
         'test_metric': TestMetric.MAX_CUT,
         'logger_save_path': logger_save_path,
@@ -159,13 +158,13 @@ def run(save_loc):
         'test_sampling_speed': TEST_SAMPLING_SPEED,
     }
     args['args'] = args
-    if TEST_SAMPLING_SPEED:
-        nb_steps = int(1e4)
-        args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
-            'save_network_frequency'] = 1e6
-        args['replay_start_size'] = args['initial_exploration_rate'] =0
-        args['replay_buffer_size'] = NUM_TRAIN_SIMS
-        args['update_exploration'] = False
+    # if TEST_SAMPLING_SPEED:
+    #     nb_steps = int(1e4)
+    #     args['test_obj_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
+    #         'save_network_frequency'] = 1e6
+    #     args['replay_start_size'] = args['initial_exploration_rate'] =0
+    #     args['replay_buffer_size'] = NUM_TRAIN_SIMS
+    #     args['update_exploration'] = False
     agent = DQN(**args)
 
     print("\n Created DQN agent with network:\n\n", agent.network)

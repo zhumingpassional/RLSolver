@@ -143,7 +143,7 @@ def run(save_loc):
         'network_save_path': network_save_path,
         'test_envs': test_envs,
         'test_episodes': n_validations,
-        'test_frequency': TEST_FREQUENCY,
+        'test_obj_frequency': TEST_OBJ_FREQUENCY,
         'test_save_path': test_save_path,
         'test_metric': TestMetric.MAX_CUT,
         'logger_save_path': logger_save_path,
@@ -154,13 +154,13 @@ def run(save_loc):
         'buffer_device': BUFFER_DEVICE,
     }
     args['args'] = args
-    if TEST_SAMPLING_SPEED:
-        nb_steps = int(2e4)
-        args['test_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
-            'save_network_frequency'] = 1e6
-        args['replay_start_size'] = args['initial_exploration_rate'] =0
-        args['replay_buffer_size'] = NUM_TRAIN_SIMS
-        args['update_exploration'] = False
+    # if TEST_SAMPLING_SPEED:
+    #     nb_steps = int(2e4)
+    #     args['test_obj_frequency'] = args['update_target_frequency'] = args['update_frequency'] = args[
+    #         'save_network_frequency'] = 1e6
+    #     args['replay_start_size'] = args['initial_exploration_rate'] =0
+    #     args['replay_buffer_size'] = NUM_TRAIN_SIMS
+    #     args['update_exploration'] = False
     agent = DQN(**args)
     #############
     # TRAIN AGENT

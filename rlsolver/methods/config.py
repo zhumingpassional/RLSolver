@@ -17,13 +17,16 @@ def calc_device(gpu_id: int):
 class Problem(Enum):
     maxcut = "maxcut"
     graph_partitioning = "graph_partitioning"
-    minimum_vertex_cover = "minimum_vertex_cover"
     number_partitioning = "number_partitioning"
+    minimum_vertex_cover = "minimum_vertex_cover"
     bilp = "bilp"
     maximum_independent_set = "maximum_independent_set"
     knapsack = "knapsack"
     set_cover = "set_cover"
     graph_coloring = "graph_coloring"
+    portfolio_allocation = "portfolio_allocation"
+    tnco = "tnco"
+    vrp = "vrp"
     tsp = "tsp"
 PROBLEM = Problem.maxcut
 

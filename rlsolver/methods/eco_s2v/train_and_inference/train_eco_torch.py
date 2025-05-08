@@ -143,17 +143,17 @@ def run(save_loc):
     'network_save_path': network_save_path,
     'test_envs': test_envs,
     'test_episodes': n_tests,
-    'test_frequency': TEST_FREQUENCY,
+    'test_obj_frequency': TEST_OBJ_FREQUENCY,
     'test_save_path': test_save_path,
     'test_metric': TestMetric.MAX_CUT,
     'logger_save_path': logger_save_path,
     'seed': None,
     'test_sampling_speed': TEST_SAMPLING_SPEED
     }
-    if TEST_SAMPLING_SPEED:
-            nb_steps = 2000
-            args['test_frequency']=args['update_target_frequency']=args['update_frequency']=args['save_network_frequency']=1e6
-            args['replay_start_size'] = 0
+    # if TEST_SAMPLING_SPEED:
+    #         nb_steps = 2000
+    #         args['test_obj_frequency']=args['update_target_frequency']=args['update_frequency']=args['save_network_frequency']=1e6
+    #         args['replay_start_size'] = 0
     agent = DQN(**args)
 
     print("\n Created DQN agent with network:\n\n", agent.network)
