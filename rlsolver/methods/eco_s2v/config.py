@@ -94,8 +94,8 @@ elif GRAPH_TYPE == GraphType.ER:
     else:
         raise ValueError("parameters are not set")
 FINAL_EXPLORATION_STEP = int(0.8 * NB_STEPS)
-NUM_TEST_OBJ = 100
-TEST_OBJ_FREQUENCY = max(1, int(1.0 / NUM_TEST_OBJ * NB_STEPS) )
+NUM_TEST_OBJ = 5000
+TEST_OBJ_FREQUENCY = max(1, int(NB_STEPS / NUM_TEST_OBJ) )
 SAVE_NETWORK_FREQUENCY = 50 if NUM_TRAIN_NODES <= 100 else 500 # seconds
 if NUM_TRAIN_NODES <= 80:
     UPDATE_TARGET_FREQUENCY = 1000
