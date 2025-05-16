@@ -102,6 +102,27 @@ where "objective" is the calculation of the objective value for one state.
 
 __Dimension of states and objective values:__ The states over all parallel environments are stored as PyTorch tensors with the environments as the first dimension and the graph nodes as the second dimension. For example, for the graph with 100 nodes, and we use 1000 environments, and the dimension of states is 1000 * 100. Correspondingly, the dimension of the objective values over all parallel environments is 1000 * 1. 
 
+# Methods 
+
+RLSolver provides a diverse range of methods for large-scale combinatorial optimization (CO)
+problems.
+
+| Method                                                         | Category     | Pattern | Source                                                                                                   |
+|----------------------------------------------------------------|--------------|---------|----------------------------------------------------------------------------------------------------------|
+| Gurobi (QUBO)                                                  | Conventional | -       | [code](https://github.com/zhumingpassional/RLSolver/blob/master/rlsolver/methods/gurobi.py)           |
+| Greedy                                                         | Conventional | -       | [code](https://github.com/zhumingpassional/RLSolver/blob/master/rlsolver/methods/greedy.py)       |
+| SDP                                                            | Conventional | -       | [code](https://github.com/zhumingpassional/RLSolver/blob/master/rlsolver/methods/sdp.py)          |
+| S2V-DQN                                                        | RL           | I       | [code](https://github.com/zhumingpassional/RLSolver/blob/master/rlsolver/methods/eco_s2v/train_and_inference/train_s2v.py)         |
+| ECO-DQN                                                        | RL           | I       | [code](https://github.com/zhumingpassional/RLSolver/blob/master/rlsolver/methods/eco_s2v/train_and_inference/train_eco.py) |
+| Jumanji                                                        | RL           | I       | [code](https://github.com/zhumingpassional/RLSolver/tree/master/rlsolver/methods/eco_s2v/jumanji)              |
+| rl4co                                                          | RL           | I       | [code](https://github.com/zhumingpassional/RLSolver/tree/master/rlsolver/methods/eco_s2v/rl4co)          |
+| PI-GNN                                                         | RL           | I       | [code](https://github.com/zhumingpassional/RLSolver/tree/master/rlsolver/methods/PI-GNN)         |
+| RUN-CSP                                                        | RL           | I       | [code](https://github.com/zhumingpassional/RLSolver/tree/master/rlsolver/methods/RUN-CSP)          |
+| iSCO                                                           | RL           | II      | [code](https://github.com/zhumingpassional/RLSolver/tree/master/rlsolver/methods/iSCO)          |
+| seq2seq                                                        | RL           | II      | [code](https://github.com/zhumingpassional/RLSolver/tree/master/rlsolver/methods/seq2seq)            |
+| MCPG                                                           | RL           | II      | [code](https://github.com/zhumingpassional/RLSolver/blob/master/rlsolver/methods/mcpg.py)           |
+| dREINFORCE                                                     | RL           | II      | [code](https://github.com/zhumingpassional/RLSolver/tree/master/rlsolver/methods/L2A)         |
+
 
 
 # Key References
