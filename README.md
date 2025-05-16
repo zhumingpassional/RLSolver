@@ -154,16 +154,22 @@ rlsolver
 └──docs
 └──result
 └──envs
-    └──env_isco_maxcut.py
-    └──env_l2a_maxcut.py
-    └──env_l2a_TNCO.py
+    └──Env_ECO.py
+    └──Env_ISCO.py
+    └──Env_Jumanji.py
+    └──Env_L2A.py
+    └──Env_MCPG.py
+    └──Env_S2V.py
 └──methods
     └──L2A (ours)
-    └──S2V-DQN
-    └──RUN-CSP
-    └──iSCO
     └──PI-GNN
-    └──tsp_alg // TSP algorithms
+    └──RUN-CSP
+    └──eco_s2v
+          └──eco
+          └──s2v
+          └──jumanji
+    └──iSCO
+    └──tsp_algs // TSP algorithms
     └──config.py
     └──genetic_algorithm.py
     └──greedy.py
@@ -176,7 +182,7 @@ rlsolver
     └──util_generate.py
     └──util_obj.py
     └──util_read_data.py
-    └──util_results.py
+    └──util_result.py
 └──README.md
 ```
 
