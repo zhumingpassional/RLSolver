@@ -28,11 +28,7 @@ Existing CPU-based environments have two significant disadvantages: 1) The numbe
 # Sampling Speed of GPU-based Massively Parallel Environments
 
 <p align="center">
-  <img src="rlsolver/fig/speed_up_maxcut.jpg" width="93%">
-</p>
-
-<p align="center">
-  <img src="rlsolver/fig/obj_time.jpg" width="93%">
+  <img src="rlsolver/fig/obj_time.png" width="93%">
 </p>
 
 <a target="\_blank">
