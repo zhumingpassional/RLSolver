@@ -166,7 +166,6 @@ rlsolver
           └──s2v
           └──jumanji
     └──iSCO
-    └──tsp_algs // TSP algorithms
     └──config.py
     └──genetic_algorithm.py
     └──greedy.py
