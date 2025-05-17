@@ -1,12 +1,12 @@
 # RLSolver: GPU-based Massively Parallel Environments for Large-Scale Combinatorial Optimization (CO) Problems Using Reinforcement Learning
 
-We aim to showcase the effectiveness of massively parallel environments for combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU based parallel environments can significantly improve the sampling speed and can obtain high-quality solutions within short time. 
+We aim to showcase the effectiveness of GPU-based massively parallel environments for large-scale combinatorial optimization (CO) problems using reinforcement learning (RL). RL with the help of GPU based parallel environments can significantly improve the sampling speed and can obtain high-quality solutions within short time. 
 
 # Overview
 
 RLSolver has three layers:
 - Environments: providing massively parallel environments using GPUs.
-- RL agents: providing RL algorithms, e.g., REINFORCE.
+- RL agents: providing RL algorithms, e.g., REINFORCE and DQN.
 - Problems: typical CO problems, e.g., graph maxcut and TNCO.
 
 <a target="\_blank">
@@ -21,7 +21,7 @@ RLSolver has three layers:
 
 # Why Use GPU-based Massively Parallel Environments?
 
-The bottleneck of using RL for solving CO problems is the sampling speed since existing solver engines (a.k.a, gym-style environments) are implemented on CPUs. Training the policy network is essentially estimating the gradients via a Markov chain Monte Carlo (MCMC) simulation, which requires a large number of samples from environments. 
+The bottleneck of using RL for solving CO problems is the low sampling speed since existing solver engines (a.k.a, gym-style environments) are implemented on CPUs. Training the policy network is essentially estimating the gradients via a Markov chain Monte Carlo (MCMC) simulation, which requires a large number of samples from environments. 
 
 Existing CPU-based environments have two significant disadvantages: 1) The number of CPU cores is typically small, generally ranging from 16 to 256, resulting in a small number of parallel environments. 2) The communication link between CPUs and GPUs has limited bandwidth. The massively parallel environments can overcome these disadvantages, since we can build thounsands of environments and the communication bottleneck between CPUs and GPUs is bypassed; therefore the sampling speed is significantly improved. 
 
