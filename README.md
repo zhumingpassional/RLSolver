@@ -25,7 +25,7 @@ The bottleneck of using RL for solving large-scale CO problems especially in dis
 
 Existing CPU-based environments have two significant disadvantages: 1) The number of CPU cores is typically small, generally ranging from 16 to 256, resulting in a small number of parallel environments. 2) The communication link between CPUs and GPUs has limited bandwidth. The massively parallel environments can overcome these disadvantages, since we can build thounsands of environments and the communication bottleneck between CPUs and GPUs is bypassed; therefore the sampling speed is significantly improved. 
 
-# Sampling Speed of GPU-based Massively Parallel Environments
+# Improving the Sampling Speed
 <a target="\_blank">
 	<div align="center">
 		<img src=rlsolver/fig/sampling_efficiency_maxcut.png width="80%"/>
@@ -51,7 +51,7 @@ To achieve the same objective value, if we use more parallel environments, the l
 
 GPU-based parallel environments can significantly improve the quality of solutions during training, since RL methods require many high-quality samples from the environments for training. Take graph maxcut as an example. We select G22 in the Gset dataset. The above figure shows the objective values vs. number of epochs with different number of GPU-based parallel environments. We see that, generally, the more parallel environments, the higher objective values, and the faster convergence.
 
-# Two Patterns
+# Two Patterns in RL-based methods
 
 <a target="\_blank">
 	<div align="center">
@@ -150,7 +150,6 @@ Numpy>=1.23
 rlsolver
 └──data
 └──docs
-└──result
 └──envs
     └──Env_ECO.py
     └──Env_ISCO.py
@@ -181,6 +180,7 @@ rlsolver
     └──util_read_data.py
     └──util_result.py
 └──README.md
+└──result
 ```
 
 ## Datasets
@@ -245,7 +245,7 @@ python methods/iSCO/main.py  # run iSCO
 python methods/PI-GNN/main.py  # run PI-GNN
 ```
 ```
-python methods/L2A/maxcut_end2end.py  # ours
+python methods/L2A/main.py  # ours
 ```
 
 
