@@ -187,7 +187,7 @@ rlsolver
   
 - __Syn__ is the synthetic data. The number of nodes is from 100 to 1000 which in three distributions: barabasi albert (BA), erdos renyi (ER), and powerlaw (PL). Each dataset in generated graphs has 10 instances. The partial synthetic data is stored in the "data" folder of this repo.
 - 
-Take g14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
+Take gset_14.txt (an undirected graph with 800 nodes and 4694 edges) as an example:
 
 800 4694 # #nodes is 800, and #edges is 4694.
 
