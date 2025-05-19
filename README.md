@@ -55,7 +55,7 @@ GPU-based parallel environments can significantly improve the quality of solutio
 
 <a target="\_blank">
 	<div align="center">
-		<img src=rlsolver/fig/parallel_sims_pattern.png width="80%"/>
+		<img src=rlsolver/fig/parallelSimPattern.png width="80%"/>
 	</div>
 </a>  
 
