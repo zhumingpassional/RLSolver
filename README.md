@@ -7,7 +7,7 @@ We aim to showcase the effectiveness of GPU-based massively parallel environment
 RLSolver has three layers:
 - Environments: providing massively parallel environments using GPUs.
 - RL agents: providing RL algorithms, e.g., REINFORCE and DQN.
-- Problems: typical CO problems, e.g., graph maxcut and TNCO.
+- Problems: typical CO problems, e.g., graph maxcut and TSP.
 
 <a target="\_blank">
 	<div align="center">
